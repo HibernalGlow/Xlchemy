@@ -17,3 +17,9 @@ tmp.py
 /.coverage
 /htmlcov/
 /_pyinstaller
+ref/*
+
+rust_bindings/target/
+*.so
+*.pyd
+xlchemy_rust/_lowlevel.*

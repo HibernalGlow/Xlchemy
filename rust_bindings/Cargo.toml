@@ -1,0 +1,14 @@
+[package]
+name = "xlchemy-rust"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Python bindings for slimg-core image processing library using pyo3"
+
+[lib]
+name = "xlchemy_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+slimg-core = { path = "../ref/slimg/crates/slimg-core" }

@@ -1,0 +1,51 @@
+"""High-performance image processing bindings for Xlchemy using Rust."""
+
+from xlchemy_rust._lowlevel import (
+    Format,
+    ImageData,
+    DecodeResult,
+    PipelineResult,
+    ResizeMode,
+    CropMode,
+    ExtendMode,
+    FillColor,
+    PipelineOptions,
+    format_extension,
+    format_can_encode,
+    format_from_extension,
+    format_from_magic_bytes,
+    decode,
+    decode_file,
+    convert,
+    crop,
+    extend,
+    resize,
+    optimize,
+    output_path,
+)
+
+__all__ = [
+    "Format",
+    "ImageData",
+    "DecodeResult",
+    "PipelineResult",
+    "ResizeMode",
+    "CropMode",
+    "ExtendMode",
+    "FillColor",
+    "PipelineOptions",
+    "format_extension",
+    "format_can_encode",
+    "format_from_extension",
+    "format_from_magic_bytes",
+    "decode",
+    "decode_file",
+    "convert",
+    "crop",
+    "extend",
+    "resize",
+    "optimize",
+    "output_path",
+]
+
+__version__ = "0.1.0"
