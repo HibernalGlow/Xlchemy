@@ -133,7 +133,7 @@ class SettingsTab(QWidget):
         self.avif_bit_depth_l = self.wm.addWidget("avif_bit_depth_l", QLabel("AVIF - Bit Depth"))
         self.avif_bit_depth_cmb = self.wm.addWidget("avif_bit_depth_cmb", ComboBox(("Auto", "12", "10", "8")))
         self.avif_encoder_l = self.wm.addWidget("avif_encoder_l", QLabel("AVIF Encoder"))
-        self.avif_encoder_cmb = self.wm.addWidget("avif_encoder_cmb", ComboBox(("AOM AV1", "SVT-AV1-PSY")))
+        self.avif_encoder_cmb = self.wm.addWidget("avif_encoder_cmb", ComboBox(("AOM AV1", "SVT-AV1-PSY", "slimg")))
         # self.avif_aom_tune_l = self.wm.addWidget("avif_aom_tune_l", QLabel("AOM AV1 Tune"))
         # self.avif_aom_tune_cmb = self.wm.addWidget("avif_aom_tune_cmb", ComboBox(("SSIM", "IQ", "PSNR")))
         self.avif_aom_iq_tune_cb = self.wm.addWidget("avif_aom_iq_tune_cb", QCheckBox("AOM AV1 - Use IQ Tune"))

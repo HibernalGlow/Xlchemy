@@ -4,6 +4,7 @@ import copy
 from pathlib import Path
 from typing import Dict
 import platform
+import logging
 
 from PySide6.QtCore import (
     QRunnable,
@@ -38,6 +39,22 @@ from core.process import runProcessOutput
 import core.lossless_jpeg as lossless_jpeg
 from core.ram_optimizer import RAMOptimizer
 import core.timestamps as timestamps
+
+logger = logging.getLogger(__name__)
+
+try:
+    from xlchemy_rust import (
+        Format as SlimgFormat,
+        decode_file as slimg_decode_file,
+        decode as slimg_decode,
+        convert as slimg_convert,
+        PipelineOptions,
+        ResizeMode,
+    )
+    SLIMG_AVAILABLE = True
+except ImportError:
+    SLIMG_AVAILABLE = False
+    logger.warning("xlchemy_rust not available. slimg encoder will not work.")
 
 class Signals(QObject):
     started = Signal(int)
@@ -288,17 +305,16 @@ class Worker(QRunnable):
                             args.append(f"-y {self.params['aom_av1_chroma_subsampling'].replace(':', '')}")
                         if self.settings["avif_aom_iq_tune"]:  # libaom version >= v3.12.0
                             args.append("-a tune=iq")
+                        encoder = AVIFENC_PATH
                     case "SVT-AV1-PSY":             # Assuming SVT-AV1 was swapped before compilation
                         args.append("-c svt")
                         args.append("-y 420")       # SVT-AV1 only supports YUV:4:2:0
                         args.append("-a tune=4")    # Still image tuning
+                        encoder = AVIFENC_PATH
+                    case "slimg":
+                        encoder = "slimg"
                     case _:
                         raise GenericException("C4", "Unrecognized AVIF encoder.")
-
-                if self.settings["avif_bit_depth"] != "Auto":
-                    args.append(f"-d {self.settings['avif_bit_depth']}")
-
-                encoder = AVIFENC_PATH
             case "JPEG":
                 if self.settings["jpg_encoder"] == "JPEGLI":
                     args = [f"-q {self.params['quality']}"]
@@ -335,7 +351,8 @@ class Worker(QRunnable):
                 raise GenericException("C0", f"Unknown format ({self.params['format']})")
 
         # Prepare metadata
-        args.extend(metadata.getArgs(encoder, self.params["misc"]["keep_metadata"], self.lossless_jpeg))
+        if encoder != "slimg":
+            args.extend(metadata.getArgs(encoder, self.params["misc"]["keep_metadata"], self.lossless_jpeg))
 
         # Custom arguments
         if self.settings["enable_custom_args"]:
@@ -354,16 +371,21 @@ class Worker(QRunnable):
 
         # Convert & downscale
         if self.params["downscaling"]["enabled"]:
-            self.scl_params["enc"] = encoder
-            self.scl_params["args"] = args
-            self.scl_params["jxl_int_e"] = self.params["intelligent_effort"]
-
-            if self.params["format"] == "PNG":
-                decodeAndDownscale(self.scl_params, self.item_ext, self.params["misc"]["keep_metadata"], self.mutex)
+            if encoder == "slimg":
+                self._convert_with_slimg_downscale()
             else:
-                downscale(self.scl_params, self.mutex)
+                self.scl_params["enc"] = encoder
+                self.scl_params["args"] = args
+                self.scl_params["jxl_int_e"] = self.params["intelligent_effort"]
+
+                if self.params["format"] == "PNG":
+                    decodeAndDownscale(self.scl_params, self.item_ext, self.params["misc"]["keep_metadata"], self.mutex)
+                else:
+                    downscale(self.scl_params, self.mutex)
         else:   # No downscaling
-            if self.params["format"] == "JPEG XL" and self.params["intelligent_effort"]:
+            if encoder == "slimg":
+                self._convert_with_slimg()
+            elif self.params["format"] == "JPEG XL" and self.params["intelligent_effort"]:
                 with QMutexLocker(self.mutex):
                     path_e7 = getUniqueTmpFilePath(self.output_dir, "jxl")
                     path_e9 = getUniqueTmpFilePath(self.output_dir, "jxl")
@@ -392,6 +414,94 @@ class Worker(QRunnable):
                         err_msg = f"[{os.path.basename(encoder)}] {stderr}"
 
                     raise FileException("C3", err_msg)
+
+    def _convert_with_slimg(self):
+        """Convert image using slimg (Rust-based encoder)."""
+        if not SLIMG_AVAILABLE:
+            raise GenericException("C5", "slimg encoder is not available. Please build xlchemy_rust first.")
+        
+        try:
+            result = slimg_decode_file(self.item_abs_path)
+            
+            format_map = {
+                "AVIF": SlimgFormat.Avif,
+                "JPEG XL": SlimgFormat.Jxl,
+                "WebP": SlimgFormat.WebP,
+                "JPEG": SlimgFormat.Jpeg,
+                "PNG": SlimgFormat.Png,
+            }
+            
+            target_format = format_map.get(self.params["format"])
+            if target_format is None:
+                raise GenericException("C6", f"slimg does not support format: {self.params['format']}")
+            
+            options = PipelineOptions(
+                format=target_format,
+                quality=self.params["quality"],
+            )
+            
+            output = slimg_convert(result.image, options)
+            output.save(self.output)
+            
+            if not os.path.isfile(self.output):
+                raise FileException("C3", "slimg conversion failed (output not created).")
+            
+        except Exception as e:
+            raise GenericException("C7", f"slimg conversion error: {e}")
+
+    def _convert_with_slimg_downscale(self):
+        """Convert image with downscaling using slimg (Rust-based encoder)."""
+        if not SLIMG_AVAILABLE:
+            raise GenericException("C5", "slimg encoder is not available. Please build xlchemy_rust first.")
+        
+        try:
+            result = slimg_decode_file(self.item_abs_path)
+            
+            format_map = {
+                "AVIF": SlimgFormat.Avif,
+                "JPEG XL": SlimgFormat.Jxl,
+                "WebP": SlimgFormat.WebP,
+                "JPEG": SlimgFormat.Jpeg,
+                "PNG": SlimgFormat.Png,
+            }
+            
+            target_format = format_map.get(self.params["format"])
+            if target_format is None:
+                raise GenericException("C6", f"slimg does not support format: {self.params['format']}")
+            
+            resize_mode = None
+            downscale = self.params["downscaling"]
+            if downscale["mode"] == "Resolution":
+                if downscale["width"] and downscale["height"]:
+                    resize_mode = ResizeMode.fit(downscale["width"], downscale["height"])
+                elif downscale["width"]:
+                    resize_mode = ResizeMode.width(downscale["width"])
+                elif downscale["height"]:
+                    resize_mode = ResizeMode.height(downscale["height"])
+            elif downscale["mode"] == "Percent":
+                factor = downscale["percent"] / 100.0
+                resize_mode = ResizeMode.scale(factor)
+            elif downscale["mode"] == "Megapixels":
+                mp = downscale["megapixels"]
+                current_mp = (result.image.width * result.image.height) / 1_000_000
+                if current_mp > mp:
+                    factor = (mp / current_mp) ** 0.5
+                    resize_mode = ResizeMode.scale(factor)
+            
+            options = PipelineOptions(
+                format=target_format,
+                quality=self.params["quality"],
+                resize=resize_mode,
+            )
+            
+            output = slimg_convert(result.image, options)
+            output.save(self.output)
+            
+            if not os.path.isfile(self.output):
+                raise FileException("C3", "slimg conversion failed (output not created).")
+            
+        except Exception as e:
+            raise GenericException("C7", f"slimg conversion error: {e}")
 
     def runExifTool(self):
         # Apply metadata (ExifTool)
