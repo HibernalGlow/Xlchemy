@@ -1,12 +1,12 @@
 [package]
-name = "xlchemy-rust"
+name = "_lowlevel"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Python bindings for slimg-core image processing library using pyo3"
 
 [lib]
-name = "xlchemy_rust"
+name = "_lowlevel"
 crate-type = ["cdylib"]
 
 [dependencies]

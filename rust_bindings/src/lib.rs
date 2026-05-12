@@ -109,7 +109,7 @@ impl ImageData {
 
     #[getter]
     fn data<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
-        Ok(PyBytes::new(py, &self.data))
+        Ok(PyBytes::new_bound(py, &self.data))
     }
 
     fn __repr__(&self) -> String {
@@ -154,7 +154,7 @@ pub struct PipelineResult {
 impl PipelineResult {
     #[getter]
     fn data<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
-        Ok(PyBytes::new(py, &self.data))
+        Ok(PyBytes::new_bound(py, &self.data))
     }
 
     #[getter]
@@ -480,7 +480,7 @@ fn optimize(data: &[u8], quality: u8) -> PyResult<PipelineResult> {
     })
 }
 
-#[pyfunction]
+#[pyfunction(signature = (input, format, output=None))]
 fn output_path(input: &str, format: Format, output: Option<&str>) -> String {
     let result = slimg_core::output_path(
         Path::new(input),
@@ -491,7 +491,7 @@ fn output_path(input: &str, format: Format, output: Option<&str>) -> String {
 }
 
 #[pymodule]
-fn xlchemy_rust(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _lowlevel(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Format>()?;
     m.add_class::<ImageData>()?;
     m.add_class::<DecodeResult>()?;

@@ -1,14 +1,27 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+from pathlib import Path
+
 block_cipher = None
 
+hiddenimports_list = ['xlchemy_rust', 'xlchemy_rust._lowlevel']
+
+binaries_list = []
+try:
+    import xlchemy_rust._lowlevel as _lowlevel
+    lowlevel_path = Path(_lowlevel.__file__)
+    if lowlevel_path.exists():
+        binaries_list.append((str(lowlevel_path), 'xlchemy_rust'))
+except ImportError:
+    pass
 
 a = Analysis(
     ['../main.py'],
     pathex=[],
-    binaries=[],
+    binaries=binaries_list,
     datas=[],
-    hiddenimports=[],
+    hiddenimports=hiddenimports_list,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

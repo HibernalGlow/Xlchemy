@@ -23,6 +23,10 @@ classifiers = [
     "Topic :: Multimedia :: Graphics",
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
 ]
+dependencies = [
+    "pillow>=11.3.0",
+    "pytest>=8.4.2",
+]
 
 [tool.maturin]
 manifest-path = "rust_bindings/Cargo.toml"

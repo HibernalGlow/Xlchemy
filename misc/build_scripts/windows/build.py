@@ -18,7 +18,7 @@ import stat
 
 PYTHON_PATH = Path().home() / 'AppData' / 'Local' / 'Programs' / 'Python' / 'Python313' / 'python.exe'
 INNOSETUP_PATH = Path('C:/Program Files (x86)/Inno Setup 6/ISCC.exe')
-SEVENZIP_PATH = Path('C:/Program Files/7-Zip/7z.exe')     # Used by the other build.py
+SEVENZIP_PATH = Path('C:/Program Files/7-Zip/7z.exe')
 PYINSTALLER_TAG = 'v6.11.1'
 RUN_DIR = Path.cwd()
 ENV_DEV = RUN_DIR / 'env_dev'
@@ -103,15 +103,24 @@ def check_python_version(python_path: Path | str, compatible_minor_ver: tuple[in
         supported_py_ver = ', '.join(f'3.{v}' for v in compatible_minor_ver)
         raise Exception(f'Incompatible Python version. Supported versions: {supported_py_ver}')
 
-def create_venv(python_path: Path | str, target: Path | str) -> None:
-    run([str(python_path), '-m', 'venv', str(target)])
+def create_uv_venv(python_path: Path | str, target: Path | str) -> None:
+    """Create a virtual environment using uv."""
+    logger.info(f'Creating venv with uv at {target}...')
+    run(['uv', 'venv', '--python', str(python_path), str(target)])
 
-def pip_install(python_path: Path | str, *requirements_files: Path | str) -> None:
-    run([str(python_path), '-m', 'pip', 'install', '--upgrade', 'pip'])
+def uv_pip_install(python_path: Path | str, *requirements_files: Path | str) -> None:
+    """Install packages using uv pip."""
     req_args = []
     for req_file in requirements_files:
         req_args.extend(['-r', str(req_file)])
-    run([str(python_path), '-m', 'pip', 'install'] + req_args)
+    run(['uv', 'pip', 'install', '--python', str(python_path)] + req_args)
+
+def build_rust_extension(python_path: Path | str) -> None:
+    """Build the xlchemy_rust Rust extension using maturin. Required."""
+    logger.info('Building xlchemy_rust Rust extension...')
+    run(['uv', 'pip', 'install', '--python', str(python_path), 'maturin'])
+    run([str(python_path), '-m', 'maturin', 'develop', '--release'], cwd=RUN_DIR)
+    logger.info('xlchemy_rust built successfully')
 
 def build_cli(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Windows build orchestrator')
@@ -143,42 +152,41 @@ def build_cli(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 def main() -> None:
-    # ArgumentParser
     args = build_cli()
 
-    # Prepare EXEs
     py_exe = Path(args.python_path)
     inno_exe = Path(args.inno_path)
 
     check_environ()
+    check_tools('uv', 'git', 'rustc', 'cargo')
     check_exists(py_exe, 'Python interpreter')
     check_python_version(py_exe, SUPPORTED_PYTHON_3_MINOR_VER)
     check_exists(inno_exe, 'Inno Setup (ISCC.exe)')
-    check_tools('git')
     check_exists(SEVENZIP_PATH, '7zip')
     check_msvc_installed()
 
-    # Clean
     if args.force_clean:
         for d in (ENV_DEV, ENV_BUILD, PYINSTALLER_DIR):
             if d.exists():
                 rmtree(d)
 
-    # Run tests
     if not args.skip_tests:
         if not ENV_DEV.exists():
-            create_venv(py_exe, ENV_DEV)
+            create_uv_venv(py_exe, ENV_DEV)
         dev_py = ENV_DEV / 'Scripts' / 'python.exe'
-        pip_install(dev_py, Path('requirements.txt'), Path('requirements_test.txt'))
+        uv_pip_install(dev_py, Path('requirements.txt'), Path('requirements_test.txt'))
         run([str(dev_py), str(RUN_DIR / 'test.py')])
         run([str(dev_py), str(RUN_DIR / 'test_convert.py')])
 
-    # Create build environment
     if not ENV_BUILD.exists():
-        create_venv(py_exe, ENV_BUILD)
+        create_uv_venv(py_exe, ENV_BUILD)
     build_py = ENV_BUILD / 'Scripts' / 'python.exe'
-    pip_install(build_py, Path('requirements.txt'))
-    if subprocess.run(     # PyInstaller not installed
+    uv_pip_install(build_py, Path('requirements.txt'))
+    
+    logger.info('Building Rust extension (required)...')
+    build_rust_extension(build_py)
+    
+    if subprocess.run(
         [str(build_py), '-m', 'pip', 'show', 'pyinstaller'],
         stdout=subprocess.DEVNULL
     ).returncode != 0:
@@ -186,22 +194,20 @@ def main() -> None:
             run(['git', 'clone', '--depth', '1', '-b', PYINSTALLER_TAG, 'https://github.com/pyinstaller/pyinstaller.git', PYINSTALLER_DIR])
         bootloader = PYINSTALLER_DIR / 'bootloader'
 
-        # Build bootloader
         run([str(build_py), str(bootloader / 'waf'), 'all'], cwd=bootloader)
         run([str(build_py), '-m', 'pip', 'install', '.'], cwd=PYINSTALLER_DIR)
 
-    # Build
     with tempfile.TemporaryDirectory() as tmp_dir:
         export_dir = Path(tmp_dir) / 'export'
         export_dir.mkdir()
         dist_dir = RUN_DIR / 'dist'
 
-        # Portable
+        logger.info('Building portable version...')
         run([str(build_py), str(RUN_DIR / 'build.py'), '-b', 'portable'], cwd=RUN_DIR)
         for f in dist_dir.glob('*.7z'):
             shutil.move(str(f), str(export_dir))
 
-        # InnoSetup
+        logger.info('Building InnoSetup installer...')
         run([str(build_py), str(RUN_DIR / 'build.py'), '-b', 'innosetup', '-u'], cwd=RUN_DIR)
         run([str(inno_exe), 'install.iss'], cwd=dist_dir)
         for f in (dist_dir / 'Output').glob('*.exe'):
@@ -209,7 +215,6 @@ def main() -> None:
         for f in dist_dir.glob('*.json'):
             shutil.move(str(f), str(export_dir))
 
-        # Move build artifacts
         rmtree(dist_dir)
         dist_dir.mkdir()
         for i in export_dir.iterdir():
