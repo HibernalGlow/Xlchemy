@@ -28,7 +28,7 @@ class AboutTab(QWidget):
     
     def setupWidgets(self):
         # Labels
-        self.title_l = QLabel(f"XL Converter")
+        self.title_l = QLabel(f"Xlchemy")
         self.version_l = QLabel(f"Version {constants.VERSION}")
         self.credits_l = StyledLabel(f"""
             <div style='line-height: 120%;'>

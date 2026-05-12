@@ -46,7 +46,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='xl-converter',
+    name='xlchemy',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -67,5 +67,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='xl-converter',
+    name='xlchemy',
 )

@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.setupMisc()
 
     def setupWindow(self) -> None:
-        self.setWindowTitle("XL Converter")
+        self.setWindowTitle("Xlchemy")
         self.setWindowIcon(QIcon(ICON_SVG))
         self.setAcceptDrops(True)
         self.resize(700, 352)

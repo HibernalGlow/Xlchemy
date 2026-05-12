@@ -160,7 +160,7 @@ class Builder():
         self.downloader = Downloader()
 
         # General
-        self.project_name = "xl-converter" 
+        self.project_name = "xlchemy" 
         self.dst_dir = "dist"
         self.internal_dir = f"{self.dst_dir}/{self.project_name}/_internal"
 
@@ -187,7 +187,7 @@ class Builder():
         self.fonts_path = "fonts"
 
         # Linux
-        self.desktop_entry_path = "misc/xl-converter.desktop"
+        self.desktop_entry_path = "misc/xlchemy.desktop"
         self.version_file_path = "misc/version.json"
         self.appimagetool_path = "misc/appimagetool"
 
@@ -196,16 +196,16 @@ class Builder():
         
         # Build Names
         self.version_sanitized = re.sub(r"[ \n]", "-", VERSION)   # No whitespaces or newline characters
-        self.build_inno_name = f"xl-converter-win-{self.version_sanitized}-x86_64"
-        self.build_win_portable_name = f"xl-converter-win-{self.version_sanitized}-x86_64-portable"
+        self.build_inno_name = f"xlchemy-win-{self.version_sanitized}-x86_64"
+        self.build_win_portable_name = f"xlchemy-win-{self.version_sanitized}-x86_64-portable"
         
-        self.build_7z_name = f"xl-converter-linux-{self.version_sanitized}-x86_64"
-        self.build_appimage_name = f"xl-converter-linux-{self.version_sanitized}-x86_64.AppImage"
+        self.build_7z_name = f"xlchemy-linux-{self.version_sanitized}-x86_64"
+        self.build_appimage_name = f"xlchemy-linux-{self.version_sanitized}-x86_64.AppImage"
 
-        self.build_macos_universal_name = f"xl-converter-macos-{self.version_sanitized}-experimental"
+        self.build_macos_universal_name = f"xlchemy-macos-{self.version_sanitized}-experimental"
 
         # Clean up
-        # base path: xl-converter/_internal
+        # base path: xlchemy/_internal
         self.cleanup_resources = {
             "Linux": [
                 # "PySide6/QtNetwork*",     # QSoundEffect needs it.
@@ -324,7 +324,7 @@ class Builder():
         bin_path = Path(bin_dir)
         if not bin_path.exists() or not any(bin_path.iterdir()):
             # Try to copy from installed xl-converter
-            scoop_path = Path(os.environ.get('USERPROFILE', '')) / 'scoop' / 'apps' / 'xl-converter'
+            scoop_path = Path(os.environ.get('USERPROFILE', '')) / 'scoop' / 'apps' / 'xlchemy'
             if scoop_path.exists():
                 # Find the latest version
                 versions = sorted([d for d in scoop_path.iterdir() if d.is_dir() and d.name != 'current'], 

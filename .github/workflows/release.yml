@@ -1,0 +1,122 @@
+name: Build Windows Portable
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    name: Build Windows Portable
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pkgconf
+        shell: powershell
+        run: choco install pkgconfiglite -y
+
+      - name: Configure dav1d environment
+        shell: powershell
+        run: |
+          $dav1dRoot = "${{ github.workspace }}\prebuilt\dav1d"
+          $pkgCfgPath = "$dav1dRoot\lib\pkgconfig"
+          $binPath = "$dav1dRoot\bin"
+
+          $newPath = "$binPath;$env:PATH"
+          echo "PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PKG_CONFIG_PATH=$pkgCfgPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Write-Host "Environment configured"
+          Write-Host "PKG_CONFIG_PATH: $pkgCfgPath"
+
+      - name: Verify dav1d detection
+        shell: powershell
+        run: |
+          pkg-config --modversion dav1d
+          pkg-config --libs --cflags dav1d
+
+      - name: Install Python dependencies
+        run: uv sync --all-groups
+
+      - name: Build Rust bindings
+        run: uv run python build_rust.py
+
+      - name: Copy dav1d.dll to xlchemy_rust
+        shell: powershell
+        run: |
+          $src = "${{ github.workspace }}\prebuilt\dav1d\bin\dav1d.dll"
+          $dst = "${{ github.workspace }}\xlchemy_rust\dav1d.dll"
+          Copy-Item -Path $src -Destination $dst -Force
+          Write-Host "Copied dav1d.dll to xlchemy_rust"
+
+      - name: Build portable package
+        run: uv run python build.py --build-type portable
+
+      - name: Get version
+        id: version
+        shell: powershell
+        run: |
+          $content = Get-Content -Path "data/constants.py" -Raw
+          if ($content -match 'VERSION\s*=\s*"([^"]+)"') {
+            $version = $matches[1]
+            Write-Host "Version: $version"
+            echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8
+          } else {
+            Write-Error "Failed to extract version from data/constants.py"
+            exit 1
+          }
+
+      - name: Create ZIP archive
+        shell: powershell
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $portableDir = "dist\xlchemy-win-$version-x86_64-portable"
+          $zipName = "xlchemy-win-$version-x86_64-portable.zip"
+
+          if (Test-Path $portableDir) {
+            Compress-Archive -Path $portableDir -DestinationPath $zipName -Force
+            Write-Host "Created: $zipName"
+          } else {
+            Write-Error "Portable directory not found: $portableDir"
+            Get-ChildItem dist -Recurse | Select-Object FullName
+            exit 1
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: "*.zip"
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: "*.zip"
