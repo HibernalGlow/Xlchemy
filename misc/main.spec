@@ -5,7 +5,15 @@ from pathlib import Path
 
 block_cipher = None
 
-hiddenimports_list = ['xlchemy_rust', 'xlchemy_rust._lowlevel']
+hiddenimports_list = [
+    'xlchemy_rust', 
+    'xlchemy_rust._lowlevel',
+    'PySide6',
+    'PySide6.QtCore',
+    'PySide6.QtGui',
+    'PySide6.QtWidgets',
+    'PySide6.QtMultimedia',
+]
 
 binaries_list = []
 try:
