@@ -423,8 +423,11 @@ fn format_from_magic_bytes(data: &[u8]) -> Option<Format> {
 }
 
 #[pyfunction]
-fn decode(data: &[u8]) -> PyResult<DecodeResult> {
-    let (image, format) = slimg_core::decode(data).map_err(map_error)?;
+fn decode(data: &[u8], py: Python<'_>) -> PyResult<DecodeResult> {
+    let data_owned = data.to_owned();
+    let (image, format) = py.allow_threads(|| {
+        slimg_core::decode(&data_owned)
+    }).map_err(map_error)?;
     Ok(DecodeResult {
         image: ImageData::from_core(image),
         format: Format::from_core(format),
@@ -432,8 +435,11 @@ fn decode(data: &[u8]) -> PyResult<DecodeResult> {
 }
 
 #[pyfunction]
-fn decode_file(path: &str) -> PyResult<DecodeResult> {
-    let (image, format) = slimg_core::decode_file(Path::new(path)).map_err(map_error)?;
+fn decode_file(path: &str, py: Python<'_>) -> PyResult<DecodeResult> {
+    let path_owned = path.to_owned();
+    let (image, format) = py.allow_threads(|| {
+        slimg_core::decode_file(Path::new(&path_owned))
+    }).map_err(map_error)?;
     Ok(DecodeResult {
         image: ImageData::from_core(image),
         format: Format::from_core(format),
@@ -441,8 +447,12 @@ fn decode_file(path: &str) -> PyResult<DecodeResult> {
 }
 
 #[pyfunction]
-fn convert(image: &ImageData, options: &PipelineOptions) -> PyResult<PipelineResult> {
-    let result = slimg_core::convert(&image.to_core(), &options.to_core()).map_err(map_error)?;
+fn convert(image: &ImageData, options: &PipelineOptions, py: Python<'_>) -> PyResult<PipelineResult> {
+    let image_core = image.to_core();
+    let options_core = options.to_core();
+    let result = py.allow_threads(|| {
+        slimg_core::convert(&image_core, &options_core)
+    }).map_err(map_error)?;
     Ok(PipelineResult {
         data: result.data,
         format: Format::from_core(result.format),
@@ -452,26 +462,42 @@ fn convert(image: &ImageData, options: &PipelineOptions) -> PyResult<PipelineRes
 }
 
 #[pyfunction]
-fn crop(image: &ImageData, mode: &CropMode) -> PyResult<ImageData> {
-    let result = slimg_core::crop::crop(&image.to_core(), &mode.to_core()).map_err(map_error)?;
+fn crop(image: &ImageData, mode: &CropMode, py: Python<'_>) -> PyResult<ImageData> {
+    let image_core = image.to_core();
+    let mode_core = mode.to_core();
+    let result = py.allow_threads(|| {
+        slimg_core::crop::crop(&image_core, &mode_core)
+    }).map_err(map_error)?;
     Ok(ImageData::from_core(result))
 }
 
 #[pyfunction]
-fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor) -> PyResult<ImageData> {
-    let result = slimg_core::extend::extend(&image.to_core(), &mode.to_core(), &fill.to_core()).map_err(map_error)?;
+fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor, py: Python<'_>) -> PyResult<ImageData> {
+    let image_core = image.to_core();
+    let mode_core = mode.to_core();
+    let fill_core = fill.to_core();
+    let result = py.allow_threads(|| {
+        slimg_core::extend::extend(&image_core, &mode_core, &fill_core)
+    }).map_err(map_error)?;
     Ok(ImageData::from_core(result))
 }
 
 #[pyfunction]
-fn resize(image: &ImageData, mode: &ResizeMode) -> PyResult<ImageData> {
-    let result = slimg_core::resize::resize(&image.to_core(), &mode.to_core()).map_err(map_error)?;
+fn resize(image: &ImageData, mode: &ResizeMode, py: Python<'_>) -> PyResult<ImageData> {
+    let image_core = image.to_core();
+    let mode_core = mode.to_core();
+    let result = py.allow_threads(|| {
+        slimg_core::resize::resize(&image_core, &mode_core)
+    }).map_err(map_error)?;
     Ok(ImageData::from_core(result))
 }
 
 #[pyfunction]
-fn optimize(data: &[u8], quality: u8) -> PyResult<PipelineResult> {
-    let result = slimg_core::optimize(data, quality).map_err(map_error)?;
+fn optimize(data: &[u8], quality: u8, py: Python<'_>) -> PyResult<PipelineResult> {
+    let data_owned = data.to_owned();
+    let result = py.allow_threads(|| {
+        slimg_core::optimize(&data_owned, quality)
+    }).map_err(map_error)?;
     Ok(PipelineResult {
         data: result.data,
         format: Format::from_core(result.format),

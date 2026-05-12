@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.22", features = ["extension-module"] }
-slimg-core = { path = "../ref/slimg/crates/slimg-core" }
+slimg-core = "0.5"

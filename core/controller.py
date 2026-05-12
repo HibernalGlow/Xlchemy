@@ -12,6 +12,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
     QObject,
+    Qt,
 )
 
 from data.time_left import TimeLeft
@@ -209,10 +210,10 @@ class Controller(QObject):
             worker_data.append((worker, worker.signals))
         
         for _, signals in worker_data:
-            signals.started.connect(self.workerStarted)
-            signals.completed.connect(self.workerCompleted)
-            signals.canceled.connect(self.workerCanceled)
-            signals.exception.connect(self.exception)
+            signals.started.connect(self.workerStarted, Qt.QueuedConnection)
+            signals.completed.connect(self.workerCompleted, Qt.QueuedConnection)
+            signals.canceled.connect(self.workerCanceled, Qt.QueuedConnection)
+            signals.exception.connect(self.exception, Qt.QueuedConnection)
             
         for worker, _ in worker_data:
             self.threadpool.start(worker)
