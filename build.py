@@ -319,7 +319,27 @@ class Builder():
     def _copyDependencies(self):
         print("[Building] Copying dependencies")
         bin_dir = self.bin_dir[platform.system()]
-        shutil.copytree(Path(bin_dir), Path(self.internal_dir, bin_dir))
+        
+        # Check if bin_dir exists and has content
+        bin_path = Path(bin_dir)
+        if not bin_path.exists() or not any(bin_path.iterdir()):
+            # Try to copy from installed xl-converter
+            scoop_path = Path(os.environ.get('USERPROFILE', '')) / 'scoop' / 'apps' / 'xl-converter'
+            if scoop_path.exists():
+                # Find the latest version
+                versions = sorted([d for d in scoop_path.iterdir() if d.is_dir() and d.name != 'current'], 
+                                 key=lambda x: x.name, reverse=True)
+                if versions:
+                    source_bin = versions[0] / '_internal' / bin_dir
+                    if source_bin.exists():
+                        print(f"[Building] Copying tools from {source_bin}")
+                        os.makedirs(bin_path, exist_ok=True)
+                        shutil.copytree(source_bin, bin_path, dirs_exist_ok=True)
+        
+        if Path(bin_dir).exists() and any(Path(bin_dir).iterdir()):
+            shutil.copytree(Path(bin_dir), Path(self.internal_dir, bin_dir))
+        else:
+            print("[Building] Warning: bin/win directory is empty. External encoders will not be available.")
     
     def _appendInstaller(self):
         installer_dir = self.installer_path[platform.system()]
