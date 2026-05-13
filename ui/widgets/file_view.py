@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import logging
-from typing import List, Tuple, Literal
+from typing import List, Tuple, Literal, Callable
 
 from PySide6.QtWidgets import(
     QTreeWidget,
@@ -38,10 +38,19 @@ class FileView(QTreeWidget):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.sortByColumn(1, Qt.SortOrder.DescendingOrder)
         self.setItemDelegate(ItemDelegate())
-        
+
         # Flags
         self.setting_sorting_disabled = False
         self.shift_start = None
+        self.format_filter_fn: Callable[[str], bool] | None = None
+
+    def setFormatFilter(self, filter_fn: Callable[[str], bool]):
+        """Set a function to filter file formats during drag-and-drop.
+
+        Args:
+            filter_fn: A function that takes an extension string and returns True if allowed.
+        """
+        self.format_filter_fn = filter_fn
 
     # Adding items
     def addItems(self, items):
@@ -141,7 +150,7 @@ class FileView(QTreeWidget):
                         file_path = Path(file)
                         ext = file_path.suffix[1:]
 
-                        if ext.lower() in ALLOWED_INPUT:
+                        if ext.lower() in ALLOWED_INPUT and self._isFormatAllowed(ext):
                             items.append(
                                 (
                                     file_path.stem,
@@ -155,7 +164,7 @@ class FileView(QTreeWidget):
                     file_path = Path(path)
                     ext = file_path.suffix[1:]
 
-                    if ext.lower() in ALLOWED_INPUT:
+                    if ext.lower() in ALLOWED_INPUT and self._isFormatAllowed(ext):
                         items.append(
                             (
                                 file_path.stem,
@@ -174,6 +183,11 @@ class FileView(QTreeWidget):
         self.startAddingItems()
         self.addItems(items)
         self.finishAddingItems()
+
+    def _isFormatAllowed(self, ext: str) -> bool:
+        if self.format_filter_fn is not None:
+            return self.format_filter_fn(ext)
+        return True
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -218,7 +232,7 @@ class FileView(QTreeWidget):
     def selectAllItems(self):
         if self.invisibleRootItem().childCount() > 0:
             self.selectAll()
-    
+
     def selectItemsBelow(self):
         current_item = self.currentItem()
         root = self.invisibleRootItem()
@@ -285,7 +299,7 @@ class FileView(QTreeWidget):
             self.setCurrentIndex(new_idx)
         elif not cur_idx.isValid():
             self.setCurrentIndex(self.indexFromItem(self.topLevelItem(0)))
-    
+
     def moveIndexUp(self):
         cur_idx = self.currentIndex()
 
@@ -298,23 +312,23 @@ class FileView(QTreeWidget):
     def movePage(self, direction: Literal["up", "down"], shift_modifier=False):
         # Config
         SCROLL_AMOUNT = 0.95     # Fraction of the visible items that will change.
-        
+
         # Checks
         if direction not in ("up", "down"):
             return
-        
+
         cur_item = self.currentItem()
         if not cur_item:
             self.moveIndexToBottom()
             return
-    
+
         if not shift_modifier:
             self.shift_start = None
-        
+
         # Compute visible items
         cur_index = self.indexFromItem(cur_item)
         item_rect = self.visualRect(cur_index)
-        
+
         if item_rect.height() <= 0:
             visible_items = 1
         else:
@@ -339,7 +353,7 @@ class FileView(QTreeWidget):
         if target_item := self.topLevelItem(target_row):
             # Set cur. item
             self.setCurrentItem(target_item)
-            
+
             # Scroll
             if last_item := self.topLevelItem(last_visible_row):
                 self.scrollToItem(last_item)
@@ -358,18 +372,18 @@ class FileView(QTreeWidget):
 
     def moveIndexToTop(self):
         self.setCurrentIndex(self.model().index(0, 0))
-    
+
     def moveIndexToBottom(self):
         self.setCurrentIndex(self.model().index(self.model().rowCount() - 1, 0))
 
     def scrollToLastItem(self):
         item_count = self.invisibleRootItem().childCount()
         self.scrollToItem(self.invisibleRootItem().child(item_count - 1))
-    
+
     def resizeToContent(self):
         for i in range(0, self.columnCount() - 1):  # The last one resizes with the window
             self.resizeColumnToContents(i)
-    
+
     # Operations
     def deleteSelected(self):
         root = self.invisibleRootItem()
@@ -381,7 +395,7 @@ class FileView(QTreeWidget):
 
         self.setUpdatesEnabled(False)
         selected_rows = sorted(set(idx.row() for idx in selected_indexes), reverse=True)
-        
+
         # Determine next row to select
         next_row = -1
         if root.childCount() > 0:
@@ -393,9 +407,9 @@ class FileView(QTreeWidget):
         # Remove selected items
         for row in selected_rows:
             self.takeTopLevelItem(row)
-        
+
         # Select next item
         if root.childCount() > 0:
             self.setCurrentIndex(self.model().index(next_row, 0))
-        
+
         self.setUpdatesEnabled(True)

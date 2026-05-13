@@ -21,7 +21,7 @@ from PySide6.QtGui import(
 
 from data.constants import ALLOWED_INPUT, ALLOWED_INPUT_FILTERS, FLATPAK
 from core.utils import scanDir
-from ui.widgets import FileView
+from ui.widgets import FileView, FormatFilterBar
 from ui.lib import WidgetManager
 from ui.lib.utils import isPathValidStr
 from ui.dialogs import message_box
@@ -34,7 +34,7 @@ class InputTab(QWidget):
     def __init__(self, settings):
         super(InputTab, self).__init__()
         self.wm = WidgetManager("InputTab")
-        
+
         self._setupWidgets()
         self._setupLayouts()
         self._setupSignals()
@@ -42,12 +42,14 @@ class InputTab(QWidget):
 
         self.disableSorting(settings["sorting_disabled"])
         self.wm.loadState()
+        self._loadFilterState()
 
     # --------------------------------------
     #               UI Setup
     # --------------------------------------
 
     def _setupWidgets(self):
+        self.format_filter = FormatFilterBar(self)
         self.file_view = FileView(self)
         self.add_files_btn = QPushButton(self)
         self.add_files_btn.setText("Add Files")
@@ -62,11 +64,12 @@ class InputTab(QWidget):
         input_l = QGridLayout()
         self.setLayout(input_l)
 
-        input_l.addWidget(self.add_files_btn,  1, 0)
-        input_l.addWidget(self.add_folder_btn, 1, 1)
-        input_l.addWidget(self.clear_list_btn, 1, 2)
-        input_l.addWidget(self.convert_btn,    1, 3, 1, 2)
-        input_l.addWidget(self.file_view,      0, 0, 1, 0)
+        input_l.addWidget(self.format_filter, 0, 0, 1, 5)
+        input_l.addWidget(self.file_view,      1, 0, 1, 5)
+        input_l.addWidget(self.add_files_btn,  2, 0)
+        input_l.addWidget(self.add_folder_btn, 2, 1)
+        input_l.addWidget(self.clear_list_btn, 2, 2)
+        input_l.addWidget(self.convert_btn,    2, 3, 1, 2)
 
     def _setupShortcuts(self):
         self.select_all_sc = QShortcut(QKeySequence('Ctrl+A'), self)
@@ -79,6 +82,7 @@ class InputTab(QWidget):
         self.add_folder_btn.clicked.connect(self.addFolder)
         self.clear_list_btn.clicked.connect(self.clearInput)
         self.convert_btn.clicked.connect(self.convert.emit)
+        self.file_view.setFormatFilter(self.format_filter.isFormatAllowed)
 
     # --------------------------------------
     #                Public
@@ -91,7 +95,7 @@ class InputTab(QWidget):
         dlg = self._createFileDialog("files", "Add Images")
         if not dlg or not dlg.exec():
             return
-        
+
         self.wm.setVar("add_files_last_dir", dlg.directory().absolutePath())
 
         # Add items
@@ -103,7 +107,7 @@ class InputTab(QWidget):
                     Path(i).parent,
                 )
             )
-        
+
         if FLATPAK and len(file_paths) > 0 and str(file_paths[0][0]).startswith("/run"):
             message_box.info(self, "Permission Error", "Insufficient Flatpak permissions.\nAdd filesystem permissions to the source directory or volume.")
             return
@@ -117,7 +121,7 @@ class InputTab(QWidget):
 
         self.wm.setVar("add_folder_last_dir", dlg.directory().absolutePath())
         selected_dir = dlg.selectedFiles()[0]
-        
+
         try:
             file_paths = scanDir(selected_dir)
         except FileNotFoundError:
@@ -134,19 +138,28 @@ class InputTab(QWidget):
                 )
             )
         self._addItems(tmp)
-    
+
     def clearInput(self):
         self.file_view.clear()
-    
+
     def disableSorting(self, disabled):
         self.file_view.disableSorting(disabled)
-    
+
     def saveState(self):
+        self.wm.setVar("excluded_formats", list(self.format_filter.getExcludedFormats()))
         self.wm.saveState()
 
     # --------------------------------------
     #                Private
     # --------------------------------------
+
+    def _loadFilterState(self):
+        excluded = self.wm.getVar("excluded_formats")
+        if excluded is not None:
+            try:
+                self.format_filter.setExcludedFormats(set(excluded))
+            except Exception as e:
+                logger.error(f"[InputTab] Failed to load filter state: {e}")
 
     def _createFileDialog(self, mode: Literal["files", "folder"], caption: str) -> QFileDialog | None:
         match mode:
@@ -174,28 +187,28 @@ class InputTab(QWidget):
             dlg.setNameFilters(ALLOWED_INPUT_FILTERS)
         elif mode == "folder":
             dlg.setFileMode(QFileDialog.Directory)
-        
+
         return dlg
 
     def _addItems(self, items: List[Tuple[Path, Path]]) -> None:
         """
         Adds items to the file list.
-        
+
         Args:
             items: List
                 Tuple:
                     absolute_path: Path
                     anchor path: Path
                 ...
-        """ 
+        """
         if not items:
             return
-        
+
         tmp = []
         for abs_path, anchor_path in items:
             ext = abs_path.suffix[1:]
 
-            if ext.lower() in ALLOWED_INPUT:
+            if ext.lower() in ALLOWED_INPUT and self.format_filter.isFormatAllowed(ext):
                 tmp.append(
                     (
                         abs_path.stem,
@@ -204,7 +217,7 @@ class InputTab(QWidget):
                         anchor_path,
                     )
                 )
-        
+
         self.file_view.startAddingItems()
         self.file_view.addItems(tmp)
         self.file_view.finishAddingItems()
