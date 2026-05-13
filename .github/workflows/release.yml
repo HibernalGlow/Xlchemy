@@ -73,6 +73,20 @@ jobs:
           Copy-Item -Path $src -Destination $dst -Force
           Write-Host "Copied dav1d.dll to xlchemy_rust"
 
+      - name: Extract bin/win tools
+        shell: powershell
+        run: |
+          $zipPath = "${{ github.workspace }}\bin\win.zip"
+          $destPath = "${{ github.workspace }}\bin\win"
+          if (Test-Path $zipPath) {
+            Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+            Write-Host "Extracted bin/win.zip to bin/win"
+            Get-ChildItem $destPath -Directory | Select-Object Name
+          } else {
+            Write-Error "bin/win.zip not found"
+            exit 1
+          }
+
       - name: Build portable package
         run: uv run python build.py --build-type portable
 
