@@ -16,9 +16,12 @@ from PySide6.QtCore import(
     QItemSelection,
 )
 
-from core.utils import scanDir
+from core.utils import scanDirFast
 from data.constants import ALLOWED_INPUT, FLATPAK
 from ui.dialogs import message_box
+
+# Precompute for fast lookup
+_ALLOWED_INPUT_SET = frozenset(ALLOWED_INPUT)
 
 class ItemDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
@@ -62,6 +65,7 @@ class FileView(QTreeWidget):
                 item[2]: str - absolute path
                 item[3]: Path - directory the file was added from
         """
+        root = self.invisibleRootItem()
         new_items = []
         for name, ext, abs_path, anchor_path in items:
             item = QTreeWidgetItem(
@@ -74,10 +78,11 @@ class FileView(QTreeWidget):
             )
             item.setData(0, Qt.UserRole, anchor_path)
             new_items.append(item)
-        self.invisibleRootItem().addChildren(new_items)
+        root.addChildren(new_items)
 
     def startAddingItems(self):
         """Run before adding items"""
+        self.setUpdatesEnabled(False)
         self.setSortingEnabled(False)
 
     def finishAddingItems(self):
@@ -87,15 +92,17 @@ class FileView(QTreeWidget):
         self.scrollToLastItem()
         if not self.setting_sorting_disabled:
             self.setSortingEnabled(True)
+        self.setUpdatesEnabled(True)
 
     def removeDuplicates(self):
         unique_items = set()
+        root = self.invisibleRootItem()
 
-        for n in range(self.invisibleRootItem().childCount() - 1, -1, -1):
-            item = self.invisibleRootItem().child(n)
+        for n in range(root.childCount() - 1, -1, -1):
+            item = root.child(n)
             path = item.text(2)
             if path in unique_items:
-                self.takeTopLevelItem(n)
+                root.removeChild(item)
             else:
                 unique_items.add(path)
 
@@ -105,11 +112,13 @@ class FileView(QTreeWidget):
 
     def getItems(self):
         items = []
-        for i in range(self.invisibleRootItem().childCount()):
+        root = self.invisibleRootItem()
+        for i in range(root.childCount()):
+            child = root.child(i)
             items.append(
                 (
-                    self.invisibleRootItem().child(i).text(2),
-                    self.invisibleRootItem().child(i).data(0, Qt.UserRole),
+                    child.text(2),
+                    child.data(0, Qt.UserRole),
                 )
             )
         return items
@@ -141,7 +150,7 @@ class FileView(QTreeWidget):
                 path = str(url.toLocalFile())
                 if os.path.isdir(path):     # Directory
                     try:
-                        files = scanDir(path)
+                        files = scanDirFast(path)
                     except FileNotFoundError as e:
                         logging.error(f"[FileView - scanDir()] Directory not found. {e}")
                         continue
@@ -149,8 +158,9 @@ class FileView(QTreeWidget):
                     for file in files:
                         file_path = Path(file)
                         ext = file_path.suffix[1:]
+                        ext_lower = ext.lower()
 
-                        if ext.lower() in ALLOWED_INPUT and self._isFormatAllowed(ext):
+                        if ext_lower in _ALLOWED_INPUT_SET and self._isFormatAllowed(ext_lower):
                             items.append(
                                 (
                                     file_path.stem,
@@ -163,8 +173,9 @@ class FileView(QTreeWidget):
                 elif os.path.isfile(path):  # Single file
                     file_path = Path(path)
                     ext = file_path.suffix[1:]
+                    ext_lower = ext.lower()
 
-                    if ext.lower() in ALLOWED_INPUT and self._isFormatAllowed(ext):
+                    if ext_lower in _ALLOWED_INPUT_SET and self._isFormatAllowed(ext_lower):
                         items.append(
                             (
                                 file_path.stem,

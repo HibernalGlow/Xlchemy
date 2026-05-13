@@ -13,9 +13,29 @@ def scanDir(path: str) -> list:
         raise FileNotFoundError(path)
 
     files = []
-    for i in Path(path).rglob("*"):
-        if os.path.isdir(i) == False:
-            files.append(os.path.abspath(i))    # Convert POSIX path to str
+    for root, _, filenames in os.walk(path):
+        for filename in filenames:
+            files.append(os.path.join(root, filename))
+    return files
+
+def scanDirFast(path: str) -> list:
+    """Fast recursive scan using os.scandir. Returns paths or raises FileNotFoundError."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+
+    files = []
+    stack = [path]
+    while stack:
+        current = stack.pop()
+        try:
+            with os.scandir(current) as it:
+                for entry in it:
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append(entry.path)
+                    elif entry.is_file(follow_symlinks=False):
+                        files.append(entry.path)
+        except (OSError, PermissionError):
+            continue
     return files
 
 def dictToList(data: dict):
@@ -49,7 +69,7 @@ def getFreeSpaceLeft(path: str) -> int:
 
 def b2sum(file_path: str, digest_size: int = 64, chunk_size: int = 8192) -> str:
     """Calculates BLAKE2b sum from a given file.
-    
+
     Raises:
         OSError: if file cannot be read.
         ValueError: if digest_size is not between 1 and 64

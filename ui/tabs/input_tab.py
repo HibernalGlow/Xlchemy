@@ -20,13 +20,16 @@ from PySide6.QtGui import(
 )
 
 from data.constants import ALLOWED_INPUT, ALLOWED_INPUT_FILTERS, FLATPAK
-from core.utils import scanDir
+from core.utils import scanDirFast
 from ui.widgets import FileView, FormatFilterBar
 from ui.lib import WidgetManager
 from ui.lib.utils import isPathValidStr
 from ui.dialogs import message_box
 
 logger = logging.getLogger(__name__)
+
+# Precompute for fast lookup
+_ALLOWED_INPUT_SET = frozenset(ALLOWED_INPUT)
 
 class InputTab(QWidget):
     convert = Signal()
@@ -123,18 +126,20 @@ class InputTab(QWidget):
         selected_dir = dlg.selectedFiles()[0]
 
         try:
-            file_paths = scanDir(selected_dir)
+            file_paths = scanDirFast(selected_dir)
         except FileNotFoundError:
             message_box.info(self, "Error", "The directory was not found.")
             return
 
         # Add items
         tmp = []
+        selected_dir_path = Path(selected_dir)
         for i in file_paths:
+            p = Path(i)
             tmp.append(
                 (
-                    Path(i),
-                    Path(selected_dir),
+                    p,
+                    selected_dir_path,
                 )
             )
         self._addItems(tmp)
@@ -205,10 +210,12 @@ class InputTab(QWidget):
             return
 
         tmp = []
+        is_allowed = self.format_filter.isFormatAllowed
         for abs_path, anchor_path in items:
             ext = abs_path.suffix[1:]
+            ext_lower = ext.lower()
 
-            if ext.lower() in ALLOWED_INPUT and self.format_filter.isFormatAllowed(ext):
+            if ext_lower in _ALLOWED_INPUT_SET and is_allowed(ext_lower):
                 tmp.append(
                     (
                         abs_path.stem,
