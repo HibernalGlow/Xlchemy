@@ -7,26 +7,33 @@ import os
 
 def main():
     print("Building xlchemy-rust Python bindings...")
-    
-    dav1d_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "prebuilt")
+
+    dav1d_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "prebuilt", "dav1d")
     pkgconfig_path = os.path.join(dav1d_path, "lib", "pkgconfig")
     bin_path = os.path.join(dav1d_path, "bin")
-    
+
     pkgconf_path = r"D:\scoop\apps\pkgconf\current"
     if not os.path.exists(pkgconf_path):
         pkgconf_path = r"D:\scoop\apps\pkgconfiglite\current"
     if not os.path.exists(pkgconf_path):
         pkgconf_path = ""
-    
+
     env = os.environ.copy()
-    env["PKG_CONFIG_PATH"] = pkgconfig_path
     env["PKG_CONFIG_ALLOW_SYSTEM_CFLAGS"] = "1"
+
+    existing_pkg_config_path = env.get("PKG_CONFIG_PATH", "")
+    if existing_pkg_config_path:
+        env["PKG_CONFIG_PATH"] = existing_pkg_config_path
+        print(f"Using existing PKG_CONFIG_PATH: {existing_pkg_config_path}")
+    else:
+        env["PKG_CONFIG_PATH"] = pkgconfig_path
+        print(f"Setting PKG_CONFIG_PATH: {pkgconfig_path}")
+
     if pkgconf_path:
         env["PATH"] = bin_path + ";" + pkgconf_path + ";" + env.get("PATH", "")
     else:
         env["PATH"] = bin_path + ";" + env.get("PATH", "")
-    
-    print(f"Setting PKG_CONFIG_PATH: {pkgconfig_path}")
+
     print(f"Adding to PATH: {bin_path}, {pkgconf_path}")
     
     try:
