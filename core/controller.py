@@ -244,17 +244,38 @@ class Controller(QObject):
     def workerStarted(self, n: int) -> None:
         logging.debug(f"[Worker #{n}] Started")
 
-    @Slot(int)
-    def workerCompleted(self, n: int, skipped: bool) -> None:
+    @Slot(int, bool, str, int, int)
+    def workerCompleted(self, n: int, skipped: bool, file_path: str, src_size: int, dst_size: int) -> None:
         self.items.addCompletedItem()
         if not skipped:
             self.time_left.addCompletedItem()
         else:
             self.time_left.addSkippedItem()
-        self.update_progress_line1.emit(f"Converted {self.items.getCompletedItemCount()} out of {self.items.getItemCount()} images")
-        self.update_progress_value.emit(self.items.getCompletedItemCount())
 
-        if self.items.getCompletedItemCount() >= self.items.getItemCount() or task_status.wasCanceled():
+        completed = self.items.getCompletedItemCount()
+        total = self.items.getItemCount()
+        self.update_progress_value.emit(completed)
+
+        if file_path and src_size > 0:
+            def fmt_size(s):
+                if s >= 1024 * 1024:
+                    return f"{s / (1024 * 1024):.2f} MB"
+                elif s >= 1024:
+                    return f"{s / 1024:.1f} KB"
+                else:
+                    return f"{s} B"
+            src_str = fmt_size(src_size)
+            dst_str = fmt_size(dst_size)
+            if src_size > 0:
+                pct = ((src_size - dst_size) / src_size) * 100
+                pct_str = f"-{pct:.0f}%" if pct > 0 else f"+{abs(pct):.0f}%"
+            else:
+                pct_str = "0%"
+            self.update_progress_line1.emit(f"{file_path} : {src_str} → {dst_str} ({pct_str})")
+        else:
+            self.update_progress_line1.emit(f"Converted {completed} out of {total} images")
+
+        if completed >= total or task_status.wasCanceled():
             self.finishProcessing()
         
         logging.debug(f"Active Workers: {self.threadpool.activeThreadCount()}")

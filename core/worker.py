@@ -58,7 +58,7 @@ except ImportError:
 
 class Signals(QObject):
     started = Signal(int)
-    completed = Signal(int, bool)
+    completed = Signal(int, bool, str, int, int)
     canceled = Signal(int)
     exception = Signal(str, str, str)
 
@@ -126,7 +126,7 @@ class Worker(QRunnable):
             self.setupConversion()
 
             if self.skip:
-                self.signals.completed.emit(self.n, True)
+                self.signals.completed.emit(self.n, True, "", 0, 0)
                 return
             
             self.runDynamicRamOptimizer()
@@ -153,7 +153,18 @@ class Worker(QRunnable):
         except Exception as err:
             self.logException("Exception", str(err))
 
-        self.signals.completed.emit(self.n, self.skipped)
+        src_size = 0
+        dst_size = 0
+        try:
+            src_size = os.path.getsize(self.org_item_abs_path)
+        except OSError:
+            pass
+        try:
+            if self.final_output and os.path.isfile(self.final_output):
+                dst_size = os.path.getsize(self.final_output)
+        except OSError:
+            pass
+        self.signals.completed.emit(self.n, self.skipped, self.org_item_abs_path, src_size, dst_size)
     
     def runChecks(self):
         # Input was moved / deleted

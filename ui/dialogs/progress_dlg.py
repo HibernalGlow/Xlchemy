@@ -41,7 +41,7 @@ class ProgressDialog(QObject):
         self.dlg.setWindowIcon(QIcon(ICON_SVG))
         self.dlg.canceled.connect(self._canceled)
 
-        self.dlg.setMinimumWidth(350)
+        self.dlg.setMinimumWidth(500)
         self.dlg.setMinimumHeight(115)
         self.dlg.show()
         self.is_processing = True
