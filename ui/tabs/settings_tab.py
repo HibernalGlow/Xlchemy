@@ -178,7 +178,7 @@ class SettingsTab(QWidget):
         self.cjxl_args_te.setAcceptRichText(False)
         self.im_args_te.setAcceptRichText(False)
         self.processing_order_l = self.wm.addWidget("processing_order_l", QLabel("Processing Order"))
-        self.processing_order_cmb = self.wm.addWidget("processing_order_cmb", ComboBox(("Random", "Sequential")))
+        self.processing_order_cmb = self.wm.addWidget("processing_order_cmb", ComboBox(("Random", "Sequential", "Path Ascending", "Path Descending", "Size Ascending", "Size Descending")))
         self.start_logging_btn = self.wm.addWidget("start_logging_btn", QPushButton("Start Logging"))
         self.open_log_dir_btn = self.wm.addWidget("open_log_dir_btn", QPushButton("Open Logs Folder"))
         self.wipe_log_dir_btn = self.wm.addWidget("wipe_log_dir_btn", QPushButton("Wipe Logs Folder"))

@@ -84,7 +84,11 @@ Changing resampling can worsen the quality. Make sure you know what you are doin
 
 Random - random order; more accurate estimated time left.
 
-Sequential - sorted by path; less fragmentation on HDDs; less accurate estimated time left.
+Sequential - sorted by directory; less fragmentation on HDDs.
+
+Path Ascending/Descending - sorted by full file path.
+
+Size Ascending/Descending - sorted by file size.
 
 Total processing time remains the same.""",
 }

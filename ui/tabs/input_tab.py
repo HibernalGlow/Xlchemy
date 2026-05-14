@@ -7,7 +7,9 @@ from PySide6.QtWidgets import(
     QWidget,
     QGridLayout,
     QPushButton,
-    QFileDialog
+    QFileDialog,
+    QMenu,
+    QToolButton,
 )
 from PySide6.QtCore import(
     Signal,
@@ -33,6 +35,7 @@ _ALLOWED_INPUT_SET = frozenset(ALLOWED_INPUT)
 
 class InputTab(QWidget):
     convert = Signal()
+    sort_requested = Signal(str)
 
     def __init__(self, settings):
         super(InputTab, self).__init__()
@@ -60,6 +63,18 @@ class InputTab(QWidget):
         self.add_folder_btn.setText("Add Folder")
         self.clear_list_btn = QPushButton(self)
         self.clear_list_btn.setText("Clear List")
+        self.sort_btn = QToolButton(self)
+        self.sort_btn.setText("Sort")
+        self.sort_btn.setPopupMode(QToolButton.InstantPopup)
+        sort_menu = QMenu(self.sort_btn)
+        sort_menu.addAction("Path Ascending", lambda: self.sort_requested.emit("Path Ascending"))
+        sort_menu.addAction("Path Descending", lambda: self.sort_requested.emit("Path Descending"))
+        sort_menu.addAction("Size Ascending", lambda: self.sort_requested.emit("Size Ascending"))
+        sort_menu.addAction("Size Descending", lambda: self.sort_requested.emit("Size Descending"))
+        sort_menu.addSeparator()
+        sort_menu.addAction("Random", lambda: self.sort_requested.emit("Random"))
+        sort_menu.addAction("Sequential", lambda: self.sort_requested.emit("Sequential"))
+        self.sort_btn.setMenu(sort_menu)
         self.convert_btn = QPushButton(self)
         self.convert_btn.setText("Convert")
 
@@ -67,12 +82,13 @@ class InputTab(QWidget):
         input_l = QGridLayout()
         self.setLayout(input_l)
 
-        input_l.addWidget(self.format_filter, 0, 0, 1, 5)
-        input_l.addWidget(self.file_view,      1, 0, 1, 5)
+        input_l.addWidget(self.format_filter, 0, 0, 1, 6)
+        input_l.addWidget(self.file_view,      1, 0, 1, 6)
         input_l.addWidget(self.add_files_btn,  2, 0)
         input_l.addWidget(self.add_folder_btn, 2, 1)
         input_l.addWidget(self.clear_list_btn, 2, 2)
-        input_l.addWidget(self.convert_btn,    2, 3, 1, 2)
+        input_l.addWidget(self.sort_btn,       2, 3)
+        input_l.addWidget(self.convert_btn,    2, 4, 1, 2)
 
     def _setupShortcuts(self):
         self.select_all_sc = QShortcut(QKeySequence('Ctrl+A'), self)
@@ -85,6 +101,7 @@ class InputTab(QWidget):
         self.add_folder_btn.clicked.connect(self.addFolder)
         self.clear_list_btn.clicked.connect(self.clearInput)
         self.convert_btn.clicked.connect(self.convert.emit)
+        self.sort_requested.connect(self.file_view.sortByOrder)
         self.file_view.setFormatFilter(self.format_filter.isFormatAllowed)
 
     # --------------------------------------

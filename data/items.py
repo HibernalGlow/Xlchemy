@@ -1,6 +1,7 @@
 from pathlib import Path
 import logging
 import random
+import os
 
 from data.constants import ALLOWED_INPUT
 
@@ -33,12 +34,19 @@ class Items():
         
         self.item_count = len(self.items)
 
-        if order == "Random":
-            # Improves time left accuracy
-            random.shuffle(self.items)
-        elif order == "Sequential":
-            # Improves file access times on HDDs
-            self.items.sort(key=lambda pair: (str(pair[0].parent).casefold(), pair[0].name.casefold()))
+        match order:
+            case "Random":
+                random.shuffle(self.items)
+            case "Sequential":
+                self.items.sort(key=lambda pair: (str(pair[0].parent).casefold(), pair[0].name.casefold()))
+            case "Path Ascending":
+                self.items.sort(key=lambda pair: str(pair[0]).casefold())
+            case "Path Descending":
+                self.items.sort(key=lambda pair: str(pair[0]).casefold(), reverse=True)
+            case "Size Ascending":
+                self.items.sort(key=lambda pair: os.path.getsize(pair[0]) if pair[0].is_file() else 0)
+            case "Size Descending":
+                self.items.sort(key=lambda pair: os.path.getsize(pair[0]) if pair[0].is_file() else 0, reverse=True)
 
     def getItem(self, n) -> Path:
         return self.items[n]

@@ -20,12 +20,11 @@ from core.utils import scanDirFast
 from data.constants import ALLOWED_INPUT, FLATPAK
 from ui.dialogs import message_box
 
-# Precompute for fast lookup
 _ALLOWED_INPUT_SET = frozenset(ALLOWED_INPUT)
 
 class ItemDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
-        option.state &= ~QStyle.State_HasFocus      # Removes the focus rectangle. It is not possible in QSS.
+        option.state &= ~QStyle.State_HasFocus
         super().paint(painter, option, index)
 
 class FileView(QTreeWidget):
@@ -36,16 +35,40 @@ class FileView(QTreeWidget):
         self.setHeaderLabels(("File Name", "Ext.", "Location"))
 
         self.setAcceptDrops(True)
-        self.setDragDropMode(QAbstractItemView.InternalMove)    # Required for dropEvent to fire
+        self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.sortByColumn(1, Qt.SortOrder.DescendingOrder)
         self.setItemDelegate(ItemDelegate())
 
-        # Flags
         self.setting_sorting_disabled = False
         self.shift_start = None
         self.format_filter_fn: Callable[[str], bool] | None = None
+
+    def sortByOrder(self, order: str):
+        root = self.invisibleRootItem()
+        items = []
+        for i in range(root.childCount()):
+            items.append(root.takeChild(0))
+
+        match order:
+            case "Path Ascending":
+                items.sort(key=lambda item: item.text(2).casefold())
+            case "Path Descending":
+                items.sort(key=lambda item: item.text(2).casefold(), reverse=True)
+            case "Size Ascending":
+                items.sort(key=lambda item: os.path.getsize(item.text(2)) if os.path.isfile(item.text(2)) else 0)
+            case "Size Descending":
+                items.sort(key=lambda item: os.path.getsize(item.text(2)) if os.path.isfile(item.text(2)) else 0, reverse=True)
+            case "Random":
+                import random
+                random.shuffle(items)
+            case "Sequential":
+                items.sort(key=lambda item: (str(Path(item.text(2)).parent).casefold(), Path(item.text(2)).name.casefold()))
+            case _:
+                pass
+
+        root.addChildren(items)
 
     def setFormatFilter(self, filter_fn: Callable[[str], bool]):
         """Set a function to filter file formats during drag-and-drop.
