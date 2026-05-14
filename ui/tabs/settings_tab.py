@@ -44,6 +44,7 @@ STOCK_PRESETS = StockPresets()
 class Signals(QObject):
     custom_resampling_toggled = Signal(bool)
     sorting_toggled = Signal(bool)
+    processing_order_changed = Signal(str)
     jxl_effort_10_toggled = Signal(bool)
     quality_prec_snap_toggled = Signal(bool)
     jpeg_encoder_changed = Signal(str)
@@ -57,6 +58,7 @@ class SettingsTab(QWidget):
 
         self.wm = WidgetManager("SettingsTab")
         self.signals = Signals()
+        self._updating_order = False
         self.logging_manager = LoggingManager()
 
         # Init UI
@@ -301,6 +303,7 @@ class SettingsTab(QWidget):
         self.custom_args_cb.toggled.connect(self.onCustomArgsToggled)
         self.play_sound_on_finish_cb.toggled.connect(self.onPlaySoundOnFinishVolumeToggled)
         self.no_sorting_cb.toggled.connect(self.signals.sorting_toggled)
+        self.processing_order_cmb.currentTextChanged.connect(self.signals.processing_order_changed)
         self.jxl_effort_10_cb.toggled.connect(self.signals.jxl_effort_10_toggled)
         self.custom_resampling_cb.toggled.connect(self.signals.custom_resampling_toggled.emit)
         self.quality_prec_snap_cb.toggled.connect(self.signals.quality_prec_snap_toggled)
@@ -491,9 +494,15 @@ class SettingsTab(QWidget):
         message_box.info(self, "File Message", self.logging_manager.wipeLogsDir())
 
     def setProcessingOrder(self, order: str):
-        idx = self.processing_order_cmb.findText(order)
-        if idx >= 0:
-            self.processing_order_cmb.setCurrentIndex(idx)
+        if self._updating_order:
+            return
+        self._updating_order = True
+        try:
+            idx = self.processing_order_cmb.findText(order)
+            if idx >= 0:
+                self.processing_order_cmb.setCurrentIndex(idx)
+        finally:
+            self._updating_order = False
 
     def getSettings(self):
         return {

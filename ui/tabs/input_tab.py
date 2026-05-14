@@ -6,15 +6,16 @@ import os
 from PySide6.QtWidgets import(
     QWidget,
     QGridLayout,
+    QHBoxLayout,
     QPushButton,
     QFileDialog,
-    QMenu,
-    QToolButton,
+    QButtonGroup,
 )
 from PySide6.QtCore import(
     Signal,
     QUrl,
     QDir,
+    Qt,
 )
 from PySide6.QtGui import(
     QShortcut,
@@ -40,6 +41,7 @@ class InputTab(QWidget):
     def __init__(self, settings):
         super(InputTab, self).__init__()
         self.wm = WidgetManager("InputTab")
+        self._updating_sort = False
 
         self._setupWidgets()
         self._setupLayouts()
@@ -63,32 +65,45 @@ class InputTab(QWidget):
         self.add_folder_btn.setText("Add Folder")
         self.clear_list_btn = QPushButton(self)
         self.clear_list_btn.setText("Clear List")
-        self.sort_btn = QToolButton(self)
-        self.sort_btn.setText("Sort")
-        self.sort_btn.setPopupMode(QToolButton.InstantPopup)
-        sort_menu = QMenu(self.sort_btn)
-        sort_menu.addAction("Path Ascending", lambda: self.sort_requested.emit("Path Ascending"))
-        sort_menu.addAction("Path Descending", lambda: self.sort_requested.emit("Path Descending"))
-        sort_menu.addAction("Size Ascending", lambda: self.sort_requested.emit("Size Ascending"))
-        sort_menu.addAction("Size Descending", lambda: self.sort_requested.emit("Size Descending"))
-        sort_menu.addSeparator()
-        sort_menu.addAction("Random", lambda: self.sort_requested.emit("Random"))
-        sort_menu.addAction("Sequential", lambda: self.sort_requested.emit("Sequential"))
-        self.sort_btn.setMenu(sort_menu)
         self.convert_btn = QPushButton(self)
         self.convert_btn.setText("Convert")
+
+        self.sort_bar = QWidget(self)
+        sort_layout = QHBoxLayout(self.sort_bar)
+        sort_layout.setContentsMargins(0, 0, 0, 0)
+        sort_layout.setSpacing(2)
+        self.sort_btn_group = QButtonGroup(self)
+        self.sort_btn_group.setExclusive(True)
+        sort_orders = [
+            ("Original", "Original"),
+            ("Path ↑", "Path Ascending"),
+            ("Path ↓", "Path Descending"),
+            ("Size ↑", "Size Ascending"),
+            ("Size ↓", "Size Descending"),
+            ("Random", "Random"),
+            ("Sequential", "Sequential"),
+        ]
+        for label, order in sort_orders:
+            btn = QPushButton(label, self.sort_bar)
+            btn.setCheckable(True)
+            btn.setProperty("sort_order", order)
+            if order == "Original":
+                btn.setChecked(True)
+            self.sort_btn_group.addButton(btn)
+            sort_layout.addWidget(btn)
+        self.sort_btn_group.idClicked.connect(self._onSortButtonClicked)
 
     def _setupLayouts(self):
         input_l = QGridLayout()
         self.setLayout(input_l)
 
-        input_l.addWidget(self.format_filter, 0, 0, 1, 6)
-        input_l.addWidget(self.file_view,      1, 0, 1, 6)
-        input_l.addWidget(self.add_files_btn,  2, 0)
-        input_l.addWidget(self.add_folder_btn, 2, 1)
-        input_l.addWidget(self.clear_list_btn, 2, 2)
-        input_l.addWidget(self.sort_btn,       2, 3)
-        input_l.addWidget(self.convert_btn,    2, 4, 1, 2)
+        input_l.addWidget(self.format_filter, 0, 0, 1, 5)
+        input_l.addWidget(self.sort_bar,      1, 0, 1, 5)
+        input_l.addWidget(self.file_view,     2, 0, 1, 5)
+        input_l.addWidget(self.add_files_btn, 3, 0)
+        input_l.addWidget(self.add_folder_btn,3, 1)
+        input_l.addWidget(self.clear_list_btn,3, 2)
+        input_l.addWidget(self.convert_btn,   3, 3, 1, 2)
 
     def _setupShortcuts(self):
         self.select_all_sc = QShortcut(QKeySequence('Ctrl+A'), self)
@@ -103,6 +118,16 @@ class InputTab(QWidget):
         self.convert_btn.clicked.connect(self.convert.emit)
         self.sort_requested.connect(self.file_view.sortByOrder)
         self.file_view.setFormatFilter(self.format_filter.isFormatAllowed)
+
+    def _onSortButtonClicked(self, btn_id):
+        if self._updating_sort:
+            return
+        btn = self.sort_btn_group.button(btn_id)
+        if btn:
+            order = btn.property("sort_order")
+            if order != "Original":
+                self.file_view.sortByOrder(order)
+            self.sort_requested.emit(order)
 
     # --------------------------------------
     #                Public
@@ -166,6 +191,16 @@ class InputTab(QWidget):
 
     def disableSorting(self, disabled):
         self.file_view.disableSorting(disabled)
+
+    def setSortOrder(self, order: str):
+        self._updating_sort = True
+        for btn in self.sort_btn_group.buttons():
+            if btn.property("sort_order") == order:
+                btn.setChecked(True)
+                if order != "Original":
+                    self.file_view.sortByOrder(order)
+                break
+        self._updating_sort = False
 
     def saveState(self):
         self.wm.setVar("excluded_formats", list(self.format_filter.getExcludedFormats()))

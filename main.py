@@ -92,6 +92,7 @@ class MainWindow(QMainWindow):
         
         self.input_tab.convert.connect(self.convert)
         self.input_tab.sort_requested.connect(self.settings_tab.setProcessingOrder)
+        self.settings_tab.signals.processing_order_changed.connect(self.input_tab.setSortOrder)
         self.output_tab.convert.connect(self.convert)
         self.output_tab.file_format_changed.connect(self.modify_tab.onFileFormatChanged)
         self.modify_tab.convert.connect(self.convert)
