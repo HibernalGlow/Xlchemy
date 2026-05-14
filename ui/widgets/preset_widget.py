@@ -19,6 +19,7 @@ class PresetWidget(QWidget):
         self.preset_cmb = ComboBox()
         self.preset_cmb.setMinimumWidth(150)
         self.preset_save_btn = QPushButton("Save")
+        self.preset_update_btn = QPushButton("Update")
         self.preset_delete_btn = QPushButton("Delete")
         self.preset_default_btn = QPushButton("Set Default")
 
@@ -27,12 +28,14 @@ class PresetWidget(QWidget):
         layout.addWidget(QLabel("Preset"))
         layout.addWidget(self.preset_cmb)
         layout.addWidget(self.preset_save_btn)
+        layout.addWidget(self.preset_update_btn)
         layout.addWidget(self.preset_delete_btn)
         layout.addWidget(self.preset_default_btn)
         layout.addStretch()
 
         self.preset_cmb.currentIndexChanged.connect(self._onPresetChanged)
         self.preset_save_btn.clicked.connect(self._onPresetSave)
+        self.preset_update_btn.clicked.connect(self._onPresetUpdate)
         self.preset_delete_btn.clicked.connect(self._onPresetDelete)
         self.preset_default_btn.clicked.connect(self._onPresetSetDefault)
 
@@ -57,16 +60,28 @@ class PresetWidget(QWidget):
         self.preset_applied.emit(data)
 
     def _onPresetSave(self):
-        name = self.preset_cmb.currentData()
-        if not name:
-            name, ok = QInputDialog.getText(self, "Save Preset", "Preset name:")
-            if not ok or not name.strip():
-                return
-            name = name.strip()
-        else:
+        name, ok = QInputDialog.getText(self, "Save Preset", "Preset name:")
+        if not ok or not name.strip():
+            return
+        name = name.strip()
+        if self.preset_manager.exists(name):
             ok = message_box.confirm(self, "Save Preset", f"Overwrite preset \"{name}\"?")
             if not ok:
                 return
+        data = {}
+        if self._get_all_settings:
+            data = self._get_all_settings()
+        if self.preset_manager.save(name, data):
+            self._refreshPresetList()
+            for i in range(self.preset_cmb.count()):
+                if self.preset_cmb.itemData(i) == name:
+                    self.preset_cmb.setCurrentIndex(i)
+                    break
+
+    def _onPresetUpdate(self):
+        name = self.preset_cmb.currentData()
+        if not name:
+            return
         data = {}
         if self._get_all_settings:
             data = self._get_all_settings()
