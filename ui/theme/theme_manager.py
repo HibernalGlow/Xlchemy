@@ -6,8 +6,12 @@ from ui.widgets.label import StyledLabel
 from .stylesheet import getStyleSheet
 from .themes import getTheme
 
+_current_theme_name: str = "Ralsei"
+
 def setTheme(theme_name: str = "Ralsei") -> None:
     """Sets theme of the QApplication."""
+    global _current_theme_name
+    _current_theme_name = theme_name
     theme = getTheme(theme_name)
     stylesheet = getStyleSheet(theme)
 
@@ -16,9 +20,8 @@ def setTheme(theme_name: str = "Ralsei") -> None:
         logging.getLogger(__name__).error("QApplication not found.")
         return
 
-    app.setStyle("Fusion")  # Solves a lot of crossplatform issues. A common baseline.
+    app.setStyle("Fusion")
     app.setStyleSheet(stylesheet)
-    # Workaround for limited styling support in QSS.
     StyledLabel.updateStyleForAll(f"""
     a {{
         color: {theme.colors.accent_big};

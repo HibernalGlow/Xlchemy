@@ -14,10 +14,18 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 
 from data.constants import ALLOWED_INPUT
+from ui.theme.themes import getTheme
+from ui.theme.utils import hexToRGBA
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXCLUDED_FORMATS = {"avif", "jxl", "webp", "gif"}
+
+
+def _getAccentColor() -> str:
+    from ui.theme.theme_manager import _current_theme_name
+    theme = getTheme(_current_theme_name)
+    return theme.colors.accent_big
 
 
 class FormatBadge(QPushButton):
@@ -51,9 +59,11 @@ class FormatBadge(QPushButton):
         return self._excluded
 
     def _updateStyle(self):
+        accent = _getAccentColor()
+        accent_hover = hexToRGBA(accent, 180)
         if self._excluded:
-            self.setStyleSheet("""
-                QPushButton {
+            self.setStyleSheet(f"""
+                QPushButton {{
                     color: #888888;
                     background-color: transparent;
                     border: 1px solid #555555;
@@ -61,27 +71,27 @@ class FormatBadge(QPushButton):
                     padding: 1px 6px;
                     font-size: 10px;
                     font-weight: 600;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: #333333;
                     border-color: #777777;
-                }
+                }}
             """)
         else:
-            self.setStyleSheet("""
-                QPushButton {
+            self.setStyleSheet(f"""
+                QPushButton {{
                     color: #ffffff;
-                    background-color: #4a9eff;
-                    border: 1px solid #4a9eff;
+                    background-color: {accent};
+                    border: 1px solid {accent};
                     border-radius: 3px;
                     padding: 1px 6px;
                     font-size: 10px;
                     font-weight: 600;
-                }
-                QPushButton:hover {
-                    background-color: #6ab2ff;
-                    border-color: #6ab2ff;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {accent_hover};
+                    border-color: {accent_hover};
+                }}
             """)
 
 
