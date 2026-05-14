@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/shadcn/card';
 import { Switch } from '~/components/shadcn/switch';
 import { Label } from '~/components/shadcn/label';
@@ -14,7 +14,11 @@ import { selectedThemeAtom, themeAtom } from '~/atom/primitive';
 import { PROCESSING_ORDERS, JPEG_ENCODERS, AVIF_ENCODERS } from '~/consts';
 import { Theme } from '~/consts';
 
-export function SettingsTab() {
+export interface SettingsTabRef {
+  getSettings: () => Record<string, unknown>;
+}
+
+export const SettingsTab = forwardRef<SettingsTabRef>(function SettingsTab(_props, ref) {
   const [processingOrder, setProcessingOrder] = useState('Sequential');
   const [playSoundOnFinish, setPlaySoundOnFinish] = useState(true);
   const [playSoundVolume, setPlaySoundVolume] = useState(80);
@@ -26,21 +30,23 @@ export function SettingsTab() {
   const currentTheme = useAtomValue(themeAtom);
   const selectedTheme = useAtomValue(selectedThemeAtom);
 
-  const getSettings = () => ({
-    processing_order: processingOrder,
-    play_sound_on_finish: playSoundOnFinish,
-    play_sound_on_finish_vol: playSoundVolume,
-    ram_optimizer: 'Auto',
-    ram_optimizer_rules: '',
-    jpg_encoder: jpgEncoder,
-    avif_encoder: avifEncoder,
-    custom_resampling: false,
-    quality_prec_snap: false,
-    jxl_effort_10: false,
-    jxl_lossy_modular: false,
-    jxl_int_effort: false,
-    exiftool_args: {},
-  });
+  useImperativeHandle(ref, () => ({
+    getSettings: () => ({
+      processing_order: processingOrder,
+      play_sound_on_finish: playSoundOnFinish,
+      play_sound_on_finish_vol: playSoundVolume,
+      ram_optimizer: 'Auto',
+      ram_optimizer_rules: '',
+      jpg_encoder: jpgEncoder,
+      avif_encoder: avifEncoder,
+      custom_resampling: false,
+      quality_prec_snap: false,
+      jxl_effort_10: false,
+      jxl_lossy_modular: false,
+      jxl_int_effort: false,
+      exiftool_args: {},
+    }),
+  }));
 
   return (
     <Card className="h-full">
@@ -162,4 +168,4 @@ export function SettingsTab() {
       </CardContent>
     </Card>
   );
-}
+});

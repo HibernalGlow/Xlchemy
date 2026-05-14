@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/shadcn/card';
 import { Switch } from '~/components/shadcn/switch';
 import { Label } from '~/components/shadcn/label';
@@ -7,7 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { Separator } from '~/components/shadcn/separator';
 import { METADATA_MODES, RESAMPLING_METHODS } from '~/consts';
 
-export function ModifyTab() {
+export interface ModifyTabRef {
+  getSettings: () => Record<string, unknown>;
+}
+
+export const ModifyTab = forwardRef<ModifyTabRef>(function ModifyTab(_props, ref) {
   const [downscaleEnabled, setDownscaleEnabled] = useState(false);
   const [downscaleWidth, setDownscaleWidth] = useState(1920);
   const [downscaleHeight, setDownscaleHeight] = useState(1080);
@@ -17,20 +21,22 @@ export function ModifyTab() {
   const [keepDates, setKeepDates] = useState(true);
   const [preserveOrientation, setPreserveOrientation] = useState(true);
 
-  const getSettings = () => ({
-    downscale: {
-      enabled: downscaleEnabled,
-      width: downscaleWidth,
-      height: downscaleHeight,
-      keep_aspect_ratio: keepAspectRatio,
-      resampling,
-    },
-    misc: {
-      keep_metadata: keepMetadata,
-      keep_dates: keepDates,
-      preserve_orientation: preserveOrientation,
-    },
-  });
+  useImperativeHandle(ref, () => ({
+    getSettings: () => ({
+      downscale: {
+        enabled: downscaleEnabled,
+        width: downscaleWidth,
+        height: downscaleHeight,
+        keep_aspect_ratio: keepAspectRatio,
+        resampling,
+      },
+      misc: {
+        keep_metadata: keepMetadata,
+        keep_dates: keepDates,
+        preserve_orientation: preserveOrientation,
+      },
+    }),
+  }));
 
   return (
     <Card className="h-full">
@@ -125,4 +131,4 @@ export function ModifyTab() {
       </CardContent>
     </Card>
   );
-}
+});

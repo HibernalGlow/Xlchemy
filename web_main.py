@@ -4,6 +4,8 @@ import logging
 import webview
 from typing import Any
 
+from PySide6.QtCore import QThreadPool
+
 from core.controller import Controller
 from data.constants import VERSION, CONFIG_LOCATION, ALLOWED_INPUT
 from data.config_manager import ConfigManager
@@ -164,8 +166,6 @@ class API:
 
 
 def main():
-    from PySide6.QtCore import QThreadPool
-
     api = API()
 
     ui_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ui_web')

@@ -11,6 +11,7 @@ export function InputTab() {
   const files = useAtomValue(filesAtom);
   const progress = useAtomValue(progressAtom);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleAddFiles = useCallback(async () => {
     const api = getAPI();
@@ -18,6 +19,15 @@ export function InputTab() {
     const paths = await api.openFileDialog();
     if (paths && paths.length > 0) {
       await api.addFiles(paths);
+    }
+  }, []);
+
+  const handleAddFolder = useCallback(async () => {
+    const api = getAPI();
+    if (!api) return;
+    const dir = await api.openFolderDialog();
+    if (dir) {
+      await api.addFiles([dir]);
     }
   }, []);
 
@@ -37,12 +47,50 @@ export function InputTab() {
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
     const api = getAPI();
     if (!api) return;
-    const paths = Array.from(e.dataTransfer.files).map((f) => (f as File & { path?: string }).path || f.name);
+
+    // Try to get real file paths from pywebview
+    let paths: string[] = [];
+    
+    if (isPyWebView() && e.dataTransfer.items) {
+      // Use webview API to get dropped file paths
+      const items = Array.from(e.dataTransfer.items);
+      for (const item of items) {
+        const entry = item.webkitGetAsEntry?.() || (item as any).getAsEntry?.();
+        if (entry) {
+          // For pywebview, we can try to get path from the file object
+          const file = item.getAsFile();
+          if (file && (file as any).path) {
+            paths.push((file as any).path);
+          }
+        }
+      }
+    }
+    
+    // Fallback: use file names (won't work for actual conversion but shows UI feedback)
+    if (paths.length === 0) {
+      paths = Array.from(e.dataTransfer.files).map((f) => (f as File & { path?: string }).path || f.name);
+    }
+    
     if (paths.length > 0) {
       await api.addFiles(paths);
     }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
   }, []);
 
   const isProcessing = progress.isProcessing;
@@ -59,6 +107,10 @@ export function InputTab() {
               <Plus className="h-3.5 w-3.5 mr-1" />
               Add
             </Button>
+            <Button variant="outline" size="sm" onClick={handleAddFolder} disabled={isProcessing}>
+              <FolderOpen className="h-3.5 w-3.5 mr-1" />
+              Folder
+            </Button>
             <Button variant="outline" size="sm" onClick={handleRemoveFiles} disabled={isProcessing || selectedIndices.size === 0}>
               <Trash2 className="h-3.5 w-3.5 mr-1" />
               Remove
@@ -71,8 +123,9 @@ export function InputTab() {
         </div>
       </CardHeader>
       <CardContent
-        className="flex-1 min-h-0"
-        onDragOver={(e) => e.preventDefault()}
+        className={`flex-1 min-h-0 transition-colors ${isDragOver ? 'bg-accent/50 border-2 border-dashed border-primary' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         <ScrollArea className="h-[280px]">

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/shadcn/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/shadcn/select';
 import { Slider } from '~/components/shadcn/slider';
@@ -10,7 +10,11 @@ import { OUTPUT_FORMATS } from '~/consts';
 import { getAPI } from '~/utils/api';
 import { FolderOpen } from 'lucide-react';
 
-export function OutputTab() {
+export interface OutputTabRef {
+  getSettings: () => Record<string, unknown>;
+}
+
+export const OutputTab = forwardRef<OutputTabRef>(function OutputTab(_props, ref) {
   const [format, setFormat] = useState('AVIF');
   const [quality, setQuality] = useState(80);
   const [effort, setEffort] = useState(4);
@@ -29,19 +33,21 @@ export function OutputTab() {
     }
   }, []);
 
-  const getSettings = () => ({
-    format,
-    quality,
-    effort,
-    lossless,
-    jxl_modular: false,
-    intelligent_effort: false,
-    custom_output_dir: customOutputDir,
-    custom_output_dir_path: customOutputDirPath,
-    keep_dir_struct: keepDirStruct,
-    thread_count: threadCount,
-    sm_format_pool: [],
-  });
+  useImperativeHandle(ref, () => ({
+    getSettings: () => ({
+      format,
+      quality,
+      effort,
+      lossless,
+      jxl_modular: false,
+      intelligent_effort: false,
+      custom_output_dir: customOutputDir,
+      custom_output_dir_path: customOutputDirPath,
+      keep_dir_struct: keepDirStruct,
+      thread_count: threadCount,
+      sm_format_pool: [],
+    }),
+  }));
 
   return (
     <Card className="h-full">
@@ -133,4 +139,4 @@ export function OutputTab() {
       </CardContent>
     </Card>
   );
-}
+});

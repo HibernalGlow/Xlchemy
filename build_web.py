@@ -2,7 +2,6 @@ import platform
 import os
 import shutil
 import subprocess
-import argparse
 import stat
 from pathlib import Path
 
@@ -54,6 +53,7 @@ class Builder:
         self._prepare()
         self._buildFrontend()
         self._buildBinaries()
+        self._copyWebAssets()
         self._copyDependencies()
         self._copyAssets()
         print(f"[Building] Finished (built to {self.dst_dir}/{self.project_name})")
@@ -140,20 +140,11 @@ try:
 except ImportError:
     pass
 
-# Include web frontend dist files - paths relative to spec file location (misc/)
-ui_web_dist = Path(__file__).parent.parent / 'ui_web' / 'dist'
-datas_list = []
-if ui_web_dist.exists():
-    for item in ui_web_dist.rglob('*'):
-        if item.is_file():
-            rel_path = item.relative_to(ui_web_dist)
-            datas_list.append((str(item), str(rel_path.parent)))
-
 a = Analysis(
     [str(Path(__file__).parent.parent / 'web_main.py')],
     pathex=[],
     binaries=binaries_list,
-    datas=datas_list,
+    datas=[],
     hiddenimports=hiddenimports_list,
     hookspath=[],
     hooksconfig={{}},
@@ -165,7 +156,6 @@ a = Analysis(
     noarchive=False,
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
 exe = EXE(
     pyz,
     a.scripts,
@@ -199,17 +189,30 @@ coll = COLLECT(
         with open(spec_path, "w") as f:
             f.write(spec_content)
 
+    def _copyWebAssets(self):
+        """Copy web frontend dist files into _internal so web_main.py can find them."""
+        print("[Building] Copying web frontend assets")
+        src = Path(PROGRAM_FOLDER, "ui_web", "dist")
+        dst = Path(PROGRAM_FOLDER, self.internal_dir, "ui_web", "dist")
+        print(f"[Building] src: {src}, exists: {src.exists()}")
+        print(f"[Building] dst: {dst}")
+        if src.exists():
+            copy(src, dst)
+            print(f"[Building] Copied web assets to {dst}, exists: {dst.exists()}")
+        else:
+            print("[Building] Warning: ui_web/dist not found")
+
     def _copyDependencies(self):
         print("[Building] Copying dependencies")
         bin_dir = self.bin_dir[platform.system()]
         bin_path = Path(bin_dir)
 
         if bin_path.exists() and any(bin_path.iterdir()):
-            makedirs(Path(self.internal_dir, bin_dir))
+            makedirs(Path(PROGRAM_FOLDER, self.internal_dir, bin_dir))
             for item in bin_path.rglob("*"):
                 if item.is_file():
                     rel = item.relative_to(bin_path)
-                    dst = Path(self.internal_dir, bin_dir, rel)
+                    dst = Path(PROGRAM_FOLDER, self.internal_dir, bin_dir, rel)
                     makedirs(dst.parent)
                     shutil.copy2(item, dst)
         else:
@@ -225,7 +228,7 @@ coll = COLLECT(
         for item in assets:
             src = Path(item)
             if src.exists():
-                dst = Path(self.internal_dir, src.name)
+                dst = Path(PROGRAM_FOLDER, self.internal_dir, src.name)
                 copy(src, dst)
 
 
@@ -235,9 +238,4 @@ if __name__ == '__main__':
         builder.build()
     except KeyboardInterrupt:
         print("[Canceled] Interrupted")
-        exit()
-    except SystemExit:
-        exit()
-    except Exception as err:
-        print(f"[Error] {err}")
         exit()
