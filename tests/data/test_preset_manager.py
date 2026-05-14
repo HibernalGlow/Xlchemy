@@ -17,7 +17,14 @@ def preset_dir(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def pm(preset_dir):
+def default_file(tmp_path, monkeypatch):
+    f = tmp_path / "default_preset.json"
+    monkeypatch.setattr("data.preset_manager.DEFAULT_PRESET_FILE", str(f))
+    return f
+
+
+@pytest.fixture
+def pm(preset_dir, default_file):
     return PresetManager()
 
 
@@ -90,3 +97,44 @@ def test_save_data_integrity(pm, preset_dir):
     with open(path, "r", encoding="utf-8") as f:
         saved = json.load(f)
     assert saved == data
+
+
+def test_set_and_get_default(pm, default_file):
+    pm.save("fav", {"output": {}})
+    pm.setDefault("fav")
+    assert pm.getDefault() == "fav"
+    with open(str(default_file), "r", encoding="utf-8") as f:
+        assert json.load(f) == {"name": "fav"}
+
+
+def test_get_default_none_when_not_set(pm):
+    assert pm.getDefault() is None
+
+
+def test_set_default_none_removes_file(pm, default_file):
+    pm.save("fav", {"output": {}})
+    pm.setDefault("fav")
+    assert os.path.isfile(str(default_file))
+    pm.setDefault(None)
+    assert not os.path.isfile(str(default_file))
+    assert pm.getDefault() is None
+
+
+def test_get_default_returns_none_if_preset_deleted(pm):
+    pm.save("fav", {"output": {}})
+    pm.setDefault("fav")
+    pm.delete("fav")
+    assert pm.getDefault() is None
+
+
+def test_get_default_returns_none_if_preset_missing(pm, default_file):
+    with open(str(default_file), "w", encoding="utf-8") as f:
+        json.dump({"name": "ghost"}, f)
+    assert pm.getDefault() is None
+
+
+def test_delete_preset_clears_default(pm):
+    pm.save("fav", {"output": {}})
+    pm.setDefault("fav")
+    pm.delete("fav")
+    assert pm.getDefault() is None

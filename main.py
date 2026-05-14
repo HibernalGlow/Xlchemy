@@ -59,7 +59,7 @@ class MainWindow(QMainWindow):
         self.settings_tab = SettingsTab()
         settings = self.settings_tab.getSettings()
         self.input_tab = InputTab(settings)
-        self.output_tab = OutputTab(settings, get_all_settings=self._getAllSettings)
+        self.output_tab = OutputTab(settings)
         self.modify_tab = ModifyTab(settings, self.output_tab.getSettings())
         self.about_tab = AboutTab()
 
@@ -78,6 +78,9 @@ class MainWindow(QMainWindow):
         MAX_HEIGHT = 320
         self.output_tab.setMaximumSize(MAX_WIDTH, MAX_HEIGHT)
         self.modify_tab.setMaximumSize(MAX_WIDTH, MAX_HEIGHT)
+
+        self.settings_tab.preset_widget._get_all_settings = self._getAllSettings
+        self.settings_tab.preset_widget.loadDefaultPreset()
 
     def setupSignals(self) -> None:
         self.controller.update_progress_line1.connect(self.progress_dlg.setLabelTextLine1)
@@ -106,7 +109,7 @@ class MainWindow(QMainWindow):
         self.settings_tab.signals.jxl_int_effort_toggled.connect(self.output_tab.onJXLIntEffortVisibleToggled)
         self.settings_tab.signals.avif_encoder_changed.connect(self.output_tab.onAVIFEncoderChanged)
 
-        self.output_tab.preset_applied.connect(self._onPresetApplied)
+        self.settings_tab.preset_widget.preset_applied.connect(self._onPresetApplied)
 
     def setupMisc(self) -> None:
         select_tab_sc = []

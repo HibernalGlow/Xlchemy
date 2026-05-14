@@ -599,8 +599,19 @@ class Worker(QRunnable):
         if not os.path.isfile(self.final_output):    # Checking if renaming was successful
             raise FileException("P2", "Output not found.")
 
-        # Delete original
+        # Delete result if keep_if_larger is enabled and result is larger than original
         if (
+            self.settings["keep_if_larger"] and
+            not self.settings["copy_if_larger"] and
+            os.path.getsize(self.org_item_abs_path) < os.path.getsize(self.final_output) and
+            not os.path.samefile(self.org_item_abs_path, self.final_output)
+        ):
+            try:
+                removeFile(self.final_output)
+            except OSError as err:
+                raise FileException("P1", f"Failed to delete result file. {err}")
+        # Delete original
+        elif (
             (
                 not self.settings["keep_if_larger"] or
                 os.path.getsize(self.org_item_abs_path) > os.path.getsize(self.final_output)
@@ -622,18 +633,6 @@ class Worker(QRunnable):
                 timestamps.applyTimestamps(self.final_output, self.src_timestamps)
             except (OSError, Exception) as err:
                 raise FileException("P0", f"Failed to apply timestamps. {err}")
-
-        # Delete result if keep_if_larger is enabled and result is larger than original
-        if (
-            self.settings["keep_if_larger"] and
-            not self.settings["copy_if_larger"] and
-            os.path.getsize(self.org_item_abs_path) < os.path.getsize(self.final_output) and
-            not os.path.samefile(self.org_item_abs_path, self.final_output)
-        ):
-            try:
-                removeFile(self.final_output)
-            except OSError as err:
-                raise FileException("P1", f"Failed to delete result file. {err}")
 
     def runDynamicRamOptimizer(self) -> None:
         with QMutexLocker(self.mutex):

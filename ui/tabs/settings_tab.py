@@ -30,7 +30,7 @@ from data.utils import compareVersions, VersionParseErrorPolicy
 from ui.lib import WidgetManager
 from ui.lib.utils import setToolTip, openLocalUrl, createQHBoxLayout, blockSignals
 from ui.theme import setTheme
-from ui.widgets import ScrollArea, SpinBox, ComboBox
+from ui.widgets import ScrollArea, SpinBox, ComboBox, PresetWidget
 from ui.dialogs import message_box
 
 @dataclass(frozen=True)
@@ -188,25 +188,34 @@ class SettingsTab(QWidget):
         self.start_logging_btn.setCheckable(True)
 
         # Categories
+        self.preset_btn = QPushButton("Preset")
         self.general_btn = QPushButton("General")
         self.conversion_btn = QPushButton("Conversion")
         self.exiftool_btn = QPushButton("ExifTool")
         self.advanced_btn = QPushButton("Advanced")
         self.restore_defaults_btn = QPushButton("Reset to Defaults")
         
+        self.preset_btn.setCheckable(True)
         self.general_btn.setCheckable(True)
         self.conversion_btn.setCheckable(True)
         self.exiftool_btn.setCheckable(True)
         self.advanced_btn.setCheckable(True)
 
+        # Preset
+        self.preset_widget = PresetWidget()
+
     def setupLayouts(self):
         # Categories
+        self.categories_lt.addWidget(self.preset_btn)
         self.categories_lt.addWidget(self.general_btn)
         self.categories_lt.addWidget(self.conversion_btn)
         self.categories_lt.addWidget(self.exiftool_btn)
         self.categories_lt.addWidget(self.advanced_btn)
         self.categories_lt.addItem(QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding))
         self.categories_lt.addWidget(self.restore_defaults_btn)
+
+        # Preset
+        self.settings_lt.addWidget(self.preset_widget)
 
         # General
         self.settings_lt.addLayout(createQHBoxLayout(self.disable_on_startup_l, self.disable_delete_startup_cb, self.disable_downscaling_startup_cb))
@@ -322,6 +331,7 @@ class SettingsTab(QWidget):
         self.ram_optimizer_rules_reset_btn.clicked.connect(self.resetOptimizationRules)
         self.ram_optimizer_cmb.currentTextChanged.connect(self.onRamOptimizerChanged)
 
+        self.preset_btn.clicked.connect(lambda: self.changeCategory("Preset"))
         self.general_btn.clicked.connect(lambda: self.changeCategory("General"))
         self.exiftool_btn.clicked.connect(lambda: self.changeCategory("ExifTool"))
         self.conversion_btn.clicked.connect(lambda: self.changeCategory("Conversion"))
@@ -354,6 +364,7 @@ class SettingsTab(QWidget):
 
     def changeCategory(self, category):
         # Category buttons
+        self.preset_btn.setChecked(category == "Preset")
         self.general_btn.setChecked(category == "General")
         self.conversion_btn.setChecked(category == "Conversion")
         self.exiftool_btn.setChecked(category == "ExifTool")
@@ -361,6 +372,9 @@ class SettingsTab(QWidget):
 
         # Settings
         visibility = {
+            "Preset": [
+                "preset_widget",
+            ],
             "General": [
                 "disable_on_startup_l", "disable_downscaling_startup_cb", "disable_delete_startup_cb",
                 "theme_l", "theme_cmb",
