@@ -12,7 +12,7 @@ tasks:
   build:
     desc: Build the project
     cmds:
-      - .venv\Scripts\python.exe build.py
+      - .venv/Scripts/python.exe build.py
 
   build:portable:
     desc: Build portable package

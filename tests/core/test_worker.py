@@ -696,6 +696,7 @@ def test_runExifTool_dont_run(mock_exiftool_env):
 def postConversionRoutines_patched(worker):
     mocks = {
         "isfile": patch("core.worker.os.path.isfile", return_value=True),
+        "getsize": patch("core.worker.os.path.getsize", return_value=100),
         "runExifTool": patch("core.worker.metadata.runExifTool", return_value=[]),
         "applyTimestamps": patch("core.worker.timestamps.applyTimestamps"),
         "remove": patch("core.worker.os.remove"),
@@ -785,6 +786,40 @@ def test_postConversionRoutines_delete_failed(postConversionRoutines_patched):
         worker.postConversionRoutines()
 
     assert "Failed to delete original file" in exc.value.msg
+
+@pytest.mark.parametrize("copy_if_larger, samefile, expected_delete_result", [
+    (False, False, True),
+    (True, False, False),
+    (False, True, False),
+])
+def test_postConversionRoutines_keep_if_larger_delete_result(
+    copy_if_larger, samefile, expected_delete_result,
+    postConversionRoutines_patched
+):
+    worker, mocks = postConversionRoutines_patched
+    worker.settings["keep_if_larger"] = True
+    worker.settings["copy_if_larger"] = copy_if_larger
+    worker.final_output = "/tmp/result.jxl"
+    mocks["getsize"].side_effect = lambda f: 200_000 if "result" in f else 100_000
+    mocks["samefile"].return_value = samefile
+
+    worker.postConversionRoutines()
+
+    if expected_delete_result:
+        mocks["removeFile"].assert_called_with("/tmp/result.jxl")
+    else:
+        mocks["removeFile"].assert_not_called()
+
+def test_postConversionRoutines_keep_if_larger_result_not_larger(postConversionRoutines_patched):
+    worker, mocks = postConversionRoutines_patched
+    worker.settings["keep_if_larger"] = True
+    worker.settings["copy_if_larger"] = False
+    worker.final_output = "/tmp/result.jxl"
+    mocks["getsize"].side_effect = lambda f: 50_000 if "result" in f else 100_000
+
+    worker.postConversionRoutines()
+
+    mocks["removeFile"].assert_not_called()
 
 @pytest.fixture
 def smallestLossless_patches_v2():
