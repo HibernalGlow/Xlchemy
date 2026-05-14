@@ -9,9 +9,17 @@ import { Plus, Trash2, FolderOpen, Play, X } from 'lucide-react';
 
 export function InputTab() {
   const files = useAtomValue(filesAtom);
+  const setFiles = useSetAtom(filesAtom);
   const progress = useAtomValue(progressAtom);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [isDragOver, setIsDragOver] = useState(false);
+
+  const refreshFiles = useCallback(async () => {
+    const api = getAPI();
+    if (!api) return;
+    const fileList = await api.getFiles();
+    setFiles(fileList);
+  }, [setFiles]);
 
   const handleAddFiles = useCallback(async () => {
     const api = getAPI();
@@ -19,8 +27,9 @@ export function InputTab() {
     const paths = await api.openFileDialog();
     if (paths && paths.length > 0) {
       await api.addFiles(paths);
+      await refreshFiles();
     }
-  }, []);
+  }, [refreshFiles]);
 
   const handleAddFolder = useCallback(async () => {
     const api = getAPI();
@@ -28,22 +37,25 @@ export function InputTab() {
     const dir = await api.openFolderDialog();
     if (dir) {
       await api.addFiles([dir]);
+      await refreshFiles();
     }
-  }, []);
+  }, [refreshFiles]);
 
   const handleRemoveFiles = useCallback(async () => {
     const api = getAPI();
     if (!api) return;
     await api.removeFiles(Array.from(selectedIndices));
     setSelectedIndices(new Set());
-  }, [selectedIndices]);
+    await refreshFiles();
+  }, [selectedIndices, refreshFiles]);
 
   const handleClearFiles = useCallback(async () => {
     const api = getAPI();
     if (!api) return;
     await api.clearFiles();
     setSelectedIndices(new Set());
-  }, []);
+    await refreshFiles();
+  }, [refreshFiles]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();

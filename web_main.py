@@ -154,7 +154,7 @@ class API:
         result = self._window.create_file_dialog(
             webview.OPEN_DIALOG,
             allow_multiple=True,
-            file_types=('Image Files', ';'.join(f'*.{ext}' for ext in ALLOWED_INPUT)),
+            file_types=(f'Image Files ({";".join(f"*.{ext}" for ext in ALLOWED_INPUT)})',),
         )
         return list(result) if result else None
 
@@ -163,6 +163,34 @@ class API:
             return None
         result = self._window.create_file_dialog(webview.FOLDER_DIALOG)
         return result[0] if result else None
+
+
+def on_drop(api: API, e):
+    """Handle drop events from pywebview DOM."""
+    files = e.get('dataTransfer', {}).get('files', [])
+    if not files:
+        return
+
+    paths = []
+    for file in files:
+        full_path = file.get('pywebviewFullPath')
+        if full_path:
+            paths.append(full_path)
+
+    if paths:
+        api.addFiles(paths)
+        # Notify frontend to refresh file list
+        api._emit('files_updated', api.getFiles())
+
+
+def bind_events(window, api):
+    """Bind DOM events for drag and drop."""
+    try:
+        window.dom.document.events.dragenter += lambda e: None
+        window.dom.document.events.dragover += lambda e: None
+        window.dom.document.events.drop += lambda e: on_drop(api, e)
+    except Exception as err:
+        logger.warning(f'Failed to bind drag/drop events: {err}')
 
 
 def main():
@@ -196,7 +224,7 @@ def main():
     controller = Controller(threadpool)
     api.set_controller(controller)
 
-    webview.start(debug=True)
+    webview.start(lambda: bind_events(window, api), debug=True)
 
 
 if __name__ == '__main__':

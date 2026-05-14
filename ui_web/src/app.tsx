@@ -20,6 +20,7 @@ export default function App() {
   const toggleTheme = useSetAtom(toggleThemeAtom);
   const progress = useAtomValue(progressAtom);
   const files = useAtomValue(filesAtom);
+  const setFiles = useSetAtom(filesAtom);
 
   const outputTabRef = useRef<{ getSettings: () => Record<string, unknown> } | null>(null);
   const modifyTabRef = useRef<{ getSettings: () => Record<string, unknown> } | null>(null);
@@ -43,12 +44,18 @@ export default function App() {
     const unsubException = onEvent('exception', (data: unknown) => {
       // handled by exception viewer
     });
+    const unsubFilesUpdated = onEvent('files_updated', (data: unknown) => {
+      if (Array.isArray(data)) {
+        setFiles(data);
+      }
+    });
 
     return () => {
       unsubProgress();
       unsubStarted();
       unsubFinished();
       unsubException();
+      unsubFilesUpdated();
     };
   }, []);
 

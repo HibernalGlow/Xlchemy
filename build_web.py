@@ -73,8 +73,14 @@ class Builder:
                     except Exception:
                         pass
 
-        rmTree(self.dst_dir)
-        rmTree("./_pyinstaller_web")
+        # Use onexc to ignore permission errors during cleanup
+        def _onexc(func, path, exc_info):
+            pass
+
+        if os.path.isdir(self.dst_dir):
+            shutil.rmtree(self.dst_dir, onexc=_onexc)
+        if os.path.isdir("./_pyinstaller_web"):
+            shutil.rmtree("./_pyinstaller_web", onexc=_onexc)
 
     def _buildFrontend(self):
         print("[Building] Building web frontend")
