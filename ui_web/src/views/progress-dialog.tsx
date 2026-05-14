@@ -11,6 +11,7 @@ import { Progress } from '~/components/shadcn/progress';
 import { getAPI } from '~/utils/api';
 import { useSetAtom } from 'jotai';
 import { progressAtom } from '~/atom/primitive';
+import { toast } from 'sonner';
 
 interface ProgressDialogProps {
   open: boolean;
@@ -26,7 +27,11 @@ export function ProgressDialog({ open, line1, line2, value, maximum }: ProgressD
   const handleCancel = async () => {
     const api = getAPI();
     if (api) {
-      await api.cancelConversion();
+      try {
+        await api.cancelConversion();
+      } catch {
+        toast.error('Cancel', { description: 'Failed to cancel conversion.' });
+      }
     }
     setProgress((prev) => ({ ...prev, isProcessing: false }));
   };

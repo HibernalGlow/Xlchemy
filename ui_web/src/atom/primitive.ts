@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { CustomThemeConfig, ThemeCfg } from '~/types';
+import type { CustomThemeConfig, ThemeCfg, GeneralSettings } from '~/types';
 
 export const themeAtom = atom<ThemeCfg>({
   display: '',
@@ -22,4 +22,4 @@ export const exceptionsAtom = atom<Array<{ title: string; description: string; p
 
 export const filesAtom = atom<Array<{ path: string; anchor_path: string; name: string; size: number; format: string }>>([]);
 
-export const settingsAtom = atom<Record<string, unknown>>({});
+export const settingsAtom = atom<GeneralSettings | null>(null);

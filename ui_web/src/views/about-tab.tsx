@@ -2,19 +2,47 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/shadcn/ca
 import { Label } from '~/components/shadcn/label';
 import { Separator } from '~/components/shadcn/separator';
 import { getAPI, isPyWebView } from '~/utils/api';
-import { useEffect, useState } from 'react';
 import { Button } from '~/components/shadcn/button';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
-export function AboutTab() {
-  const [version, setVersion] = useState('1.2.4');
+interface AboutTabProps {
+  version: string;
+  licensePath?: string;
+  licenseThirdPartyPath?: string;
+}
 
-  useEffect(() => {
+export function AboutTab({ version, licensePath, licenseThirdPartyPath }: AboutTabProps) {
+  const handleCheckUpdate = async () => {
+    const api = getAPI();
+    if (!api) return;
+    const result = await api.checkForUpdates();
+    if (!result.ok) {
+      toast.error('Update Check', { description: result.error || 'Failed to check updates.' });
+      return;
+    }
+    if (result.is_newer) {
+      toast.success('Update Available', { description: `Latest version: ${result.latest_version}` });
+      if (result.download_url) {
+        window.open(result.download_url, '_blank');
+      }
+    } else {
+      toast.success('Up to Date', { description: 'You are already on the latest version.' });
+    }
+  };
+
+  const handleOpenPath = async (path?: string) => {
+    if (!path) return;
     const api = getAPI();
     if (api) {
-      api.getVersion().then(setVersion).catch(() => {});
+      const result = await api.openPath(path);
+      if (!result.ok) {
+        toast.error('Open Path', { description: result.message || 'Failed to open path.' });
+      }
+      return;
     }
-  }, []);
+    window.open(path, '_blank');
+  };
 
   return (
     <Card className="h-full">
@@ -45,6 +73,31 @@ export function AboutTab() {
         </div>
 
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckUpdate}
+            disabled={!isPyWebView()}
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+            Check for Updates
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenPath(licensePath)}
+            disabled={!licensePath}
+          >
+            License
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenPath(licenseThirdPartyPath)}
+            disabled={!licenseThirdPartyPath}
+          >
+            3rd Party
+          </Button>
           <Button
             variant="outline"
             size="sm"

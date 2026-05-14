@@ -27,44 +27,97 @@ export interface OutputSettings {
   quality: number;
   effort: number;
   lossless: boolean;
-  jxl_modular: boolean;
   intelligent_effort: boolean;
+  jxl_modular: boolean;
+  jxl_verify: boolean;
+  jxl_normalize_enable: boolean;
+  jxl_normalize_when: string;
+  max_compression: boolean;
+  aom_av1_chroma_subsampling: string;
+  jpegli_chroma_subsampling: string;
+  jpg_chroma_subsampling: string;
+  if_file_exists: string;
   custom_output_dir: boolean;
   custom_output_dir_path: string;
   keep_dir_struct: boolean;
+  delete_original: boolean;
+  delete_original_mode: string;
   thread_count: number;
-  sm_format_pool: string[];
+  smallest_format_pool: {
+    png: boolean;
+    webp: boolean;
+    jxl: boolean;
+  };
+  jxl_png_fallback: boolean;
+  clear_after_conv: boolean;
 }
 
 export interface ModifySettings {
-  downscale: {
+  downscaling: {
     enabled: boolean;
+    mode: string;
+    percent: number;
     width: number;
     height: number;
-    keep_aspect_ratio: boolean;
-    resampling: string;
+    file_size: number;
+    shortest_side: number;
+    longest_side: number;
+    megapixels: number;
+    resample: string;
   };
   misc: {
     keep_metadata: string;
-    keep_dates: boolean;
-    preserve_orientation: boolean;
+    keep_timestamps: boolean;
   };
 }
 
 export interface GeneralSettings {
+  custom_resampling: boolean;
+  sorting_disabled: boolean;
+  disable_downscaling_startup: boolean;
+  disable_delete_startup: boolean;
+  enable_jxl_effort_10: boolean;
+  disable_progressive_jpegli: boolean;
+  enable_custom_args: boolean;
+  cjxl_args: string;
+  avifenc_args: string;
+  cjpegli_args: string;
+  im_args: string;
+  enable_quality_precision_snapping: boolean;
   processing_order: string;
   play_sound_on_finish: boolean;
   play_sound_on_finish_vol: number;
   ram_optimizer: string;
   ram_optimizer_rules: string;
   jpg_encoder: string;
-  avif_encoder: string;
-  custom_resampling: boolean;
-  quality_prec_snap: boolean;
-  jxl_effort_10: boolean;
+  jxl_auto_lossless_jpeg: boolean;
   jxl_lossy_modular: boolean;
   jxl_int_effort: boolean;
+  avif_encoder: string;
+  avif_bit_depth: string;
+  avif_aom_iq_tune: boolean;
+  keep_if_larger: boolean;
+  copy_if_larger: boolean;
   exiftool_args: Record<string, string>;
+}
+
+export interface InputSettings {
+  excluded_formats: string[];
+  sort_order: string;
+}
+
+export interface AppSettingsPayload {
+  version: string;
+  config_location: string;
+  allowed_input: string[];
+  max_threads: number;
+  license_path?: string;
+  license_3rd_party_path?: string;
+  input: InputSettings;
+  output: OutputSettings;
+  modify: ModifySettings;
+  settings: GeneralSettings;
+  logging_enabled?: boolean;
 }
 
 export interface ExceptionItem {
