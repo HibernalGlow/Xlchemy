@@ -541,7 +541,7 @@ class OutputTab(QWidget):
             self.wm.saveState()
 
     def applyPreset(self, data: dict):
-        output_data = data.get("output", {})
+        output_data = data.get("output")
         if not output_data:
             return
 

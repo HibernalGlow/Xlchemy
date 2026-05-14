@@ -179,11 +179,13 @@ class MainWindow(QMainWindow):
     
     def _getAllSettings(self) -> dict:
         return {
+            "output": self.output_tab.getSettings(),
             "settings": self.settings_tab.getSettings(),
             "modify": self.modify_tab.getSettings(),
         }
     
     def _onPresetApplied(self, data: dict):
+        self.output_tab.applyPreset(data)
         self.settings_tab.applyPreset(data)
         self.modify_tab.applyPreset(data)
     

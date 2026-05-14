@@ -652,7 +652,7 @@ class SettingsTab(QWidget):
             message_box.info(self, "Settings Migration", "This change is highly recommended. To apply changes later, press \"Reset\" in Settings -> ExifTool.")
 
     def applyPreset(self, data: dict):
-        settings_data = data.get("settings", {})
+        settings_data = data.get("settings")
         if not settings_data:
             return
 

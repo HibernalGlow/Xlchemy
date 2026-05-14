@@ -317,7 +317,7 @@ class ModifyTab(QWidget):
             return "Default"
 
     def applyPreset(self, data: dict):
-        modify_data = data.get("modify", {})
+        modify_data = data.get("modify")
         if not modify_data:
             return
 
