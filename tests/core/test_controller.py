@@ -337,7 +337,7 @@ def test_workerCompleted_processing(workerCompleted_patched, caplog):
     controller, mocks, signal_spies = workerCompleted_patched
     caplog.set_level(logging.DEBUG)
 
-    controller.workerCompleted(0, False)
+    controller.workerCompleted(0, False, "", 0, 0)
     
     assert_workerCompleted(workerCompleted_patched, caplog)
 
@@ -346,7 +346,7 @@ def test_workerCompleted_completed(workerCompleted_patched, caplog):
     mocks["items_getCompletedItemCount"].return_value = 100
     caplog.set_level(logging.DEBUG)
 
-    controller.workerCompleted(0, False)
+    controller.workerCompleted(0, False, "", 0, 0)
 
     assert_workerCompleted(workerCompleted_patched, caplog)
 
@@ -354,7 +354,7 @@ def test_workerCompleted_skipped(workerCompleted_patched, caplog):
     controller, mocks, signal_spies = workerCompleted_patched
     caplog.set_level(logging.DEBUG)
 
-    controller.workerCompleted(0, True)
+    controller.workerCompleted(0, True, "", 0, 0)
     
     assert_workerCompleted(workerCompleted_patched, caplog, assert_addCompletedItem=False, assert_addSkippedItem=True)
 
@@ -363,7 +363,7 @@ def test_workerCompleted_canceled(workerCompleted_patched, caplog):
     mocks["task_status_wasCanceled"].return_value = True
     caplog.set_level(logging.DEBUG)
 
-    controller.workerCompleted(0, False)
+    controller.workerCompleted(0, False, "", 0, 0)
     
     assert_workerCompleted(workerCompleted_patched, caplog, assert_wasCanceled=True)
 
