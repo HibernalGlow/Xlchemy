@@ -318,8 +318,12 @@ class API:
             }
 
         items = [(Path(f['path']), Path(f['anchor_path'])) for f in self._files]
+        logger.info(f'[startConversion] Files count: {len(self._files)}, items count: {len(items)}')
+        if items:
+            logger.info(f'[startConversion] First item: {items[0]}')
         self._controller.items.clear()
         self._controller.items.parseData(settings_tab_settings.get('processing_order', 'Sequential'), *items)
+        logger.info(f'[startConversion] Parsed items count: {self._controller.items.getItemCount()}')
 
         self._controller.startProcessing(
             output_settings,
@@ -335,6 +339,11 @@ class API:
     def checkRequirements(self, output_settings: dict, modify_settings: dict, settings_tab_settings: dict) -> dict:
         if not self._controller:
             return {'allowed_to_proceed': False, 'display_error': True, 'error_title': 'Error', 'error_description': 'Controller not initialized'}
+
+        # Parse data first (like original main.py does before checkProcessingRequirements)
+        items = [(Path(f['path']), Path(f['anchor_path'])) for f in self._files]
+        self._controller.items.clear()
+        self._controller.items.parseData(settings_tab_settings.get('processing_order', 'Sequential'), *items)
 
         sm_pool = output_settings.get('smallest_format_pool', {})
         if isinstance(sm_pool, dict):

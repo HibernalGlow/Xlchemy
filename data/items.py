@@ -13,6 +13,7 @@ class Items():
 
     def parseData(self, order: str = "Original", *items) -> None:
         """Populate the structure with proper data."""
+        logging.info(f"[Items.parseData] Called with order={order}, items count={len(items)}")
         for abs_path, anchor_path in items:
             abs_path = Path(abs_path)
             ext = abs_path.suffix[1:]
@@ -33,6 +34,7 @@ class Items():
             )
         
         self.item_count = len(self.items)
+        logging.info(f"[Items.parseData] Parsed {self.item_count} items")
 
         match order:
             case "Random":
