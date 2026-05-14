@@ -82,6 +82,8 @@ Changing resampling can worsen the quality. Make sure you know what you are doin
     "encoder_args": "Additional arguments for the encoders.\n\nAll arguments must be valid and can not conflict with already used ones. Inspect logs for more details.",
     "processing_order": """Controls the processing order.
 
+Original - process in the order listed in the Input tab.
+
 Random - random order; more accurate estimated time left.
 
 Sequential - sorted by directory; less fragmentation on HDDs.

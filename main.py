@@ -91,6 +91,7 @@ class MainWindow(QMainWindow):
         self.moved.connect(self.progress_dlg.updatePosition)
         
         self.input_tab.convert.connect(self.convert)
+        self.input_tab.sort_requested.connect(self.settings_tab.setProcessingOrder)
         self.output_tab.convert.connect(self.convert)
         self.output_tab.file_format_changed.connect(self.modify_tab.onFileFormatChanged)
         self.modify_tab.convert.connect(self.convert)
