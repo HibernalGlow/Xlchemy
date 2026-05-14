@@ -25,3 +25,6 @@ rust_bindings/target/
 *.pyd
 ui-web/*
 ui_web/node_modules/*
+/_pyinstaller_web/*
+/ui_web/dist/*
+/dist_web/*
