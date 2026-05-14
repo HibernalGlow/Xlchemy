@@ -25,6 +25,21 @@ def __getLightThemeIconPaths() -> ThemeIconPaths:
         down_arrow_disabled_svg_url = getIconPath("down_arrow_disabled.svg"),
     )
 
+def _getThemeMiku() -> Theme:
+    return Theme(
+        name="Miku",
+        colors=ThemeColors(
+            accent_big="#39C5BB",
+            accent_small="#E12885",
+            font="#e9e9e9",
+            font_disabled="#9A9A9A",
+            canvas="#141414",
+            border="#404040",
+            progress_bar_text="#E12885",
+        ),
+        icons=__getDarkThemeIconPaths()
+    )
+
 def _getThemeRalsei() -> Theme:
     return Theme(
         name="Ralsei",
@@ -72,6 +87,9 @@ def _getThemeLightAmber() -> Theme:
 
 def getTheme(theme_name: str) -> Theme:
     match theme_name:
+        case "Miku":
+            return _getThemeMiku()
+
         case "Ralsei":
             return _getThemeRalsei()
 
@@ -83,4 +101,4 @@ def getTheme(theme_name: str) -> Theme:
         
         case _:
             logging.getLogger(__name__).error(f"Theme \"{theme_name}\" not found")
-            return _getThemeRalsei()
+            return _getThemeMiku()

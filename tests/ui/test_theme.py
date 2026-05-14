@@ -101,6 +101,7 @@ def test_hexToRGBA_exceptions(invalid_hex_color):
 # ---------------------- themes ----------------------
 
 @pytest.mark.parametrize("available_theme, function_called", [
+    ("Miku", "_getThemeMiku"),
     ("Ralsei", "_getThemeRalsei"),
     ("Dark Amber", "_getThemeDarkAmber"),
     ("Light Amber", "_getThemeLightAmber"),
@@ -116,12 +117,13 @@ def test_getTheme_theme_unavailable(caplog):
     caplog.set_level(logging.ERROR)
     mock_theme = "theme"
 
-    with patch(f"ui.theme.themes._getThemeRalsei", return_value=mock_theme) as mock_theme_func:
+    with patch(f"ui.theme.themes._getThemeMiku", return_value=mock_theme) as mock_theme_func:
         theme.themes.getTheme("Undefined") == mock_theme
         mock_theme_func.assert_called_once()
         assert "Theme \"Undefined\" not found" in caplog.text
 
 @pytest.mark.parametrize("theme_name, func_name, theme_type", [
+    ("Miku", "_getThemeMiku", "dark"),
     ("Ralsei", "_getThemeRalsei", "dark"),
     ("Dark Amber", "_getThemeDarkAmber", "dark"),
     ("Light Amber", "_getThemeLightAmber", "light"),

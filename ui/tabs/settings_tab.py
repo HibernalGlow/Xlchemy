@@ -117,7 +117,7 @@ class SettingsTab(QWidget):
         self.disable_downscaling_startup_cb = self.wm.addWidget("disable_downscaling_startup_cb", QCheckBox("Downscaling"))
         self.disable_delete_startup_cb = self.wm.addWidget("disable_delete_startup_cb", QCheckBox("Delete Original"))
         self.theme_l = self.wm.addWidget("theme_l", QLabel("Theme"))
-        self.theme_cmb = self.wm.addWidget("theme_cmb", ComboBox(("Ralsei", "Dark Amber", "Light Amber")))
+        self.theme_cmb = self.wm.addWidget("theme_cmb", ComboBox(("Miku", "Ralsei", "Dark Amber", "Light Amber")))
         self.no_sorting_cb = self.wm.addWidget("no_sorting_cb", QCheckBox("Input - Disable Sorting"))
         self.quality_prec_snap_cb = self.wm.addWidget("quality_prec_snap_cb", QCheckBox("Quality Slider - Snap to Individual Values"))
         self.play_sound_on_finish_cb = self.wm.addWidget("play_sound_on_finish_cb", QCheckBox("Play Sound When Conversion Finishes"))

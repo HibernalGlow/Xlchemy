@@ -6,9 +6,9 @@ from ui.widgets.label import StyledLabel
 from .stylesheet import getStyleSheet
 from .themes import getTheme
 
-_current_theme_name: str = "Ralsei"
+_current_theme_name: str = "Miku"
 
-def setTheme(theme_name: str = "Ralsei") -> None:
+def setTheme(theme_name: str = "Miku") -> None:
     """Sets theme of the QApplication."""
     global _current_theme_name
     _current_theme_name = theme_name
