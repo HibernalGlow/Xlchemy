@@ -12,7 +12,7 @@ tasks:
   build:
     desc: Build the project
     cmds:
-      - uv run python build.py
+      - .venv\Scripts\python.exe build.py
 
   build:portable:
     desc: Build portable package
@@ -37,8 +37,7 @@ tasks:
   prepare:
     desc: Prepare a release with the given version (e.g., task prepare -- 1.2.4)
     cmds:
-      - python scripts/set_version.py {{.CLI_ARGS}}
-      - 'git commit -am "chore: prepare release v{{.CLI_ARGS}}"'
+      - python scripts/set_version.py {{.CLI_ARGS}} --constants-only
 
   push-tag:
     desc: Push a tag to remote repository (e.g., task push-tag -- v1.2.4)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Update version number in all relevant files."""
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -52,12 +53,12 @@ def update_rust_cargo_toml(version: str) -> None:
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python scripts/set_version.py <version>")
-        print("Example: python scripts/set_version.py 1.2.4")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Update version number in project files.")
+    parser.add_argument("version", help="Version number (e.g., 1.2.4)")
+    parser.add_argument("--constants-only", action="store_true", help="Only update data/constants.py")
+    args = parser.parse_args()
 
-    version = sys.argv[1].lstrip("v")
+    version = args.version.lstrip("v")
 
     if not re.match(r"^\d+\.\d+\.\d+$", version):
         print(f"Error: Invalid version format '{version}'. Expected format: X.Y.Z")
@@ -66,11 +67,12 @@ def main():
     print(f"Setting version to {version}...")
 
     update_constants_py(version)
-    update_pyproject_toml(version)
-    update_rust_cargo_toml(version)
+
+    if not args.constants_only:
+        update_pyproject_toml(version)
+        update_rust_cargo_toml(version)
 
     print(f"\nVersion updated to {version}")
-    print("Don't forget to commit these changes!")
 
 
 if __name__ == "__main__":
