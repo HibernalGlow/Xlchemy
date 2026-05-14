@@ -637,4 +637,70 @@ class SettingsTab(QWidget):
         else:
             message_box.info(self, "Settings Migration", "This change is highly recommended. To apply changes later, press \"Reset\" in Settings -> ExifTool.")
 
+    def applyPreset(self, data: dict):
+        settings_data = data.get("settings", {})
+        if not settings_data:
+            return
+
+        if "keep_if_larger" in settings_data:
+            self.keep_if_larger_cb.setChecked(settings_data["keep_if_larger"])
+        if "copy_if_larger" in settings_data:
+            self.copy_if_larger_cb.setChecked(settings_data["copy_if_larger"])
+        if "jxl_lossy_modular" in settings_data:
+            self.jxl_lossy_modular_cb.setChecked(settings_data["jxl_lossy_modular"])
+        if "jxl_auto_lossless_jpeg" in settings_data:
+            self.jxl_auto_lossless_jpeg_cb.setChecked(settings_data["jxl_auto_lossless_jpeg"])
+        if "jpg_encoder" in settings_data:
+            idx = self.jpg_encoder_cmb.findText(settings_data["jpg_encoder"])
+            if idx >= 0:
+                self.jpg_encoder_cmb.setCurrentIndex(idx)
+        if "disable_progressive_jpegli" in settings_data:
+            self.disable_progressive_jpegli_cb.setChecked(settings_data["disable_progressive_jpegli"])
+        if "avif_bit_depth" in settings_data:
+            idx = self.avif_bit_depth_cmb.findText(settings_data["avif_bit_depth"])
+            if idx >= 0:
+                self.avif_bit_depth_cmb.setCurrentIndex(idx)
+        if "avif_encoder" in settings_data:
+            idx = self.avif_encoder_cmb.findText(settings_data["avif_encoder"])
+            if idx >= 0:
+                self.avif_encoder_cmb.setCurrentIndex(idx)
+        if "avif_aom_iq_tune" in settings_data:
+            self.avif_aom_iq_tune_cb.setChecked(settings_data["avif_aom_iq_tune"])
+        if "jxl_effort_10" in settings_data:
+            self.jxl_effort_10_cb.setChecked(settings_data["jxl_effort_10"])
+        if "jxl_int_effort" in settings_data:
+            self.jxl_int_effort_cb.setChecked(settings_data["jxl_int_effort"])
+        if "custom_resampling" in settings_data:
+            self.custom_resampling_cb.setChecked(settings_data["custom_resampling"])
+        if "enable_custom_args" in settings_data:
+            self.custom_args_cb.setChecked(settings_data["enable_custom_args"])
+        if "cjxl_args" in settings_data:
+            self.cjxl_args_te.setPlainText(settings_data["cjxl_args"])
+        if "avifenc_args" in settings_data:
+            self.avifenc_args_te.setPlainText(settings_data["avifenc_args"])
+        if "cjpegli_args" in settings_data:
+            self.cjpegli_args_te.setPlainText(settings_data["cjpegli_args"])
+        if "im_args" in settings_data:
+            self.im_args_te.setPlainText(settings_data["im_args"])
+        if "ram_optimizer" in settings_data:
+            idx = self.ram_optimizer_cmb.findText(settings_data["ram_optimizer"])
+            if idx >= 0:
+                self.ram_optimizer_cmb.setCurrentIndex(idx)
+        if "ram_optimizer_rules" in settings_data:
+            self.ram_optimizer_rules_te.setPlainText(settings_data["ram_optimizer_rules"])
+        if "exiftool_args" in settings_data:
+            args = settings_data["exiftool_args"]
+            if "ExifTool - Wipe" in args:
+                self.exiftool_wipe_te.setPlainText(args["ExifTool - Wipe"])
+            if "ExifTool - Preserve" in args:
+                self.exiftool_preserve_te.setPlainText(args["ExifTool - Preserve"])
+            if "ExifTool - Unsafe Wipe" in args:
+                self.exiftool_unsafe_wipe_te.setPlainText(args["ExifTool - Unsafe Wipe"])
+            if "ExifTool - Custom" in args:
+                self.exiftool_custom_te.setPlainText(args["ExifTool - Custom"])
+        if "processing_order" in settings_data:
+            idx = self.processing_order_cmb.findText(settings_data["processing_order"])
+            if idx >= 0:
+                self.processing_order_cmb.setCurrentIndex(idx)
+
 

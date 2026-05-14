@@ -315,3 +315,48 @@ class ModifyTab(QWidget):
             return self.resample_cmb.currentText()
         else:
             return "Default"
+
+    def applyPreset(self, data: dict):
+        modify_data = data.get("modify", {})
+        if not modify_data:
+            return
+
+        downscaling = modify_data.get("downscaling", {})
+        if "enabled" in downscaling:
+            self.setDownscalingEnabled(downscaling["enabled"])
+        if "mode" in downscaling:
+            idx = self.mode_cmb.findText(downscaling["mode"])
+            if idx >= 0:
+                self.mode_cmb.setCurrentIndex(idx)
+        if "percent" in downscaling:
+            self.percent_sb.setValue(downscaling["percent"])
+        if "width" in downscaling:
+            val = downscaling["width"]
+            self.pixel_w_cb.setChecked(val != float("inf"))
+            if val != float("inf"):
+                self.pixel_w_sb.setValue(val)
+        if "height" in downscaling:
+            val = downscaling["height"]
+            self.pixel_h_cb.setChecked(val != float("inf"))
+            if val != float("inf"):
+                self.pixel_h_sb.setValue(val)
+        if "file_size" in downscaling:
+            self.file_size_sb.setValue(downscaling["file_size"])
+        if "shortest_side" in downscaling:
+            self.shortest_sb.setValue(downscaling["shortest_side"])
+        if "longest_side" in downscaling:
+            self.longest_sb.setValue(downscaling["longest_side"])
+        if "megapixels" in downscaling:
+            self.megapixels_sb.setValue(downscaling["megapixels"])
+        if "resample" in downscaling:
+            idx = self.resample_cmb.findText(downscaling["resample"])
+            if idx >= 0:
+                self.resample_cmb.setCurrentIndex(idx)
+
+        misc = modify_data.get("misc", {})
+        if "keep_metadata" in misc:
+            idx = self.metadata_cmb.findText(misc["keep_metadata"])
+            if idx >= 0:
+                self.metadata_cmb.setCurrentIndex(idx)
+        if "keep_timestamps" in misc:
+            self.keep_timestamps_cb.setChecked(misc["keep_timestamps"])

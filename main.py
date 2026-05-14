@@ -59,7 +59,7 @@ class MainWindow(QMainWindow):
         self.settings_tab = SettingsTab()
         settings = self.settings_tab.getSettings()
         self.input_tab = InputTab(settings)
-        self.output_tab = OutputTab(settings)
+        self.output_tab = OutputTab(settings, get_all_settings=self._getAllSettings)
         self.modify_tab = ModifyTab(settings, self.output_tab.getSettings())
         self.about_tab = AboutTab()
 
@@ -105,6 +105,8 @@ class MainWindow(QMainWindow):
         self.settings_tab.signals.jxl_lossy_modular_toggled.connect(self.output_tab.onJXLLossyModularVisibleToggled)
         self.settings_tab.signals.jxl_int_effort_toggled.connect(self.output_tab.onJXLIntEffortVisibleToggled)
         self.settings_tab.signals.avif_encoder_changed.connect(self.output_tab.onAVIFEncoderChanged)
+
+        self.output_tab.preset_applied.connect(self._onPresetApplied)
 
     def setupMisc(self) -> None:
         select_tab_sc = []
@@ -171,6 +173,16 @@ class MainWindow(QMainWindow):
     
     def isUIEnabled(self) -> bool:
         return self.tabs.isEnabled()
+    
+    def _getAllSettings(self) -> dict:
+        return {
+            "settings": self.settings_tab.getSettings(),
+            "modify": self.modify_tab.getSettings(),
+        }
+    
+    def _onPresetApplied(self, data: dict):
+        self.settings_tab.applyPreset(data)
+        self.modify_tab.applyPreset(data)
     
     # Events
     def closeEvent(self, event) -> None:

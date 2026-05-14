@@ -15,6 +15,7 @@ from PySide6.QtWidgets import(
     QPushButton,
     QFileDialog,
     QSizePolicy,
+    QInputDialog,
 )
 from PySide6.QtCore import(
     Qt,
@@ -23,6 +24,7 @@ from PySide6.QtCore import(
 )
 
 from core.utils import dictToList
+from data.preset_manager import PresetManager
 from ui.lib import WidgetManager
 from ui.lib.utils import setToolTip, isPathValidStr, createQHBoxLayout, blockSignals
 from ui.widgets import Slider, ComboBox, SpinBox
@@ -31,12 +33,15 @@ from ui.dialogs import message_box
 class OutputTab(QWidget):
     convert = Signal()
     file_format_changed = Signal(str)
+    preset_applied = Signal(dict)
     
-    def __init__(self, settings):
+    def __init__(self, settings, get_all_settings=None):
         super(OutputTab, self).__init__()
 
         # Components
         self.wm = WidgetManager("OutputTab")
+        self.preset_manager = PresetManager()
+        self._get_all_settings = get_all_settings
 
         # Variables
         self.prev_format = None
@@ -73,6 +78,13 @@ class OutputTab(QWidget):
         self.cached_states = self.getSettings()
     
     def _setupWidgets(self):
+        # Presets
+        self.preset_cmb = ComboBox()
+        self.preset_cmb.setMinimumWidth(150)
+        self.preset_save_btn = QPushButton("Save")
+        self.preset_delete_btn = QPushButton("Delete")
+        self._refreshPresetList()
+
         # Conversion
         self.threads_sl = self.wm.addWidget("threads_sl", Slider())
         self.threads_sb = self.wm.addWidget("threads_sb", SpinBox())
@@ -171,12 +183,13 @@ class OutputTab(QWidget):
 
         # Main
         self.main_lt = QGridLayout(self)
-        self.main_lt.addWidget(self.reset_to_default_btn, 2, 0)
-        self.main_lt.addWidget(self.convert_btn, 2, 1)
-        self.main_lt.addWidget(self.format_grp, 0, 1)
-        self.main_lt.addWidget(self.output_grp, 0, 0)
-        self.main_lt.addWidget(self.conv_grp, 1, 0)
-        self.main_lt.addWidget(self.after_conv_grp, 1, 1)
+        self.main_lt.addLayout(createQHBoxLayout(QLabel("Preset"), self.preset_cmb, self.preset_save_btn, self.preset_delete_btn), 0, 0, 1, 2)
+        self.main_lt.addWidget(self.reset_to_default_btn, 3, 0)
+        self.main_lt.addWidget(self.convert_btn, 3, 1)
+        self.main_lt.addWidget(self.format_grp, 1, 1)
+        self.main_lt.addWidget(self.output_grp, 1, 0)
+        self.main_lt.addWidget(self.conv_grp, 2, 0)
+        self.main_lt.addWidget(self.after_conv_grp, 2, 1)
         
         # Size policies
         self.main_lt.setAlignment(Qt.AlignTop)
@@ -204,6 +217,9 @@ class OutputTab(QWidget):
         self.jxl_normalize_enable_cb.toggled.connect(self._onJXLNormalizeToggled)
         self.jxl_normalize_enable_cb.clicked.connect(self._onJXLNormalizeClicked)
         self.smallest_lossless_webp_cb.toggled.connect(self._onSmLBitDepthChanged)
+        self.preset_cmb.currentIndexChanged.connect(self._onPresetChanged)
+        self.preset_save_btn.clicked.connect(self._onPresetSave)
+        self.preset_delete_btn.clicked.connect(self._onPresetDelete)
 
     def _setToolTipsStatic(self):
         """Sets tooltips at once at startup."""
@@ -537,3 +553,131 @@ class OutputTab(QWidget):
             )
             self._saveFormatVars()
             self.wm.saveState()
+
+    # //////////////////////////////////////////////////////////
+    # /                   Presets
+    # //////////////////////////////////////////////////////////
+
+    def _refreshPresetList(self):
+        with blockSignals(self.preset_cmb):
+            self.preset_cmb.clear()
+            self.preset_cmb.addItem("--")
+            for name in self.preset_manager.listPresets():
+                self.preset_cmb.addItem(name)
+
+    def _onPresetChanged(self):
+        name = self.preset_cmb.currentText()
+        if name == "--" or not name:
+            return
+        data = self.preset_manager.load(name)
+        if data is None:
+            return
+        self.applyPreset(data)
+
+    def _onPresetSave(self):
+        name = self.preset_cmb.currentText()
+        if name == "--" or not name:
+            name, ok = QInputDialog.getText(self, "Save Preset", "Preset name:")
+            if not ok or not name.strip():
+                return
+            name = name.strip()
+        else:
+            ok = message_box.confirm(self, "Save Preset", f"Overwrite preset \"{name}\"?")
+            if not ok:
+                return
+        data = {"output": self.getSettings()}
+        if self._get_all_settings:
+            all_settings = self._get_all_settings()
+            data["settings"] = all_settings.get("settings", {})
+            data["modify"] = all_settings.get("modify", {})
+        if self.preset_manager.save(name, data):
+            self._refreshPresetList()
+            idx = self.preset_cmb.findText(name)
+            if idx >= 0:
+                self.preset_cmb.setCurrentIndex(idx)
+
+    def _onPresetDelete(self):
+        name = self.preset_cmb.currentText()
+        if name == "--" or not name:
+            return
+        ok = message_box.confirm(self, "Delete Preset", f"Delete preset \"{name}\"?")
+        if not ok:
+            return
+        if self.preset_manager.delete(name):
+            self._refreshPresetList()
+            self.preset_cmb.setCurrentIndex(0)
+
+    def applyPreset(self, data: dict):
+        output_data = data.get("output", {})
+        if not output_data:
+            return
+
+        with blockSignals(self.format_cmb):
+            if "format" in output_data:
+                idx = self.format_cmb.findText(output_data["format"])
+                if idx >= 0:
+                    self.format_cmb.setCurrentIndex(idx)
+            self._onFormatChange()
+
+        if "quality" in output_data:
+            self.quality_sl.setValue(output_data["quality"])
+        if "lossless" in output_data:
+            self.lossless_cb.setChecked(output_data["lossless"])
+        if "max_compression" in output_data:
+            self.max_compression_cb.setChecked(output_data["max_compression"])
+        if "effort" in output_data:
+            self.effort_sb.setValue(output_data["effort"])
+        if "intelligent_effort" in output_data:
+            self.int_effort_cb.setChecked(output_data["intelligent_effort"])
+        if "jxl_modular" in output_data:
+            self.jxl_modular_cb.setChecked(output_data["jxl_modular"])
+        if "jxl_verify" in output_data:
+            self.jxl_verify_cb.setChecked(output_data["jxl_verify"])
+        if "jxl_normalize_enable" in output_data:
+            self.jxl_normalize_enable_cb.setChecked(output_data["jxl_normalize_enable"])
+        if "jxl_normalize_when" in output_data:
+            idx = self.jxl_normalize_when_cmb.findText(output_data["jxl_normalize_when"])
+            if idx >= 0:
+                self.jxl_normalize_when_cmb.setCurrentIndex(idx)
+        if "aom_av1_chroma_subsampling" in output_data:
+            idx = self.chroma_subsampling_aom_av1_cmb.findText(output_data["aom_av1_chroma_subsampling"])
+            if idx >= 0:
+                self.chroma_subsampling_aom_av1_cmb.setCurrentIndex(idx)
+        if "jpegli_chroma_subsampling" in output_data:
+            idx = self.chroma_subsampling_jpegli_cmb.findText(output_data["jpegli_chroma_subsampling"])
+            if idx >= 0:
+                self.chroma_subsampling_jpegli_cmb.setCurrentIndex(idx)
+        if "if_file_exists" in output_data:
+            idx = self.duplicates_cmb.findText(output_data["if_file_exists"])
+            if idx >= 0:
+                self.duplicates_cmb.setCurrentIndex(idx)
+        if "custom_output_dir" in output_data:
+            self.choose_output_ct_rb.setChecked(output_data["custom_output_dir"])
+            self.choose_output_src_rb.setChecked(not output_data["custom_output_dir"])
+        if "custom_output_dir_path" in output_data:
+            self.choose_output_ct_le.setText(output_data["custom_output_dir_path"])
+        if "keep_dir_struct" in output_data:
+            self.keep_dir_struct_cb.setChecked(output_data["keep_dir_struct"])
+        if "delete_original" in output_data:
+            self.delete_original_cb.setChecked(output_data["delete_original"])
+        if "delete_original_mode" in output_data:
+            idx = self.delete_original_cmb.findText(output_data["delete_original_mode"])
+            if idx >= 0:
+                self.delete_original_cmb.setCurrentIndex(idx)
+        if "smallest_format_pool" in output_data:
+            pool = output_data["smallest_format_pool"]
+            if "png" in pool:
+                self.smallest_lossless_png_cb.setChecked(pool["png"])
+            if "webp" in pool:
+                self.smallest_lossless_webp_cb.setChecked(pool["webp"])
+            if "jxl" in pool:
+                self.smallest_lossless_jxl_cb.setChecked(pool["jxl"])
+        if "jxl_png_fallback" in output_data:
+            self.jxl_png_fallback_cb.setChecked(output_data["jxl_png_fallback"])
+
+        self._onLosslessToggled()
+        self._onDeleteOriginalChanged()
+        self._onOutputToggled()
+        self._onEffortToggled()
+
+        self.preset_applied.emit(data)
