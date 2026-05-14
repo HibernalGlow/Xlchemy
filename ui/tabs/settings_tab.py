@@ -45,6 +45,7 @@ class Signals(QObject):
     custom_resampling_toggled = Signal(bool)
     sorting_toggled = Signal(bool)
     processing_order_changed = Signal(str)
+    theme_changed = Signal()
     jxl_effort_10_toggled = Signal(bool)
     quality_prec_snap_toggled = Signal(bool)
     jpeg_encoder_changed = Signal(str)
@@ -457,6 +458,7 @@ class SettingsTab(QWidget):
 
     def onThemeChanged(self) -> None:
         setTheme(self.theme_cmb.currentText())
+        self.signals.theme_changed.emit()
 
     def onRamOptimizerChanged(self) -> None:
         dynamic_ram_optimizer = self.ram_optimizer_cmb.currentText() == "Dynamic"

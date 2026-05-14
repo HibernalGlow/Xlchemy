@@ -229,3 +229,7 @@ class FormatFilterBar(QWidget):
 
     def isFormatAllowed(self, ext: str) -> bool:
         return ext.lower() not in self._excluded
+
+    def refreshTheme(self):
+        for badge in self._badges.values():
+            badge._updateStyle()
