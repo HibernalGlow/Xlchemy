@@ -1,9 +1,8 @@
 import pytest
 import os
-import logging
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 from contextlib import ExitStack
 
 from PySide6.QtCore import QThreadPool, Qt
@@ -39,7 +38,7 @@ def test_worker_signals_completed_emits_empty_for_skip():
     assert spy.at(0)[3] == 0
 
 
-def test_controller_workerCompleted_logs_filepath(caplog):
+def test_controller_workerCompleted_emits_filepath():
     controller = Controller(MagicMock(autospec=QThreadPool()))
     spy_line1 = QSignalSpy(controller.update_progress_line1)
     spy_value = QSignalSpy(controller.update_progress_value)
@@ -52,20 +51,17 @@ def test_controller_workerCompleted_logs_filepath(caplog):
         patch("core.controller.task_status.wasCanceled", return_value=False),
         patch.object(controller, "finishProcessing"),
     ):
-        with caplog.at_level(logging.INFO):
-            controller.workerCompleted(0, False, r"C:\Users\test\photo.jpg", 2048000, 512000)
+        controller.workerCompleted(0, False, r"C:\Users\test\photo.jpg", 2048000, 512000)
 
     assert spy_line1.count() == 1
-    assert "Converted 3 out of 10 images" in spy_line1.at(0)[0]
-
-    log_text = caplog.text
-    assert "photo.jpg" in log_text
-    assert "MB" in log_text
-    assert "KB" in log_text
-    assert "-75%" in log_text
+    line1 = spy_line1.at(0)[0]
+    assert "photo.jpg" in line1
+    assert "MB" in line1
+    assert "KB" in line1
+    assert "-75%" in line1
 
 
-def test_controller_workerCompleted_no_log_for_empty_path(caplog):
+def test_controller_workerCompleted_emits_fallback():
     controller = Controller(MagicMock(autospec=QThreadPool()))
     spy_line1 = QSignalSpy(controller.update_progress_line1)
 
@@ -77,13 +73,10 @@ def test_controller_workerCompleted_no_log_for_empty_path(caplog):
         patch("core.controller.task_status.wasCanceled", return_value=False),
         patch.object(controller, "finishProcessing"),
     ):
-        with caplog.at_level(logging.INFO):
-            controller.workerCompleted(0, False, "", 0, 0)
+        controller.workerCompleted(0, False, "", 0, 0)
 
     assert spy_line1.count() == 1
     assert "Converted 3 out of 10 images" in spy_line1.at(0)[0]
-    assert "KB" not in caplog.text
-    assert "MB" not in caplog.text
 
 
 def test_worker_run_emits_completed_with_file_info():

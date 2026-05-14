@@ -1,7 +1,6 @@
 import logging
 import textwrap
 import os
-from datetime import datetime
 from typing import Any
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -14,14 +13,12 @@ from PySide6.QtCore import (
     Slot,
     QObject,
     Qt,
-    QTimer,
 )
 
 from data.time_left import TimeLeft
 from data.thread_manager import ThreadManager
 from data.items import Items
 from data.process_manager import ProcessManager
-from data.constants import LOGS_DIR
 import data.task_status as task_status
 from core.worker import Worker
 from core.pathing import UniquePathStore
@@ -52,7 +49,7 @@ class CheckStatus:
 
 class Controller(QObject):
     processing_started = Signal()
-    processing_finished = Signal()
+    processing_finished = Signal()      # finished / canceled
     exception = Signal(str, str, str)
     update_progress_line1 = Signal(str)
     update_progress_line2 = Signal(str)
@@ -69,8 +66,6 @@ class Controller(QObject):
 
         # Flags
         self.finish_emitted = False     # debounce
-        self._log_handler = None
-        self._prev_log_level = logging.WARNING
 
         # Signals
         self.time_left.update_time_left.connect(self.update_progress_line2)
@@ -180,8 +175,6 @@ class Controller(QObject):
     ) -> None:
         """Starts the conversion."""
 
-        self._startLogHandler()
-
         # Setup
         self.thread_manager.configure(
             self.items.getItemCount(),
@@ -234,7 +227,6 @@ class Controller(QObject):
             return
         self.finish_emitted = True
         self.time_left.stopCounting()
-        QTimer.singleShot(500, self._stopLogHandler)
         self.processing_finished.emit()
         ProcessManager.clear()
 
@@ -247,31 +239,6 @@ class Controller(QObject):
     def cancel(self):
         task_status.cancel()
         ProcessManager.terminateAll()
-
-    def _startLogHandler(self):
-        self._stopLogHandler()
-        os.makedirs(LOGS_DIR, exist_ok=True)
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_path = os.path.join(LOGS_DIR, f"convert_{ts}.log")
-        handler = logging.FileHandler(log_path, encoding="utf-8")
-        handler.setFormatter(logging.Formatter("%(asctime)s  %(message)s", datefmt="%H:%M:%S"))
-        handler.setLevel(logging.INFO)
-        logger = logging.getLogger()
-        self._prev_log_level = logger.level
-        logger.setLevel(logging.INFO)
-        logger.addHandler(handler)
-        self._log_handler = handler
-        logging.info("=== Conversion started ===")
-
-    def _stopLogHandler(self):
-        if self._log_handler is not None:
-            logging.info("=== Conversion finished ===")
-            self._log_handler.flush()
-            logger = logging.getLogger()
-            logger.removeHandler(self._log_handler)
-            self._log_handler.close()
-            self._log_handler = None
-            logger.setLevel(self._prev_log_level)
 
     @Slot(int)
     def workerStarted(self, n: int) -> None:
@@ -304,10 +271,9 @@ class Controller(QObject):
                 pct_str = f"-{pct:.0f}%" if pct > 0 else f"+{abs(pct):.0f}%"
             else:
                 pct_str = "0%"
-            log_text = f"{file_path} : {src_str} → {dst_str} ({pct_str})"
-            logging.info(log_text)
-
-        self.update_progress_line1.emit(f"Converted {completed} out of {total} images")
+            self.update_progress_line1.emit(f"{file_path} : {src_str} → {dst_str} ({pct_str})")
+        else:
+            self.update_progress_line1.emit(f"Converted {completed} out of {total} images")
 
         if completed >= total or task_status.wasCanceled():
             self.finishProcessing()
