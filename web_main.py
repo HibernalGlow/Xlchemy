@@ -11,7 +11,7 @@ from typing import Any
 import requests
 import webview
 
-from PySide6.QtCore import QThreadPool
+from PySide6.QtCore import QThreadPool, Qt
 
 from core.controller import Controller
 from data.constants import (
@@ -189,28 +189,34 @@ class API:
 
     def set_controller(self, controller: Controller):
         self._controller = controller
-        self._controller.update_progress_line1.connect(self._on_progress_line1)
-        self._controller.update_progress_line2.connect(self._on_progress_line2)
-        self._controller.update_progress_value.connect(self._on_progress_value)
-        self._controller.processing_started.connect(self._on_processing_started)
-        self._controller.processing_finished.connect(self._on_processing_finished)
-        self._controller.exception.connect(self._on_exception)
+        # Use QueuedConnection to ensure signals are processed in main thread
+        self._controller.update_progress_line1.connect(self._on_progress_line1, Qt.QueuedConnection)
+        self._controller.update_progress_line2.connect(self._on_progress_line2, Qt.QueuedConnection)
+        self._controller.update_progress_value.connect(self._on_progress_value, Qt.QueuedConnection)
+        self._controller.processing_started.connect(self._on_processing_started, Qt.QueuedConnection)
+        self._controller.processing_finished.connect(self._on_processing_finished, Qt.QueuedConnection)
+        self._controller.exception.connect(self._on_exception, Qt.QueuedConnection)
 
     def _emit(self, event: str, data: Any = None):
         if self._window:
             payload = json.dumps(data) if data is not None else 'null'
+            logger.debug(f'[emit] event={event}, data={payload}')
             self._window.evaluate_js(f'window.__xlchemy_emit("{event}", {payload})')
 
     def _on_progress_line1(self, text: str):
+        logger.debug(f'[progress_line1] {text}')
         self._emit('progress', {'line1': text})
 
     def _on_progress_line2(self, text: str):
+        logger.debug(f'[progress_line2] {text}')
         self._emit('progress', {'line2': text})
 
     def _on_progress_value(self, value: int):
+        logger.debug(f'[progress_value] {value}')
         self._emit('progress', {'value': value})
 
     def _on_processing_started(self):
+        logger.debug('[processing_started]')
         self._emit('processing_started')
 
     def _on_processing_finished(self):
