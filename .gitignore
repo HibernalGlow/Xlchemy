@@ -24,3 +24,4 @@ rust_bindings/target/
 *.so
 *.pyd
 ui-web/*
+ui_web/node_modules/*
