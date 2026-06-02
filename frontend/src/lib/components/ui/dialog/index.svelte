@@ -22,19 +22,28 @@
       onclose?.();
     }
   }
+
+  function preventSubmit(e: SubmitEvent) {
+    e.preventDefault();
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 {#if open}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     onclick={handleOverlayClick}
     role="dialog"
     aria-modal="true"
+    aria-label={title || "Dialog"}
+    tabindex={-1}
   >
-    <div
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <form
       class={cn("relative bg-card rounded-lg border shadow-lg p-6 max-w-lg w-full max-h-[80vh] overflow-auto")}
+      onsubmit={preventSubmit}
       onclick={(e) => e.stopPropagation()}
     >
       {#if title}
@@ -46,6 +55,6 @@
           {@render footer()}
         </div>
       {/if}
-    </div>
+    </form>
   </div>
 {/if}
