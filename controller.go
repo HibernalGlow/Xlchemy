@@ -417,7 +417,7 @@ func getMetadataArgs(encoderPath string, mode string, losslessJPEG bool) []strin
 	switch mode {
 	case "Encoder - Wipe":
 		if encoderPath == CJXlPath && !losslessJPEG {
-			return []string{"--strip=1"}
+			return []string{"-x", "strip=exif", "-x", "strip=xmp", "-x", "strip=jumbf"}
 		}
 		// ImageMagick, avifenc, etc. handle stripping natively
 		return nil

@@ -1,4 +1,4 @@
-import { Events } from '@wailsio/runtime';
+import { Dialogs, Events } from '@wailsio/runtime';
 import {
   FileInput,
   FileOutput,
@@ -146,6 +146,23 @@ export default function App() {
   }, []);
 
   // --- Actions ---
+  const handleAddFiles = useCallback(async () => {
+    try {
+      const selected = await Dialogs.OpenFile({
+        CanChooseFiles: true,
+        AllowsMultipleSelection: true,
+        Title: 'Select image files',
+        Filters: [{ DisplayName: 'Images', Pattern: '*.jpg;*.jpeg;*.png;*.webp;*.avif;*.jxl;*.gif;*.bmp;*.ico;*.tiff;*.tif' }],
+      });
+      if (!selected || (Array.isArray(selected) && selected.length === 0)) return;
+      const paths: string[] = Array.isArray(selected) ? selected : [selected];
+      const result = await AppService.AddFiles(paths);
+      setFileItems((prev) => [...prev, ...JSON.parse(result)]);
+    } catch (e) {
+      console.error('AddFiles error:', e);
+    }
+  }, []);
+
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     const files = e.dataTransfer?.files;
@@ -284,7 +301,7 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">{t('Input')}</h2>
                 <div className="flex gap-2 items-center">
-                  <Button variant="outline" size="sm" onClick={() => {}}>
+                  <Button variant="outline" size="sm" onClick={handleAddFiles}>
                     {t('Add Files')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={clearFiles}>
