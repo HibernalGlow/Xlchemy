@@ -13,8 +13,10 @@ ComfyUI 生成的 PNG 图片包含 `workflow` 和 `prompt` 元数据，存储在
 在 **Settings -> ExifTool -> Custom** 中输入以下参数：
 
 ```
--m -tagsFromFile $src "-workflow>XMP-dc:Description" "-prompt>XMP-dc:Subject" $dst -overwrite_original
+-m -tagsFromFile $src -workflow>XMP-dc:Description -prompt>XMP-dc:Subject $dst -overwrite_original
 ```
+
+> ⚠️ **重要**：参数中不要使用引号！Xlchemy 使用空格分割参数，引号会被保留在字符串中导致 exiftool 无法正确解析。
 
 ### 参数说明
 
@@ -59,7 +61,7 @@ ComfyUI 生成的 PNG 图片包含 `workflow` 和 `prompt` 元数据，存储在
 
 4. **仅保留 workflow**: 如果只需要 workflow 不需要 prompt，可以使用：
    ```
-   -m -tagsFromFile $src "-workflow>XMP-dc:Description" $dst -overwrite_original
+   -m -tagsFromFile $src -workflow>XMP-dc:Description $dst -overwrite_original
    ```
 
 ## 从 AVIF 提取 workflow
