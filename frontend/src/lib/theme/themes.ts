@@ -1,137 +1,253 @@
-// Theme definitions ported from Python themes.py
+/**
+ * Xlchemy Theme System — oklch-based, following neoview's theme architecture.
+ * Each theme defines light & dark color variants using shadcn CSS variables.
+ */
 
-export interface ThemeColors {
-  accentBig: string;
-  accentSmall: string;
-  font: string;
-  fontDisabled: string;
-  canvas: string;
-  border: string;
-  progressBarText: string;
-  // Derived
-  backgroundHover: string;
-  backgroundSelected: string;
-  borderFaded: string;
-  canvasFaded: string;
-  scrollbarHandle: string;
-  scrollbarHandleHover: string;
-}
+export type ThemeColorsVariant = Record<string, string>;
 
-export interface Theme {
+export interface ThemeConfig {
   name: string;
-  colors: ThemeColors;
+  description: string;
   isDark: boolean;
-}
-
-function hexToRGBA(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha / 255})`;
-}
-
-function createDerived(base: Omit<ThemeColors, 'backgroundHover' | 'backgroundSelected' | 'borderFaded' | 'canvasFaded' | 'scrollbarHandle' | 'scrollbarHandleHover'>, isDark: boolean): ThemeColors {
-  const backgroundHover = hexToRGBA(base.accentBig, 51);
-  const backgroundSelected = hexToRGBA(base.accentBig, 102);
-  const borderFaded = hexToRGBA(base.border, 150);
-  const canvasFaded = hexToRGBA(base.canvas, 180);
-
-  let scrollbarHandle: string;
-  let scrollbarHandleHover: string;
-  if (!isDark) {
-    scrollbarHandle = base.border;
-    scrollbarHandleHover = hexToRGBA(base.font, 166);
-  } else {
-    scrollbarHandle = borderFaded;
-    scrollbarHandleHover = base.border;
-  }
-
-  return {
-    ...base,
-    backgroundHover,
-    backgroundSelected,
-    borderFaded,
-    canvasFaded,
-    scrollbarHandle,
-    scrollbarHandleHover,
+  colors: {
+    light: ThemeColorsVariant;
+    dark: ThemeColorsVariant;
   };
 }
 
-export const themes: Record<string, Theme> = {
-  'Miku': {
+// Preset themes — converted from original hex to oklch
+export const presetThemes: ThemeConfig[] = [
+  {
     name: 'Miku',
+    description: 'Cyan & magenta dark theme',
     isDark: true,
-    colors: createDerived({
-      accentBig: '#39C5BB',
-      accentSmall: '#E12885',
-      font: '#e9e9e9',
-      fontDisabled: '#9A9A9A',
-      canvas: '#141414',
-      border: '#404040',
-      progressBarText: '#E12885',
-    }, true),
+    colors: {
+      light: {
+        primary: 'oklch(0.7684 0.1370 182.83)',
+        'primary-foreground': 'oklch(0.145 0.005 0)',
+        accent: 'oklch(0.6013 0.2200 348.53)',
+        'accent-foreground': 'oklch(0.98 0 0)',
+        background: 'oklch(0.97 0 0)',
+        foreground: 'oklch(0.2 0 0)',
+        card: 'oklch(0.97 0 0)',
+        'card-foreground': 'oklch(0.2 0 0)',
+        popover: 'oklch(0.97 0 0)',
+        'popover-foreground': 'oklch(0.2 0 0)',
+        secondary: 'oklch(0.93 0.005 182.83)',
+        'secondary-foreground': 'oklch(0.2 0 0)',
+        muted: 'oklch(0.93 0 0)',
+        'muted-foreground': 'oklch(0.5 0 0)',
+        destructive: 'oklch(0.577 0.245 27.325)',
+        border: 'oklch(0.88 0 0)',
+        input: 'oklch(0.88 0 0)',
+        ring: 'oklch(0.7684 0.1370 182.83)',
+        'progress-text': 'oklch(0.6013 0.2200 348.53)',
+      },
+      dark: {
+        primary: 'oklch(0.7684 0.1370 182.83)',
+        'primary-foreground': 'oklch(0.145 0.005 0)',
+        accent: 'oklch(0.6013 0.2200 348.53)',
+        'accent-foreground': 'oklch(0.92 0 0)',
+        background: 'oklch(0.145 0.005 0)',
+        foreground: 'oklch(0.92 0 0)',
+        card: 'oklch(0.17 0.005 0)',
+        'card-foreground': 'oklch(0.92 0 0)',
+        popover: 'oklch(0.17 0.005 0)',
+        'popover-foreground': 'oklch(0.92 0 0)',
+        secondary: 'oklch(0.25 0.01 0)',
+        'secondary-foreground': 'oklch(0.92 0 0)',
+        muted: 'oklch(0.25 0.01 0)',
+        'muted-foreground': 'oklch(0.65 0 0)',
+        destructive: 'oklch(0.704 0.191 22.216)',
+        border: 'oklch(0.32 0.01 0)',
+        input: 'oklch(0.32 0.01 0)',
+        ring: 'oklch(0.7684 0.1370 182.83)',
+        'progress-text': 'oklch(0.6013 0.2200 348.53)',
+      },
+    },
   },
-  'Ralsei': {
+  {
     name: 'Ralsei',
+    description: 'Green & pink dark theme',
     isDark: true,
-    colors: createDerived({
-      accentBig: '#00ff76',
-      accentSmall: '#ff0066',
-      font: '#e9e9e9',
-      fontDisabled: '#9A9A9A',
-      canvas: '#141414',
-      border: '#404040',
-      progressBarText: '#ff0066',
-    }, true),
+    colors: {
+      light: {
+        primary: 'oklch(0.8200 0.1800 155.00)',
+        'primary-foreground': 'oklch(0.145 0.005 0)',
+        accent: 'oklch(0.6013 0.2400 355.00)',
+        'accent-foreground': 'oklch(0.98 0 0)',
+        background: 'oklch(0.97 0 0)',
+        foreground: 'oklch(0.2 0 0)',
+        card: 'oklch(0.97 0 0)',
+        'card-foreground': 'oklch(0.2 0 0)',
+        popover: 'oklch(0.97 0 0)',
+        'popover-foreground': 'oklch(0.2 0 0)',
+        secondary: 'oklch(0.93 0.005 155.00)',
+        'secondary-foreground': 'oklch(0.2 0 0)',
+        muted: 'oklch(0.93 0 0)',
+        'muted-foreground': 'oklch(0.5 0 0)',
+        destructive: 'oklch(0.577 0.245 27.325)',
+        border: 'oklch(0.88 0 0)',
+        input: 'oklch(0.88 0 0)',
+        ring: 'oklch(0.8200 0.1800 155.00)',
+        'progress-text': 'oklch(0.6013 0.2400 355.00)',
+      },
+      dark: {
+        primary: 'oklch(0.8200 0.1800 155.00)',
+        'primary-foreground': 'oklch(0.145 0.005 0)',
+        accent: 'oklch(0.6013 0.2400 355.00)',
+        'accent-foreground': 'oklch(0.92 0 0)',
+        background: 'oklch(0.145 0.005 0)',
+        foreground: 'oklch(0.92 0 0)',
+        card: 'oklch(0.17 0.005 0)',
+        'card-foreground': 'oklch(0.92 0 0)',
+        popover: 'oklch(0.17 0.005 0)',
+        'popover-foreground': 'oklch(0.92 0 0)',
+        secondary: 'oklch(0.25 0.01 0)',
+        'secondary-foreground': 'oklch(0.92 0 0)',
+        muted: 'oklch(0.25 0.01 0)',
+        'muted-foreground': 'oklch(0.65 0 0)',
+        destructive: 'oklch(0.704 0.191 22.216)',
+        border: 'oklch(0.32 0.01 0)',
+        input: 'oklch(0.32 0.01 0)',
+        ring: 'oklch(0.8200 0.1800 155.00)',
+        'progress-text': 'oklch(0.6013 0.2400 355.00)',
+      },
+    },
   },
-  'Dark Amber': {
+  {
     name: 'Dark Amber',
+    description: 'Warm amber dark theme',
     isDark: true,
-    colors: createDerived({
-      accentBig: '#F18000',
-      accentSmall: '#F18000',
-      font: '#E4E7EB',
-      fontDisabled: '#A1A1A1',
-      canvas: '#202124',
-      border: '#3F4042',
-      progressBarText: '#E4E7EB',
-    }, true),
+    colors: {
+      light: {
+        primary: 'oklch(0.7053 0.1663 61.00)',
+        'primary-foreground': 'oklch(0.145 0.005 0)',
+        accent: 'oklch(0.7053 0.1663 61.00)',
+        'accent-foreground': 'oklch(0.98 0 0)',
+        background: 'oklch(0.97 0 0)',
+        foreground: 'oklch(0.25 0 0)',
+        card: 'oklch(0.97 0 0)',
+        'card-foreground': 'oklch(0.25 0 0)',
+        popover: 'oklch(0.97 0 0)',
+        'popover-foreground': 'oklch(0.25 0 0)',
+        secondary: 'oklch(0.93 0.01 61.00)',
+        'secondary-foreground': 'oklch(0.25 0 0)',
+        muted: 'oklch(0.93 0 0)',
+        'muted-foreground': 'oklch(0.5 0 0)',
+        destructive: 'oklch(0.577 0.245 27.325)',
+        border: 'oklch(0.88 0 0)',
+        input: 'oklch(0.88 0 0)',
+        ring: 'oklch(0.7053 0.1663 61.00)',
+        'progress-text': 'oklch(0.9 0.02 61.00)',
+      },
+      dark: {
+        primary: 'oklch(0.7053 0.1663 61.00)',
+        'primary-foreground': 'oklch(0.145 0.005 0)',
+        accent: 'oklch(0.7053 0.1663 61.00)',
+        'accent-foreground': 'oklch(0.92 0 0)',
+        background: 'oklch(0.19 0.005 61.00)',
+        foreground: 'oklch(0.91 0.01 240.00)',
+        card: 'oklch(0.22 0.005 61.00)',
+        'card-foreground': 'oklch(0.91 0.01 240.00)',
+        popover: 'oklch(0.22 0.005 61.00)',
+        'popover-foreground': 'oklch(0.91 0.01 240.00)',
+        secondary: 'oklch(0.27 0.01 61.00)',
+        'secondary-foreground': 'oklch(0.92 0 0)',
+        muted: 'oklch(0.27 0.01 61.00)',
+        'muted-foreground': 'oklch(0.65 0 0)',
+        destructive: 'oklch(0.704 0.191 22.216)',
+        border: 'oklch(0.33 0.01 61.00)',
+        input: 'oklch(0.33 0.01 61.00)',
+        ring: 'oklch(0.7053 0.1663 61.00)',
+        'progress-text': 'oklch(0.91 0.01 240.00)',
+      },
+    },
   },
-  'Light Amber': {
+  {
     name: 'Light Amber',
+    description: 'Warm amber light theme',
     isDark: false,
-    colors: createDerived({
-      accentBig: '#F17400',
-      accentSmall: '#F17400',
-      font: '#404040',
-      fontDisabled: '#9198A3',
-      canvas: '#F8F9FA',
-      border: '#D8DADE',
-      progressBarText: '#404040',
-    }, false),
+    colors: {
+      light: {
+        primary: 'oklch(0.6553 0.1763 58.00)',
+        'primary-foreground': 'oklch(0.98 0 0)',
+        accent: 'oklch(0.6553 0.1763 58.00)',
+        'accent-foreground': 'oklch(0.98 0 0)',
+        background: 'oklch(0.975 0.003 70.00)',
+        foreground: 'oklch(0.32 0.01 0)',
+        card: 'oklch(0.99 0 0)',
+        'card-foreground': 'oklch(0.32 0.01 0)',
+        popover: 'oklch(0.99 0 0)',
+        'popover-foreground': 'oklch(0.32 0.01 0)',
+        secondary: 'oklch(0.94 0.005 58.00)',
+        'secondary-foreground': 'oklch(0.32 0.01 0)',
+        muted: 'oklch(0.94 0 0)',
+        'muted-foreground': 'oklch(0.55 0 0)',
+        destructive: 'oklch(0.577 0.245 27.325)',
+        border: 'oklch(0.88 0.005 70.00)',
+        input: 'oklch(0.88 0.005 70.00)',
+        ring: 'oklch(0.6553 0.1763 58.00)',
+        'progress-text': 'oklch(0.32 0.01 0)',
+      },
+      dark: {
+        primary: 'oklch(0.6553 0.1763 58.00)',
+        'primary-foreground': 'oklch(0.98 0 0)',
+        accent: 'oklch(0.6553 0.1763 58.00)',
+        'accent-foreground': 'oklch(0.92 0 0)',
+        background: 'oklch(0.19 0.005 58.00)',
+        foreground: 'oklch(0.92 0 0)',
+        card: 'oklch(0.22 0.005 58.00)',
+        'card-foreground': 'oklch(0.92 0 0)',
+        popover: 'oklch(0.22 0.005 58.00)',
+        'popover-foreground': 'oklch(0.92 0 0)',
+        secondary: 'oklch(0.27 0.01 58.00)',
+        'secondary-foreground': 'oklch(0.92 0 0)',
+        muted: 'oklch(0.27 0.01 58.00)',
+        'muted-foreground': 'oklch(0.65 0 0)',
+        destructive: 'oklch(0.704 0.191 22.216)',
+        border: 'oklch(0.33 0.01 58.00)',
+        input: 'oklch(0.33 0.01 58.00)',
+        ring: 'oklch(0.6553 0.1763 58.00)',
+        'progress-text': 'oklch(0.92 0 0)',
+      },
+    },
   },
-};
+];
 
-export const themeNames = Object.keys(themes);
+export const themeNames = presetThemes.map((t) => t.name);
 
-export function applyTheme(name: string): Theme {
-  const theme = themes[name] || themes['Miku'];
-  const c = theme.colors;
+/** Apply a named theme to the DOM */
+export function applyTheme(name: string): ThemeConfig {
+  const theme = presetThemes.find((t) => t.name === name) || presetThemes[0];
   const root = document.documentElement;
 
-  root.style.setProperty('--color-accent-big', c.accentBig);
-  root.style.setProperty('--color-accent-small', c.accentSmall);
-  root.style.setProperty('--color-font', c.font);
-  root.style.setProperty('--color-font-disabled', c.fontDisabled);
-  root.style.setProperty('--color-canvas', c.canvas);
-  root.style.setProperty('--color-border', c.border);
-  root.style.setProperty('--color-progress-text', c.progressBarText);
-  root.style.setProperty('--color-bg-hover', c.backgroundHover);
-  root.style.setProperty('--color-bg-selected', c.backgroundSelected);
-  root.style.setProperty('--color-border-faded', c.borderFaded);
-  root.style.setProperty('--color-canvas-faded', c.canvasFaded);
-  root.style.setProperty('--color-scrollbar-handle', c.scrollbarHandle);
-  root.style.setProperty('--color-scrollbar-hover', c.scrollbarHandleHover);
+  // Toggle dark class
+  if (theme.isDark) {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+
+  // Apply the appropriate color variant
+  const colors = theme.isDark ? theme.colors.dark : theme.colors.light;
+  for (const [key, value] of Object.entries(colors)) {
+    root.style.setProperty(`--${key}`, value);
+  }
+
+  // Persist
+  try {
+    localStorage.setItem('xlchemy-theme', name);
+  } catch {}
 
   return theme;
+}
+
+/** Get saved theme name from localStorage */
+export function loadThemeName(): string {
+  try {
+    return localStorage.getItem('xlchemy-theme') || 'Miku';
+  } catch {
+    return 'Miku';
+  }
 }

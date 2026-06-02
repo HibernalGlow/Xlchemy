@@ -7,7 +7,7 @@
  */
 import { Call } from "@wailsio/runtime";
 
-const PKG = "github.com/nicjacek/xlchemy.AppService";
+const PKG = "main.AppService";
 
 function call(method: string, ...args: any[]): Promise<any> {
   return Call.ByName(`${PKG}.${method}`, ...args);

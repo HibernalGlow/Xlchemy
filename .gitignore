@@ -29,3 +29,5 @@ ui_web/node_modules/*
 /ui_web/dist
 /ui_web/node_modules
 /dist_web/*
+/xlchemy.exe
+/frontend/node_modules/*
