@@ -314,45 +314,52 @@
   background: rgba(74, 158, 255, 0.1);
 }
 
-/* ─── Canvas Layout ─── */
+/* ═══════════════════════════════════════════════════════════
+   Canvas Layout (GitButler-faithful)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Scroll Container ─── */
 .canvas-container {
   display: flex;
   flex: 1;
+  height: 100%;
+  margin: 0 -1px; /* bleed into edge for first-child border-left */
   overflow-x: auto;
   overflow-y: hidden;
-  min-height: 0;
 }
 
 .lanes-scrollable {
   display: flex;
   position: relative;
   height: 100%;
-  min-width: min-content;
 }
 
-/* ─── Lane ─── */
+/* ─── Lane (StackView) ─── */
 .lane {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
+  width: fit-content;
   height: 100%;
   position: relative;
-  background: var(--bg-2);
-  overflow: hidden;
 }
 
-.lane__header {
+.lane:first-child {
+  border-left: 1px solid var(--border-2);
+}
+
+/* Stack view inner wrapper (GitButler .stack-view) */
+.stack-view {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 36px;
-  padding: 0 12px;
-  background: var(--bg-3);
-  border-bottom: 1px solid var(--border-2);
+  position: relative;
   flex-shrink: 0;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0 12px;
 }
 
-.lane__content {
+/* Stack content: vertically stacked Drawers */
+.stack-content {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -360,19 +367,276 @@
   overflow-y: auto;
 }
 
-/* ─── Collapsed Lane ─── */
-.collapsed-lane {
+/* ─── Lane Drag Handle (StackDragHandle) ─── */
+.lane-drag-handle {
   display: flex;
+  align-items: center;
+  height: 28px;
+  margin: 0 -3px;
+  color: var(--text-2);
+  cursor: grab;
   flex-shrink: 0;
-  width: 44px;
-  height: 100%;
-  border-right: 1px solid var(--border-2);
-  background: var(--bg-3);
+  gap: 4px;
 }
 
-/* ─── Custom Scrollbar ─── */
+.lane-drag-handle__collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: color 0.05s ease;
+  position: relative;
+}
+
+.lane-drag-handle__collapse:hover {
+  color: var(--text-1);
+}
+
+.lane-drag-handle__collapse:hover .lane-drag-handle__lane-rect {
+  fill: currentColor;
+}
+
+.lane-drag-handle__collapse--folded .lane-drag-handle__lane-rect {
+  fill: currentColor;
+}
+
+.lane-drag-handle__collapse--folded:hover .lane-drag-handle__lane-rect {
+  fill: none;
+}
+
+.lane-drag-handle__icon {
+  position: relative;
+  z-index: var(--z-ground);
+  width: 15px;
+  height: 10px;
+}
+
+.lane-drag-handle__grip {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 10px;
+  padding: 2px;
+  border-radius: 3px;
+  background-color: var(--bg-2);
+  color: var(--text-2);
+  pointer-events: none;
+}
+
+.lane-drag-handle__title {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.lane-drag-handle__actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+/* ─── Drawer (LaneCard) ─── */
+.drawer {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-1);
+}
+
+.drawer--border {
+  border-bottom: 1px solid var(--border-2);
+}
+
+.drawer--grow {
+  flex-grow: 1;
+}
+
+.drawer--noshrink {
+  flex-shrink: 0;
+}
+
+.drawer--collapsed {
+  max-height: none;
+  margin-bottom: -1px;
+}
+
+/* PreviewHeader (GitButler style: 42px) */
+.drawer-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  height: 42px;
+  padding: 0 12px 0 14px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-2);
+  background-color: var(--bg-2);
+}
+
+.drawer-header__title {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+  gap: 6px;
+}
+
+.drawer-header__text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-header__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin-right: -2px;
+  gap: 10px;
+}
+
+/* Chevron button */
+.drawer-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: color 0.05s ease, transform 0.15s ease;
+}
+
+.drawer-chevron:hover {
+  color: var(--text-1);
+}
+
+.drawer-chevron--expanded {
+  transform: rotate(90deg);
+}
+
+/* Scrollable content area */
+.drawer-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.drawer__content {
+  container-name: drawer-content;
+  container-type: inline-size;
+  display: flex;
+  position: relative;
+  flex-grow: 1;
+  flex-direction: column;
+  padding: 12px;
+}
+
+/* ─── Folded Lane (CollapsedLane) ─── */
+.folded-lane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  padding: 2px 9px 18px;
+  border-right: 1px solid var(--border-2);
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 0%,
+    var(--bg-2) 70%,
+    var(--bg-3) 100%
+  );
+  color: var(--text-2);
+  cursor: grab;
+}
+
+.folded-lane__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: color 0.05s ease;
+}
+
+.folded-lane__toggle:hover {
+  color: var(--text-1);
+}
+
+.folded-lane__toggle:hover .folded-lane__collapse-rect {
+  fill: none;
+}
+
+.folded-lane__collapse-icon {
+  position: relative;
+  z-index: var(--z-ground);
+  width: 15px;
+  height: 10px;
+}
+
+.folded-lane__grip {
+  display: flex;
+  margin-top: 4px;
+  pointer-events: none;
+  color: var(--text-2);
+}
+
+.folded-lane__text {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  overflow: hidden;
+  gap: 10px;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  pointer-events: none;
+}
+
+.folded-lane__icon {
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.folded-lane__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Custom Scrollbar (GitButler: ~9px) ─── */
 .custom-scrollbar {
-  height: 6px;
+  height: 9px;
   background: var(--bg-3);
   position: relative;
   flex-shrink: 0;
@@ -381,9 +645,9 @@
 
 .custom-scrollbar__thumb {
   position: absolute;
-  top: 1px;
-  height: 4px;
-  border-radius: 2px;
+  top: 2px;
+  height: 5px;
+  border-radius: 3px;
   background: var(--border-2);
   transition: background 0.15s ease;
   cursor: grab;

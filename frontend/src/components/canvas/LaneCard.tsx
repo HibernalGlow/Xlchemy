@@ -10,6 +10,7 @@ interface LaneCardProps {
   persistId?: string;
   showBorder?: boolean;
   grow?: boolean;
+  noshrink?: boolean;
   actions?: React.ReactNode;
   className?: string;
 }
@@ -28,6 +29,13 @@ function saveCollapsed(id: string, v: boolean) {
   } catch { /* ignore */ }
 }
 
+/**
+ * GitButler-style Drawer component.
+ * - PreviewHeader (42px) with chevron + header + actions
+ * - Independently scrollable content
+ * - Container query on content wrapper
+ * - Collapsed: margin-bottom -1px for border collapse
+ */
 export const LaneCard: React.FC<LaneCardProps> = ({
   id,
   header,
@@ -35,6 +43,7 @@ export const LaneCard: React.FC<LaneCardProps> = ({
   defaultCollapsed = false,
   showBorder = true,
   grow = false,
+  noshrink = false,
   actions,
   className,
 }) => {
@@ -51,38 +60,39 @@ export const LaneCard: React.FC<LaneCardProps> = ({
   return (
     <div
       className={cn(
-        'flex flex-col bg-[var(--bg-1)] w-full',
-        grow && 'flex-1 min-h-0',
-        !grow && 'flex-shrink-0',
-        collapsed && 'flex-shrink-0',
-        showBorder && 'border-b border-[var(--border-2)]',
+        'drawer',
+        grow && 'drawer--grow',
+        noshrink && 'drawer--noshrink',
+        collapsed && 'drawer--collapsed',
+        showBorder && !collapsed && 'drawer--border',
         className,
       )}
     >
-      {/* Card Header */}
-      <button
-        type="button"
-        className="flex items-center gap-1.5 px-3 py-2 w-full text-left cursor-pointer hover:bg-[var(--bg-3)]/30 transition-colors shrink-0"
-        onClick={handleToggle}
-      >
-        <ChevronRight
-          className={cn(
-            'w-3.5 h-3.5 text-text-2 shrink-0 transition-transform duration-150',
-            !collapsed && 'rotate-90',
-          )}
-        />
-        <span className="text-xs font-medium text-text-1 flex-1 min-w-0">{header}</span>
+      {/* PreviewHeader (GitButler style: 42px, bg-2, border-bottom) */}
+      <div className="drawer-header">
+        <div className="drawer-header__title">
+          <button
+            type="button"
+            className={cn('drawer-chevron', !collapsed && 'drawer-chevron--expanded')}
+            onClick={handleToggle}
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+          <span className="drawer-header__text">{header}</span>
+        </div>
         {actions && (
-          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="drawer-header__actions" onClick={(e) => e.stopPropagation()}>
             {actions}
           </div>
         )}
-      </button>
+      </div>
 
-      {/* Card Content */}
+      {/* Scrollable Content */}
       {!collapsed && (
-        <div className={cn('px-3 pb-3', grow && 'flex-1 min-h-0 overflow-auto')}>
-          {children}
+        <div className="drawer-scroll">
+          <div className="drawer__content">
+            {children}
+          </div>
         </div>
       )}
     </div>
