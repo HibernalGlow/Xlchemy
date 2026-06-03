@@ -5,7 +5,7 @@ import {
   Settings,
   SlidersHorizontal,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { AppStateProvider, useAppState } from '~/hooks/useAppState';
 import { useT } from '~/hooks/useT';
 import { CanvasChrome, type LaneConfig } from '~/components/canvas/CanvasChrome';
@@ -54,10 +54,37 @@ function AppContent() {
     return sorted;
   }, [lanes, state.laneOrder]);
 
+  // Reorder lanes via drag-and-drop
+  const handleReorderLanes = useCallback(
+    (fromId: string, toId: string) => {
+      const order = [...state.laneOrder];
+      // Ensure all lanes are in the order
+      for (const lane of lanes) {
+        if (!order.includes(lane.id)) order.push(lane.id);
+      }
+      const fromIdx = order.indexOf(fromId);
+      const toIdx = order.indexOf(toId);
+      if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+      order.splice(fromIdx, 1);
+      order.splice(toIdx, 0, fromId);
+      state.setLaneOrder(order);
+    },
+    [state.laneOrder, state.setLaneOrder, lanes],
+  );
+
+  // Move a card between lanes (infrastructure – cards opt-in via movable prop)
+  const handleMoveCard = useCallback(
+    (cardId: string, fromLaneId: string, toLaneId: string) => {
+      console.log(`Move card "${cardId}" from "${fromLaneId}" to "${toLaneId}"`);
+      // Future: persist card-to-lane mapping in state and re-render lanes
+    },
+    [],
+  );
+
   return (
     <div
       data-file-drop-target
-      className="flex flex-col h-screen bg-[var(--bg-2)] text-text-1 select-none"
+      className="flex flex-col h-screen canvas-bg text-text-1 select-none"
       onDragOver={(e) => e.preventDefault()}
       onDrop={state.handleDrop}
     >
@@ -67,6 +94,8 @@ function AppContent() {
         onToggleCollapse={state.toggleLaneCollapsed}
         laneWidth={state.laneWidth}
         onLaneWidthChange={state.setLaneWidth}
+        onReorderLanes={handleReorderLanes}
+        onMoveCard={handleMoveCard}
         version={state.constants.version}
         isConverting={state.isConverting}
         progress={state.progress}

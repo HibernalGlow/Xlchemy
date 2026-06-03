@@ -315,15 +315,22 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Canvas Layout (GitButler-faithful)
+   Canvas Layout – Floating lanes on dot-grid background
    ═══════════════════════════════════════════════════════════ */
+
+/* ─── Dot Grid Background ─── */
+.canvas-bg {
+  background-color: var(--bg-3);
+  background-image: radial-gradient(circle, var(--border-2) 0.8px, transparent 0.8px);
+  background-size: 20px 20px;
+}
 
 /* ─── Scroll Container ─── */
 .canvas-container {
   display: flex;
   flex: 1;
   height: 100%;
-  margin: 0 -1px; /* bleed into edge for first-child border-left */
+  padding: 10px 14px;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -332,30 +339,56 @@
   display: flex;
   position: relative;
   height: 100%;
+  gap: 8px;
 }
 
-/* ─── Lane (StackView) ─── */
+/* ─── Lane (floating panel) ─── */
 .lane {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  width: fit-content;
   height: 100%;
   position: relative;
+  background-color: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-.lane:first-child {
-  border-left: 1px solid var(--border-2);
+.lane:hover {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
 }
 
-/* Stack view inner wrapper (GitButler .stack-view) */
+.lane--dragging {
+  opacity: 0.4;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.lane--drag-over {
+  box-shadow: 0 0 0 2px var(--fill-pop-bg);
+}
+
+/* Lane resizer handle (inside floating panel) */
+.lane > [style*="col-resize"] {
+  right: 0 !important;
+  width: 6px !important;
+  z-index: var(--z-floating) !important;
+}
+
+.lane > [style*="col-resize"]:hover {
+  background: var(--fill-pop-bg);
+  opacity: 0.3;
+  border-radius: 3px;
+}
+
+/* Stack view inner wrapper */
 .stack-view {
   display: flex;
   position: relative;
-  flex-shrink: 0;
   flex-direction: column;
-  min-height: 100%;
-  padding: 0 12px;
+  min-height: 0;
+  height: 100%;
 }
 
 /* Stack content: vertically stacked Drawers */
@@ -457,7 +490,6 @@
   width: 100%;
   max-height: 100%;
   overflow: hidden;
-  background-color: var(--bg-1);
 }
 
 .drawer--border {
@@ -475,6 +507,86 @@
 .drawer--collapsed {
   max-height: none;
   margin-bottom: -1px;
+}
+
+.drawer--expanded {
+  /* visual indicator only – detail panel is absolute */
+}
+
+.drawer--dragging {
+  opacity: 0.5;
+}
+
+/* Card move grip handle */
+.card-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  border-radius: 3px;
+  color: var(--text-2);
+  cursor: grab;
+  flex-shrink: 0;
+  transition: color 0.1s ease, background 0.1s ease;
+}
+
+.card-grip:hover {
+  color: var(--text-1);
+  background: var(--bg-3);
+}
+
+/* Card detail panel (side expansion – drops down within lane) */
+.drawer-detail {
+  display: none;
+  position: absolute;
+  top: 42px; /* below the header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-2);
+  z-index: var(--z-lifted);
+  border-top: 1px solid var(--border-2);
+  animation: slide-down 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer--expanded .drawer-detail {
+  display: block;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.drawer-detail__inner {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.drawer-detail__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-2);
+  z-index: var(--z-lifted);
+}
+
+.drawer-detail__close:hover {
+  color: var(--text-1);
+  background: var(--bg-3);
 }
 
 /* PreviewHeader (GitButler style: 42px) */
@@ -561,16 +673,25 @@
   align-items: center;
   flex-shrink: 0;
   height: 100%;
-  padding: 2px 9px 18px;
-  border-right: 1px solid var(--border-2);
+  padding: 8px 10px 18px;
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
   background: linear-gradient(
-    90deg,
-    var(--bg-2) 0%,
-    var(--bg-2) 70%,
-    var(--bg-3) 100%
+    180deg,
+    var(--bg-1) 0%,
+    var(--bg-2) 100%
   );
   color: var(--text-2);
   cursor: grab;
+  transition: box-shadow 0.2s ease;
+}
+
+.folded-lane:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.folded-lane--dragging {
+  opacity: 0.4;
 }
 
 .folded-lane__toggle {

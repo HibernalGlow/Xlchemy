@@ -1,26 +1,40 @@
 import * as React from 'react';
 import { GripVertical } from 'lucide-react';
+import { cn } from '~/utils/cn';
 
 interface CollapsedLaneProps {
+  id?: string;
   title: string;
   icon?: React.ReactNode;
   onExpand: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  isDragging?: boolean;
 }
 
 /**
- * GitButler-style collapsed lane:
- * - Gradient background (bg-2 → bg-3)
- * - Vertical text (writing-mode: vertical-lr)
- * - Drag handle dots at top
- * - Custom collapse SVG button
+ * Collapsed/folded lane – vertical floating panel.
+ * Shows a narrow strip with the lane title written vertically.
  */
 export const CollapsedLane: React.FC<CollapsedLaneProps> = ({
+  id,
   title,
   icon,
   onExpand,
+  draggable,
+  onDragStart,
+  onDragEnd,
+  isDragging,
 }) => {
   return (
-    <div className="folded-lane">
+    <div
+      className={cn('folded-lane', isDragging && 'folded-lane--dragging')}
+      data-lane-id={id || ''}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+    >
       {/* Collapse button (expand toggle) */}
       <button
         type="button"

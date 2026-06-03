@@ -31,6 +31,43 @@ export function InputLane() {
       {/* Files Card */}
       <LaneCard
         id="input-files"
+        laneId="input"
+        expandable
+        detail={
+          <div className="flex flex-col gap-3 text-xs text-text-2">
+            <h3 className="text-sm font-semibold text-text-1">{t('Files Overview')}</h3>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between"><span>{t('Total files:')}</span><span className="text-text-1 font-medium">{fileItems.length}</span></div>
+              <div className="flex justify-between">
+                <span>{t('Total size:')}</span>
+                <span className="text-text-1 font-medium">
+                  {fileItems.reduce((s: number, f: any) => s + (f.size || 0), 0) > 1048576
+                    ? `${(fileItems.reduce((s: number, f: any) => s + (f.size || 0), 0) / 1048576).toFixed(1)} MB`
+                    : `${(fileItems.reduce((s: number, f: any) => s + (f.size || 0), 0) / 1024).toFixed(0)} KB`}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t('Formats:')}</span>
+                <span className="text-text-1 font-medium">
+                  {Array.from(new Set(fileItems.map((f: any) => f.ext))).join(', ') || '—'}
+                </span>
+              </div>
+            </div>
+            {fileItems.length > 0 && (
+              <div className="mt-2">
+                <h4 className="text-[11px] font-medium text-text-1 mb-1">{t('Recent files')}</h4>
+                <div className="flex flex-col gap-1">
+                  {fileItems.slice(-5).reverse().map((f: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 px-2 py-1 rounded bg-[var(--bg-1)]">
+                      <span className="text-text-1 truncate flex-1">{f.name}</span>
+                      <span className="text-text-2 text-[10px]">.{f.ext}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        }
         header={
           <span className="flex items-center gap-2">
             {t('Files')}
@@ -85,6 +122,8 @@ export function InputLane() {
       {/* Filter Card */}
       <LaneCard
         id="input-filter"
+        laneId="input"
+        movable
         header={t('Filter')}
         defaultCollapsed={allowedInput.length === 0}
       >

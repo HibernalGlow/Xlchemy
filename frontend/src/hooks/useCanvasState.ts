@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Canvas-level state: manages the horizontal scroll container,
- * lane visibility tracking, and horizontal panning.
+ * lane visibility tracking, horizontal panning, and drag-over tracking.
  */
 export function useCanvasState() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [visibleLanes, setVisibleLanes] = useState<string[]>([]);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   // Check if content overflows the container
   const updateOverflow = useCallback(() => {
@@ -75,5 +76,7 @@ export function useCanvasState() {
     isOverflowing,
     visibleLanes,
     scrollToLane,
+    dragOverId,
+    setDragOverId,
   };
 }

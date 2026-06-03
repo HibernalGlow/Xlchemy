@@ -31,7 +31,20 @@ export function OutputLane() {
   return (
     <>
       {/* Format Card */}
-      <LaneCard id="output-format" header={t('Format')}>
+      <LaneCard id="output-format" laneId="output" header={t('Format')} expandable detail={
+        <div className="flex flex-col gap-2.5 text-xs text-text-2">
+          <h3 className="text-sm font-semibold text-text-1">{t('Current Output Settings')}</h3>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between"><span>{t('Format:')}</span><span className="text-text-1 font-medium">{fmt || '—'}</span></div>
+            <div className="flex justify-between"><span>{t('Lossless:')}</span><span className="text-text-1 font-medium">{outputSettings.lossless ? t('Yes') : t('No')}</span></div>
+            {!outputSettings.lossless && <div className="flex justify-between"><span>{t('Quality:')}</span><span className="text-text-1 font-medium">{outputSettings.quality || 80}</span></div>}
+            {supportsEffort && <div className="flex justify-between"><span>{t('Effort:')}</span><span className="text-text-1 font-medium">{outputSettings.effort || 5}</span></div>}
+            <div className="flex justify-between"><span>{t('Threads:')}</span><span className="text-text-1 font-medium">{outputSettings.threads || cpuCount}</span></div>
+            <div className="flex justify-between"><span>{t('If file exists:')}</span><span className="text-text-1 font-medium">{outputSettings.if_file_exists || 'Replace'}</span></div>
+            <div className="flex justify-between"><span>{t('Save to:')}</span><span className="text-text-1 font-medium">{outputSettings.custom_output_dir ? t('Custom folder') : t('Next to source')}</span></div>
+          </div>
+        </div>
+      }>
         <div className="flex flex-col gap-2.5">
           <div className="flex gap-2 items-center">
             <span className="text-[11px] text-text-2 shrink-0">{t('Format:')}</span>
@@ -122,7 +135,7 @@ export function OutputLane() {
       </LaneCard>
 
       {/* Conversion Settings Card */}
-      <LaneCard id="output-conversion" header={t('Conversion Settings')}>
+      <LaneCard id="output-conversion" laneId="output" movable header={t('Conversion Settings')}>
         <div className="flex flex-col gap-2.5">
           <NumberInput label={`${t('Threads:')}`} value={outputSettings.threads || cpuCount} onChange={(v) => updateOutput('threads', v)} min={1} max={cpuCount} />
           <div className="flex gap-2 items-center">
@@ -138,7 +151,7 @@ export function OutputLane() {
       </LaneCard>
 
       {/* Save To Card */}
-      <LaneCard id="output-saveto" header={t('Save To')}>
+      <LaneCard id="output-saveto" laneId="output" header={t('Save To')}>
         <div className="flex flex-col gap-2.5">
           <div className="flex gap-3 items-center">
             <label className="flex items-center gap-1.5 text-[11px] text-text-1 cursor-pointer">

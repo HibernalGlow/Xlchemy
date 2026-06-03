@@ -1,10 +1,6 @@
 import * as React from 'react';
 import {
-  FileInput,
   FileOutput,
-  SlidersHorizontal,
-  Settings,
-  Info,
 } from 'lucide-react';
 import { HeaderBar } from '~/layout/HeaderBar';
 import { BottomBar } from '~/layout/BottomBar';
@@ -12,7 +8,6 @@ import { LaneContainer } from './LaneContainer';
 import { Lane } from './Lane';
 import { CustomScrollbar } from './CustomScrollbar';
 import { useCanvasState } from '~/hooks/useCanvasState';
-import { cn } from '~/utils/cn';
 
 export interface LaneConfig {
   id: string;
@@ -27,6 +22,8 @@ interface CanvasChromeProps {
   onToggleCollapse: (id: string) => void;
   laneWidth: number;
   onLaneWidthChange: (w: number) => void;
+  onReorderLanes?: (fromId: string, toId: string) => void;
+  onMoveCard?: (cardId: string, fromLaneId: string, toLaneId: string) => void;
   version?: string;
   isConverting: boolean;
   progress: { completed: number; total: number; line1: string; line2: string };
@@ -45,6 +42,8 @@ export const CanvasChrome: React.FC<CanvasChromeProps> = ({
   onToggleCollapse,
   laneWidth,
   onLaneWidthChange,
+  onReorderLanes,
+  onMoveCard,
   version,
   isConverting,
   progress,
@@ -56,12 +55,12 @@ export const CanvasChrome: React.FC<CanvasChromeProps> = ({
   visibleLanes: externalVisibleLanes,
   onScrollToLane,
 }) => {
-  const { canvasRef, visibleLanes, scrollToLane } = useCanvasState();
+  const { canvasRef, visibleLanes, scrollToLane, dragOverId, setDragOverId } = useCanvasState();
   const activeVisible = externalVisibleLanes ?? visibleLanes;
   const handleScrollToLane = onScrollToLane ?? scrollToLane;
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--bg-2)] text-text-1 select-none">
+    <div className="flex flex-col h-screen canvas-bg text-text-1 select-none">
       <HeaderBar
         version={version}
         laneTabs={lanes.map((l) => ({
@@ -73,7 +72,12 @@ export const CanvasChrome: React.FC<CanvasChromeProps> = ({
         onLaneSelect={handleScrollToLane}
       />
 
-      <LaneContainer canvasRef={canvasRef}>
+      <LaneContainer
+        canvasRef={canvasRef}
+        onReorderLanes={onReorderLanes}
+        onMoveCard={onMoveCard}
+        setDragOverId={setDragOverId}
+      >
         {lanes.map((lane, i) => (
           <Lane
             key={lane.id}
@@ -85,6 +89,7 @@ export const CanvasChrome: React.FC<CanvasChromeProps> = ({
             width={laneWidth}
             showBorder={i < lanes.length - 1}
             onWidthChange={onLaneWidthChange}
+            dragOverId={dragOverId}
           >
             {lane.content}
           </Lane>
