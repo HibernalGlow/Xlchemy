@@ -69,6 +69,8 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
   const [settingsTab, setSettingsTab] = useState(0);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importSettingsJson, setImportSettingsJson] = useState('');
 
   const navItems: SidebarNavItem[] = useMemo(() => [
     { label: t('Input'), icon: FileInput },
@@ -713,17 +715,7 @@ export default function App() {
                   }}>
                     {t('Export')}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    try {
-                      const text = prompt('Paste settings JSON:');
-                      if (text) {
-                        const data = JSON.parse(text);
-                        if (data.output) setOutputSettings(data.output);
-                        if (data.modify) setModifySettings(data.modify);
-                        if (data.app) setAppSettings(data.app);
-                      }
-                    } catch {}
-                  }}>
+                  <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
                     {t('Import')}
                   </Button>
                 </div>
@@ -1063,6 +1055,42 @@ export default function App() {
               }}
             >
               {t('Close')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Settings Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t('Import')} {t('Settings')}</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={importSettingsJson}
+            onChange={(e) => setImportSettingsJson(e.target.value)}
+            placeholder="Paste settings JSON here..."
+            className="min-h-[200px] text-xs font-mono"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              onClick={() => {
+                try {
+                  const data = JSON.parse(importSettingsJson);
+                  if (data.output) setOutputSettings(data.output);
+                  if (data.modify) setModifySettings(data.modify);
+                  if (data.app) setAppSettings(data.app);
+                  setImportSettingsJson('');
+                  setShowImportDialog(false);
+                } catch (e) {
+                  console.error('Import failed:', e);
+                }
+              }}
+            >
+              {t('Import')}
             </Button>
           </DialogFooter>
         </DialogContent>
