@@ -514,15 +514,6 @@ export default function App() {
                   </tbody>
                 </table>
               </Card>
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={startConversion}
-                  disabled={isConverting || fileItems.length === 0}
-                >
-                  {t('Convert')}
-                </Button>
-              </div>
             </div>
           )}
 
@@ -1101,37 +1092,45 @@ export default function App() {
       </main>
       </div>
 
-      {/* Bottom Bar - Progress & File List */}
-      {(isConverting || fileItems.length > 0) && (
-        <div className="border-t border-border bg-muted/30 px-4 py-2">
-          <div className="flex items-center justify-between gap-4">
-            {/* Progress section */}
-            {isConverting && (
-              <div className="flex items-center gap-3 flex-1">
-                <Progress value={progressPercent} className="h-2 flex-1 max-w-[200px]" />
-                <span className="text-xs text-muted-foreground">
-                  {progress.completed} / {progress.total}
-                </span>
-                <span className="text-xs truncate max-w-[200px]">{progress.line1}</span>
-                <Button variant="outline" size="sm" onClick={cancelConversion}>
-                  {t('Cancel')}
-                </Button>
-              </div>
-            )}
-            {/* File count */}
-            {!isConverting && fileItems.length > 0 && (
-              <div className="flex items-center gap-2">
+      {/* Bottom Bar - Always visible with Convert button */}
+      <div className="border-t border-border bg-muted/30 px-4 py-2">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left side - Tab-specific buttons / Progress */}
+          {isConverting ? (
+            <div className="flex items-center gap-3 flex-1">
+              <Progress value={progressPercent} className="h-2 flex-1 max-w-[200px]" />
+              <span className="text-xs text-muted-foreground">
+                {progress.completed} / {progress.total}
+              </span>
+              <span className="text-xs truncate max-w-[200px]">{progress.line1}</span>
+              <Button variant="outline" size="sm" onClick={cancelConversion}>
+                {t('Cancel')}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {/* File count when not converting */}
+              {fileItems.length > 0 && (
                 <Badge variant="secondary">{fileItems.length} {t('file(s)')}</Badge>
-                {exceptions.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={() => setShowExceptions(true)}>
-                    {t('Exceptions')} ({exceptions.length})
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+              {/* Exceptions button */}
+              {exceptions.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => setShowExceptions(true)}>
+                  {t('Exceptions')} ({exceptions.length})
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Right side - Convert button */}
+          <Button
+            onClick={startConversion}
+            disabled={isConverting || fileItems.length === 0}
+          >
+            {isConverting ? t('Converting...') : t('Convert')}
+          </Button>
         </div>
-      )}
+      </div>
 
       {/* Exception Dialog */}
       <Dialog open={showExceptions} onOpenChange={setShowExceptions}>

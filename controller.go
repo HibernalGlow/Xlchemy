@@ -307,6 +307,11 @@ func convertJXL(ctx context.Context, fi FileItem, dstPath string, output OutputS
 
 // convertAVIF converts an image to AVIF format.
 func convertAVIF(ctx context.Context, fi FileItem, dstPath string, output OutputSettings, modify ModifySettings, settings AppSettings, threads int) *conversionError {
+	// Handle slimg encoder separately (uses native library, not avifenc)
+	if settings.AvifEncoder == "slimg" {
+		return convertAVIFWithSlimg(ctx, fi.AbsPath, dstPath, output.Quality)
+	}
+
 	args := []string{
 		fmt.Sprintf("-q %d", output.Quality),
 		fmt.Sprintf("-s %d", output.Effort),

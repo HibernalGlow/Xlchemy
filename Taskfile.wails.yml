@@ -5,6 +5,9 @@ vars:
   BIN_DIR: "bin"
   PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "npm"}}'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  SLIMG_SRC: "ref/slimg"
+  LIBJXL_PATH: "D:/scoop/apps/libjxl/current"
+  PREBUILT_DAV1D: "prebuilt/dav1d"
 
 includes:
   common: ./build/Taskfile.yml
@@ -34,6 +37,29 @@ tasks:
     summary: Runs the application in development mode
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+
+  # slimg 编译任务
+  build:slimg:
+    summary: Builds slimg DLL for AVIF/JXL encoding
+    cmds:
+      - |
+        $env:PKG_CONFIG_PATH = "{{.LIBJXL_PATH}}/lib/pkgconfig;{{.PREBUILT_DAV1D}}/lib/pkgconfig"
+        cargo build --release -p slimg-cffi --manifest-path {{.SLIMG_SRC}}/Cargo.toml
+      - cp {{.SLIMG_SRC}}/target/release/slimg_cffi.dll ./slimg_cffi.dll
+      - cp {{.PREBUILT_DAV1D}}/bin/dav1d.dll ./dav1d.dll
+    sources:
+      - "{{.SLIMG_SRC}}/crates/slimg-cffi/src/**/*.rs"
+    generates:
+      - "{{.SLIMG_SRC}}/target/release/slimg_cffi.dll"
+      - "./slimg_cffi.dll"
+      - "./dav1d.dll"
+
+  build:all:
+    summary: Builds slimg DLL and Go application
+    deps:
+      - build:slimg
+    cmds:
+      - go build -o xlchemy.exe .
 
   setup:docker:
     summary: Builds Docker image for cross-compilation (~800MB download)
