@@ -845,6 +845,10 @@ func runExifTool(srcPath string, dstPath string, mode string, exifToolArgs map[s
 			args[i] = srcPath
 		case "$dst":
 			args[i] = dstPath
+		case "\"$src\"":
+			args[i] = srcPath
+		case "\"$dst\"":
+			args[i] = dstPath
 		}
 	}
 

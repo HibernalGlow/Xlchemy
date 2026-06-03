@@ -124,6 +124,19 @@ export default function App() {
         const settingsStr = await AppService.GetSettings();
         const settings = JSON.parse(settingsStr);
         setOutputSettings(settings.output || {});
+        // Fix: map Chinese metadata values to English
+        const metadataMap: Record<string, string> = {
+          'Encoder - 清除': 'Encoder - Wipe',
+          'Encoder - 保留': 'Encoder - Preserve',
+          'ExifTool - 清除': 'ExifTool - Wipe',
+          'ExifTool - 保留': 'ExifTool - Preserve',
+          'ExifTool - 不安全清除': 'ExifTool - Unsafe Wipe',
+          'ExifTool - 自定义': 'ExifTool - Custom',
+        };
+        if (settings.modify?.misc?.keep_metadata) {
+          const mapped = metadataMap[settings.modify.misc.keep_metadata];
+          if (mapped) settings.modify.misc.keep_metadata = mapped;
+        }
         setModifySettings(settings.modify || {});
         setAppSettings(settings.app || {});
 
@@ -1034,7 +1047,7 @@ export default function App() {
                         <label className="text-sm">{t('RAM optimizer:')}</label>
                         <Select value={appSettings.ram_optimizer || 'Dynamic'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, ram_optimizer: v }))}>
                           <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                          <SelectContent>{[t('Dynamic'), t('Static'), t('Disabled')].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                          <SelectContent>{['Dynamic', 'Static', 'Disabled'].map((opt) => <SelectItem key={opt} value={opt}>{t(opt)}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       {appSettings.ram_optimizer === 'Static' && (
@@ -1075,7 +1088,7 @@ export default function App() {
                         <label className="text-sm">{t('Processing order:')}</label>
                         <Select value={appSettings.processing_order || 'Original'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, processing_order: v }))}>
                           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-                          <SelectContent>{[t('Original'), t('Random'), t('Sequential'), t('Path Ascending'), t('Path Descending'), t('Size Ascending'), t('Size Descending')].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                          <SelectContent>{['Original', 'Random', 'Sequential', 'Path Ascending', 'Path Descending', 'Size Ascending', 'Size Descending'].map((opt) => <SelectItem key={opt} value={opt}>{t(opt)}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div className="flex gap-2 mt-2">
