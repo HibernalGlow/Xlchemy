@@ -596,6 +596,19 @@ export default function App() {
                       />
                     </div>
                   )}
+                {/* JXL Lossy Modular option */}
+                {outputSettings.format === 'JPEG XL' && !outputSettings.lossless && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Checkbox
+                      id="jxl_modular"
+                      checked={!!outputSettings.jxl_modular}
+                      onCheckedChange={(v) => updateOutput('jxl_modular', !!v)}
+                    />
+                    <label htmlFor="jxl_modular" className="text-sm cursor-pointer">
+                      {t('JXL lossy modular')}
+                    </label>
+                  </div>
+                )}
               </Card>
 
               <Card className="p-4">
@@ -790,6 +803,25 @@ export default function App() {
                         />
                       </div>
                     )}
+                    {/* Resample filter selection */}
+                    <div className="flex gap-3 items-center mt-2">
+                      <label className="text-sm">{t('Resample:')}</label>
+                      <Select
+                        value={modifySettings.downscaling?.resample || 'Default'}
+                        onValueChange={(v) => updateModify(['downscaling', 'resample'], v)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Default', 'Nearest', 'Bilinear', 'Bicubic', 'Mitchell', 'Lanczos', 'Catrom', 'Spline'].map((opt) => (
+                            <SelectItem key={opt} value={opt}>
+                              {t(opt)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 )}
               </Card>

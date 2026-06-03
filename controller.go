@@ -24,8 +24,16 @@ func runConversion(ctx context.Context, items []FileItem, output OutputSettings,
 	var completed atomic.Int32
 	startTime := time.Now()
 
+	// Initialize RAM Optimizer
+	GlobalRAMOptimizer.Initialize(settings.RAMOptimizer, settings.RAMOptimizerRules, threadCount)
+
 	// Create a semaphore to limit concurrent workers
-	sem := make(chan struct{}, threadCount)
+	// If RAM Optimizer is enabled, start with max possible, it will adjust dynamically
+	maxConcurrent := threadCount
+	if GlobalRAMOptimizer.Enabled {
+		maxConcurrent = threadCount // Will be adjusted per-file
+	}
+	sem := make(chan struct{}, maxConcurrent)
 	var wg sync.WaitGroup
 
 	// Emit initial progress
@@ -54,8 +62,21 @@ func runConversion(ctx context.Context, items []FileItem, output OutputSettings,
 				return
 			}
 
+			// Adjust threads per worker based on RAM Optimizer
+			adjustedThreads := threadCount
+			if GlobalRAMOptimizer.Enabled {
+				adjustedThreads = GlobalRAMOptimizer.Run(
+					fi.AbsPath,
+					output.Format,
+					settings.AvifEncoder,
+					output.Effort,
+					settings.JXLLossyModular,
+					output.Lossless,
+				)
+			}
+
 			// Run the worker for this file
-			srcSize, dstSize, skipped, exc := runWorker(ctx, idx, fi, output, modify, settings, threadCount)
+			srcSize, dstSize, skipped, exc := runWorker(ctx, idx, fi, output, modify, settings, adjustedThreads)
 
 			if exc != nil {
 				App.Event.Emit("conversion:exception", ExceptionEvent{
@@ -102,6 +123,33 @@ func runConversion(ctx context.Context, items []FileItem, output OutputSettings,
 	}
 
 	wg.Wait()
+
+	// Play sound on finish if enabled
+	if settings.PlaySoundOnFinish && !GlobalTaskStatus.WasCanceled() {
+		playCompletionSound(int(settings.PlaySoundOnFinishVol))
+	}
+}
+
+// playCompletionSound plays a sound when conversion finishes.
+func playCompletionSound(volume int) {
+	if runtime.GOOS == "windows" {
+		// Use PowerShell to play system sound
+		volPercent := volume
+		if volPercent < 0 {
+			volPercent = 0
+		} else if volPercent > 100 {
+			volPercent = 100
+		}
+		// Play a simple beep using PowerShell
+		psCmd := fmt.Sprintf("[console]::Beep(800, 200)")
+		exec.Command("powershell", "-Command", psCmd).Run()
+	} else if runtime.GOOS == "darwin" {
+		// Use afplay on macOS
+		exec.Command("afplay", "/System/Library/Sounds/Ping.aiff").Run()
+	} else {
+		// Use beep command on Linux if available
+		exec.Command("beep").Run()
+	}
 }
 
 type conversionError struct {
@@ -325,6 +373,11 @@ func convertAVIF(ctx context.Context, fi FileItem, dstPath string, output Output
 		fmt.Sprintf("-q %d", output.Quality),
 		fmt.Sprintf("-s %d", output.Effort),
 		fmt.Sprintf("-j %d", threads),
+	}
+
+	// Bit depth
+	if settings.AvifBitDepth != "Auto" {
+		args = append(args, fmt.Sprintf("--bitdepth=%s", settings.AvifBitDepth))
 	}
 
 	switch settings.AvifEncoder {
