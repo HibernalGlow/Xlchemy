@@ -32,3 +32,4 @@ ui_web/node_modules/*
 /xlchemy.exe
 /frontend/node_modules/*
 frontend/dist/*
+native/slimg_cffi.lib
