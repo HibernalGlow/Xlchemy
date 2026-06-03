@@ -220,6 +220,22 @@ export default function App() {
     }
   }, [addFileItems]);
 
+  const handleAddFolder = useCallback(async () => {
+    try {
+      const selected = await Dialogs.OpenFile({
+        CanChooseDirectories: true,
+        CanChooseFiles: false,
+        Title: 'Select folder',
+      });
+      if (!selected) return;
+      const result = await AppService.ScanDirectory(selected as string);
+      setActiveTab(0);
+      addFileItems(JSON.parse(result));
+    } catch (e) {
+      console.error('AddFolder error:', e);
+    }
+  }, [addFileItems]);
+
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     const files = e.dataTransfer?.files;
@@ -369,6 +385,7 @@ export default function App() {
 
   return (
     <div
+      data-file-drop-target
       className="flex flex-col h-screen bg-background text-foreground select-none"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
@@ -414,6 +431,9 @@ export default function App() {
                 <div className="flex gap-2 items-center">
                   <Button variant="outline" size="sm" onClick={handleAddFiles}>
                     {t('Add Files')}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleAddFolder}>
+                    {t('Add Folder')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={clearFiles}>
                     {t('Clear')}
@@ -617,9 +637,9 @@ export default function App() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[t('Replace'), t('Skip'), t('Rename')].map((opt) => (
+                      {['Replace', 'Skip', 'Rename'].map((opt) => (
                         <SelectItem key={opt} value={opt}>
-                          {opt}
+                          {t(opt)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -719,9 +739,9 @@ export default function App() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {[t('Resolution'), t('Percent'), t('File Size'), t('Shortest Side'), t('Longest Side'), t('Megapixels')].map((opt) => (
+                          {['Resolution', 'Percent', 'File Size', 'Shortest Side', 'Longest Side', 'Megapixels'].map((opt) => (
                             <SelectItem key={opt} value={opt}>
-                              {opt}
+                              {t(opt)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -795,9 +815,9 @@ export default function App() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[t('Encoder - Wipe'), t('Encoder - Preserve'), t('ExifTool - Wipe'), t('ExifTool - Preserve'), t('ExifTool - Unsafe Wipe'), t('ExifTool - Custom')].map((opt) => (
+                      {['Encoder - Wipe', 'Encoder - Preserve', 'ExifTool - Wipe', 'ExifTool - Preserve', 'ExifTool - Unsafe Wipe', 'ExifTool - Custom'].map((opt) => (
                         <SelectItem key={opt} value={opt}>
-                          {opt}
+                          {t(opt)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -940,7 +960,7 @@ export default function App() {
                         <label className="text-sm">{t('AVIF bit depth:')}</label>
                         <Select value={appSettings.avif_bit_depth || 'Auto'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, avif_bit_depth: v }))}>
                           <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                          <SelectContent>{[t('Auto'), '12', '10', '8'].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                          <SelectContent>{['Auto', '12', '10', '8'].map((opt) => <SelectItem key={opt} value={opt}>{opt === 'Auto' ? t(opt) : opt}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       {appSettings.avif_encoder === 'AOM AV1' && (

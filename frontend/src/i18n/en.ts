@@ -8,6 +8,7 @@ export const en = {
 
   // Input page
   'Add Files': 'Add Files',
+  'Add Folder': 'Add Folder',
   'Clear': 'Clear',
   'Filter': 'Filter',
   'file(s)': 'file(s)',

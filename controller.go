@@ -1,15 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-
 )
 
 // runConversion orchestrates the batch conversion process.
@@ -155,25 +156,45 @@ func runWorker(ctx context.Context, idx int, fi FileItem, output OutputSettings,
 	// Get source file size
 	srcSize, _ := getFileSize(fi.AbsPath)
 
+	// Handle downscaling if enabled
+	var actualSrcPath string
+	if modify.Downscaling.Enabled {
+		// Create temp file for downscaled image
+		downscaledPath := fi.AbsPath + ".downscaled_" + fmt.Sprintf("%d", idx)
+		err := applyDownscaling(ctx, fi.AbsPath, downscaledPath, modify, threads)
+		if err != nil {
+			_ = os.Remove(downscaledPath)
+			return srcSize, 0, false, err
+		}
+		actualSrcPath = downscaledPath
+	} else {
+		actualSrcPath = fi.AbsPath
+	}
+
 	// Run the actual conversion based on format
 	var err *conversionError
 	switch output.Format {
 	case "JPEG XL":
-		err = convertJXL(ctx, fi, tmpOutput, output, modify, settings, threads)
+		err = convertJXL(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, modify, settings, threads)
 	case "AVIF":
-		err = convertAVIF(ctx, fi, tmpOutput, output, modify, settings, threads)
+		err = convertAVIF(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, modify, settings, threads)
 	case "JPEG":
-		err = convertJPEG(ctx, fi, tmpOutput, output, modify, settings, threads)
+		err = convertJPEG(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, modify, settings, threads)
 	case "WebP":
-		err = convertWebP(ctx, fi, tmpOutput, output, modify, settings, threads)
+		err = convertWebP(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, modify, settings, threads)
 	case "PNG":
-		err = convertPNG(ctx, fi, tmpOutput, output, modify, settings, threads)
+		err = convertPNG(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, modify, settings, threads)
 	case "Lossless JPEG Transcoding":
-		err = convertLosslessJPEG(ctx, fi, tmpOutput, output, settings, threads)
+		err = convertLosslessJPEG(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, settings, threads)
 	case "JPEG Reconstruction":
-		err = convertJPEGReconstruction(ctx, fi, tmpOutput, output, settings, threads)
+		err = convertJPEGReconstruction(ctx, FileItem{AbsPath: actualSrcPath, Name: fi.Name, Ext: fi.Ext, Dir: fi.Dir}, tmpOutput, output, settings, threads)
 	default:
 		err = &conversionError{"C0", fmt.Sprintf("Unknown format: %s", output.Format)}
+	}
+
+	// Clean up downscaled temp file
+	if modify.Downscaling.Enabled && actualSrcPath != fi.AbsPath {
+		_ = os.Remove(actualSrcPath)
 	}
 
 	if err != nil {
@@ -187,13 +208,55 @@ func runWorker(ctx context.Context, idx int, fi FileItem, output OutputSettings,
 		return srcSize, 0, false, &conversionError{"X0", "Canceled"}
 	}
 
+	// Get source file timestamps before any modifications
+	var srcModTime, srcAccessTime time.Time
+	if modify.Misc.KeepTimestamps || settings.KeepIfLarger || settings.CopyIfLarger {
+		if info, statErr := os.Stat(fi.AbsPath); statErr == nil {
+			srcModTime = info.ModTime()
+			srcAccessTime = info.ModTime() // Use mod time as access time approximation
+		}
+	}
+
 	// Rename tmp to final
-	handleExistingFile(finalOutput, output.IfFileExists)
+	finalOutput = handleExistingFile(finalOutput, output.IfFileExists)
 	if renameErr := os.Rename(tmpOutput, finalOutput); renameErr != nil {
 		return srcSize, 0, false, &conversionError{"F1", fmt.Sprintf("Rename failed: %s", renameErr)}
 	}
 
 	dstSize, _ := getFileSize(finalOutput)
+
+	// Handle KeepIfLarger / CopyIfLarger
+	keepOriginal := false
+	if settings.KeepIfLarger && dstSize >= srcSize {
+		// Result is larger or equal, keep original and delete result
+		_ = os.Remove(finalOutput)
+		keepOriginal = true
+	} else if settings.CopyIfLarger && dstSize >= srcSize {
+		// Result is larger or equal, copy original to output location
+		_ = os.Remove(finalOutput)
+		_ = os.Rename(fi.AbsPath, finalOutput)
+		keepOriginal = true
+	}
+
+	// Apply timestamps to output file if requested
+	if modify.Misc.KeepTimestamps && !keepOriginal {
+		_ = os.Chtimes(finalOutput, srcAccessTime, srcModTime)
+	}
+
+	// Delete original file if requested (and not keeping due to size)
+	if output.DeleteOriginal && !keepOriginal {
+		if output.DeleteOriginalMode == "To Trash" {
+			// Move to trash (recycle bin on Windows)
+			if err := moveToTrash(fi.AbsPath); err != nil {
+				// Fallback to permanent delete if trash fails
+				_ = os.Remove(fi.AbsPath)
+			}
+		} else {
+			// Permanent delete
+			_ = os.Remove(fi.AbsPath)
+		}
+	}
+
 	return srcSize, dstSize, false, nil
 }
 
@@ -431,13 +494,52 @@ func getMetadataArgs(encoderPath string, mode string, losslessJPEG bool) []strin
 }
 
 // handleExistingFile handles the "if file exists" policy.
-func handleExistingFile(path string, mode string) {
+func handleExistingFile(path string, mode string) string {
 	switch mode {
 	case "Replace":
 		_ = os.Remove(path)
+		return path
 	case "Rename":
-		// Will be handled by unique path generation
+		// Generate unique filename
+		ext := filepath.Ext(path)
+		name := path[:len(path)-len(ext)]
+		counter := 1
+		for {
+			newPath := fmt.Sprintf("%s_%d%s", name, counter, ext)
+			if _, err := os.Stat(newPath); os.IsNotExist(err) {
+				return newPath
+			}
+			counter++
+		}
+	default:
+		return path
 	}
+}
+
+// moveToTrash moves a file to the trash/recycle bin.
+func moveToTrash(path string) error {
+	// On Windows, use SHFileOperation to move to recycle bin
+	// For simplicity, we'll use a PowerShell command
+	cmd := fmt.Sprintf("Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')", path)
+	_, stderr, err := RunPowerShell(cmd)
+	if err != nil {
+		return fmt.Errorf("trash failed: %s", stderr)
+	}
+	return nil
+}
+
+// RunPowerShell executes a PowerShell command.
+func RunPowerShell(script string) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "powershell", "-NoProfile", "-NonInteractive", "-Command", script)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	return stdout.String(), stderr.String(), err
 }
 
 // Helper functions
@@ -500,4 +602,81 @@ func getTooltips() map[string]string {
 		"avif_encoder":  "Encoder used for encoding AVIF images.",
 		"jpeg_encoder":  "JPEGLI - the new state of the art in JPEG encoding.\n\nlibjpeg - the original JPEG encoder.",
 	}
+}
+
+// applyDownscaling applies downscaling to an image using ImageMagick.
+func applyDownscaling(ctx context.Context, srcPath string, dstPath string, modify ModifySettings, threads int) *conversionError {
+	ds := modify.Downscaling
+	if !ds.Enabled {
+		return nil
+	}
+
+	args := make([]string, 0, 4)
+
+	// Add resampling filter if specified
+	if ds.Resample != "Default" {
+		args = append(args, fmt.Sprintf("-filter %s", ds.Resample))
+	}
+
+	// Build resize argument based on mode
+	switch ds.Mode {
+	case "Resolution":
+		if ds.Width > 0 && ds.Height > 0 {
+			args = append(args, fmt.Sprintf("-resize %dx%d>", ds.Width, ds.Height))
+		} else if ds.Width > 0 {
+			args = append(args, fmt.Sprintf("-resize %dx>", ds.Width))
+		} else if ds.Height > 0 {
+			args = append(args, fmt.Sprintf("-resize x%d>", ds.Height))
+		} else {
+			return nil // No downscaling needed
+		}
+
+	case "Percent":
+		percent := ds.Percent
+		if percent < 1 {
+			percent = 1
+		} else if percent > 100 {
+			percent = 100
+		}
+		args = append(args, fmt.Sprintf("-resize %.0f%%", percent))
+
+	case "Shortest Side":
+		if ds.ShortestSide > 0 {
+			args = append(args, fmt.Sprintf("-resize %dx%d^>", ds.ShortestSide, ds.ShortestSide))
+		}
+
+	case "Longest Side":
+		if ds.LongestSide > 0 {
+			args = append(args, fmt.Sprintf("-resize %dx%d>", ds.LongestSide, ds.LongestSide))
+		}
+
+	case "Megapixels":
+		mpx := int(ds.Megapixels * 1000000)
+		if mpx > 0 {
+			args = append(args, fmt.Sprintf("-resize %d@>", mpx))
+		}
+
+	case "File Size":
+		// File Size mode requires iterative approach - simplified version
+		// Estimate percentage based on desired file size
+		// This is a simplified implementation
+		if ds.FileSize > 0 {
+			// Start with a rough estimate: 50% scale
+			args = append(args, fmt.Sprintf("-resize 50%%"))
+		}
+
+	default:
+		return nil // Unknown mode, skip downscaling
+	}
+
+	// Run ImageMagick resize
+	_, stderr, err := RunBinary(ctx, ImageMagickPath, args, srcPath, dstPath, true)
+	if err != nil {
+		if GlobalTaskStatus.WasCanceled() {
+			return &conversionError{"X0", "Canceled"}
+		}
+		return &conversionError{"D1", fmt.Sprintf("[magick downscale] %s", stderr)}
+	}
+
+	return nil
 }

@@ -3,5 +3,6 @@ import type { TranslationKeys } from '~/i18n/en';
 
 export function useT() {
   const { t } = _useTranslation();
-  return t as (key: TranslationKeys, obj?: Record<string, any>) => string;
+  // Allow both predefined keys and arbitrary strings for dynamic values
+  return t as (key: TranslationKeys | string, obj?: Record<string, any>) => string;
 }

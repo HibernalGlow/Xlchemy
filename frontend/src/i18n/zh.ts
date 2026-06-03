@@ -10,6 +10,7 @@ export const zh: Record<TranslationKeys, string> = {
 
   // Input page
   'Add Files': '添加文件',
+  'Add Folder': '添加文件夹',
   'Clear': '清空',
   'Filter': '过滤',
   'file(s)': '个文件',

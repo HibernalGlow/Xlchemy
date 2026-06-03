@@ -114,3 +114,9 @@
     display: none;
   }
 }
+
+/* File drop target active state */
+.file-drop-target-active {
+  border: 2px dashed var(--primary);
+  background: rgba(74, 158, 255, 0.1);
+}
