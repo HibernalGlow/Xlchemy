@@ -362,11 +362,90 @@ func convertJXL(ctx context.Context, fi FileItem, dstPath string, output OutputS
 	return nil
 }
 
+// runExifToolRaw runs ExifTool with raw args string.
+func runExifToolRaw(srcPath string, dstPath string, argsStr string) error {
+	// Parse args (space-separated, but need to handle $src and $dst)
+	args := strings.Fields(argsStr)
+	
+	// Replace $src and $dst with actual paths
+	for i, arg := range args {
+		switch arg {
+		case "$src":
+			args[i] = srcPath
+		case "$dst":
+			args[i] = dstPath
+		case "\"$src\"":
+			args[i] = srcPath
+		case "\"$dst\"":
+			args[i] = dstPath
+		}
+	}
+
+	// On Windows, use argfile to handle UTF-8 paths
+	if runtime.GOOS == "windows" {
+		// Create temporary argfile
+		tmpFile, err := os.CreateTemp("", "exiftool_args_*.txt")
+		if err != nil {
+			return fmt.Errorf("failed to create argfile: %v", err)
+		}
+		tmpPath := tmpFile.Name()
+		defer os.Remove(tmpPath)
+
+		// Write args to file (UTF-8 encoded)
+		for _, arg := range args {
+			_, err := tmpFile.WriteString(arg + "\n")
+			if err != nil {
+				tmpFile.Close()
+				return fmt.Errorf("failed to write argfile: %v", err)
+			}
+		}
+		tmpFile.Close()
+
+		// Run ExifTool with argfile
+		exifToolCmd := ExifToolPath
+		if exifToolCmd == "" {
+			exifToolCmd = "exiftool"
+		}
+		cmd := exec.Command(exifToolCmd, "-charset", "filename=UTF8", "-@", filepath.Base(tmpPath))
+		cmd.Dir = filepath.Dir(tmpPath)
+		_, err = cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("exiftool failed: %v", err)
+		}
+	} else {
+		// On Linux/macOS, run directly
+		exifToolCmd := "exiftool"
+		cmd := exec.Command(exifToolCmd, args...)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("exiftool failed: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // convertAVIF converts an image to AVIF format.
 func convertAVIF(ctx context.Context, fi FileItem, dstPath string, output OutputSettings, modify ModifySettings, settings AppSettings, threads int) *conversionError {
 	// Handle slimg encoder separately (uses native library, not avifenc)
 	if settings.AvifEncoder == "slimg" {
-		return convertAVIFWithSlimg(ctx, fi.AbsPath, dstPath, output.Quality)
+		err := convertAVIFWithSlimg(ctx, fi.AbsPath, dstPath, output.Quality)
+		if err != nil {
+			return err
+		}
+		// slimg doesn't support metadata natively, use ExifTool if needed
+		if strings.HasPrefix(modify.Misc.KeepMetadata, "ExifTool") {
+			if err := runExifTool(fi.AbsPath, dstPath, modify.Misc.KeepMetadata, settings.ExifToolArgs); err != nil {
+				fmt.Printf("[ExifTool] %s\n", err.Error())
+			}
+		} else if modify.Misc.KeepMetadata != "Encoder - Wipe" {
+			// For "Encoder - Keep" mode, use default ExifTool args to copy all metadata
+			exifArgs := "-TagsFromFile $src -all:all $dst -overwrite_original"
+			if err := runExifToolRaw(fi.AbsPath, dstPath, exifArgs); err != nil {
+				fmt.Printf("[ExifTool] %s\n", err.Error())
+			}
+		}
+		return nil
 	}
 
 	args := []string{
