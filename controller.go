@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -221,6 +222,14 @@ func runWorker(ctx context.Context, idx int, fi FileItem, output OutputSettings,
 	finalOutput = handleExistingFile(finalOutput, output.IfFileExists)
 	if renameErr := os.Rename(tmpOutput, finalOutput); renameErr != nil {
 		return srcSize, 0, false, &conversionError{"F1", fmt.Sprintf("Rename failed: %s", renameErr)}
+	}
+
+	// Run ExifTool post-processing if needed
+	if strings.HasPrefix(modify.Misc.KeepMetadata, "ExifTool") {
+		if err := runExifTool(fi.AbsPath, finalOutput, modify.Misc.KeepMetadata, settings.ExifToolArgs); err != nil {
+			// Log error but don't fail the conversion
+			fmt.Printf("[ExifTool] %s\n", err.Error())
+		}
 	}
 
 	dstSize, _ := getFileSize(finalOutput)
@@ -681,6 +690,71 @@ func applyDownscaling(ctx context.Context, srcPath string, dstPath string, modif
 			return &conversionError{"X0", "Canceled"}
 		}
 		return &conversionError{"D1", fmt.Sprintf("[magick downscale] %s", stderr)}
+	}
+
+	return nil
+}
+
+// runExifTool runs ExifTool post-processing after conversion.
+func runExifTool(srcPath string, dstPath string, mode string, exifToolArgs map[string]string) error {
+	// Get the args for the specified mode
+	argsStr, ok := exifToolArgs[mode]
+	if !ok || argsStr == "" {
+		return fmt.Errorf("no ExifTool args configured for mode: %s", mode)
+	}
+
+	// Parse args (space-separated, but need to handle $src and $dst)
+	args := strings.Fields(argsStr)
+	
+	// Replace $src and $dst with actual paths
+	for i, arg := range args {
+		switch arg {
+		case "$src":
+			args[i] = srcPath
+		case "$dst":
+			args[i] = dstPath
+		}
+	}
+
+	// On Windows, use argfile to handle UTF-8 paths
+	if runtime.GOOS == "windows" {
+		// Create temporary argfile
+		tmpFile, err := os.CreateTemp("", "exiftool_args_*.txt")
+		if err != nil {
+			return fmt.Errorf("failed to create argfile: %v", err)
+		}
+		tmpPath := tmpFile.Name()
+		defer os.Remove(tmpPath)
+
+		// Write args to file (UTF-8 encoded)
+		for _, arg := range args {
+			_, err := tmpFile.WriteString(arg + "\n")
+			if err != nil {
+				tmpFile.Close()
+				return fmt.Errorf("failed to write argfile: %v", err)
+			}
+		}
+		tmpFile.Close()
+
+		// Run ExifTool with argfile
+		exifToolCmd := ExifToolPath
+		if exifToolCmd == "" {
+			exifToolCmd = "exiftool"
+		}
+		cmd := exec.Command(exifToolCmd, "-charset", "filename=UTF8", "-@", filepath.Base(tmpPath))
+		cmd.Dir = filepath.Dir(tmpPath)
+		_, err = cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("exiftool failed: %v", err)
+		}
+	} else {
+		// On Linux/macOS, run directly
+		exifToolCmd := "exiftool"
+		cmd := exec.Command(exifToolCmd, args...)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("exiftool failed: %v", err)
+		}
 	}
 
 	return nil
