@@ -123,6 +123,23 @@ export const zh: Record<TranslationKeys, string> = {
   'Open log directory': '打开日志目录',
   'Wipe log directory': '清除日志目录',
 
+  // Output - JXL options
+  'PNG fallback': 'PNG 回退',
+  'Verify': '验证',
+  'Normalize': '规范化',
+  'On Fail': '失败时',
+  'Always': '总是',
+  'Intelligent effort': '智能压缩力度',
+
+  // Output - Smallest Lossless
+  'Format pool:': '格式池：',
+  'Max compression': '最大压缩',
+
+  // Output - After conversion
+  'To Trash': '移至回收站',
+  'Permanently': '永久删除',
+  'Clear file list after conversion': '转换后清空文件列表',
+
   // Settings - Presets
   'Presets': '预设',
   'Preset:': '预设：',

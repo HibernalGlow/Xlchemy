@@ -622,6 +622,107 @@ export default function App() {
                     </label>
                   </div>
                 )}
+                {/* JXL specific options */}
+                {outputSettings.format === 'JPEG XL' && (
+                  <>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Checkbox
+                        id="jxl_png_fallback"
+                        checked={!!outputSettings.jxl_png_fallback}
+                        onCheckedChange={(v) => updateOutput('jxl_png_fallback', !!v)}
+                      />
+                      <label htmlFor="jxl_png_fallback" className="text-sm cursor-pointer">
+                        {t('PNG fallback')}
+                      </label>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Checkbox
+                        id="jxl_verify"
+                        checked={!!outputSettings.jxl_verify}
+                        onCheckedChange={(v) => updateOutput('jxl_verify', !!v)}
+                      />
+                      <label htmlFor="jxl_verify" className="text-sm cursor-pointer">
+                        {t('Verify')}
+                      </label>
+                    </div>
+                    <div className="mt-2 flex items-center gap-4">
+                      <Checkbox
+                        id="jxl_normalize_enable"
+                        checked={!!outputSettings.jxl_normalize_enable}
+                        onCheckedChange={(v) => updateOutput('jxl_normalize_enable', !!v)}
+                      />
+                      <label htmlFor="jxl_normalize_enable" className="text-sm cursor-pointer">
+                        {t('Normalize')}
+                      </label>
+                      {outputSettings.jxl_normalize_enable && (
+                        <Select
+                          value={outputSettings.jxl_normalize_when || 'On Fail'}
+                          onValueChange={(v) => updateOutput('jxl_normalize_when', v)}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['On Fail', 'Always'].map((opt) => (
+                              <SelectItem key={opt} value={opt}>
+                                {t(opt)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </>
+                )}
+                {/* Intelligent Effort */}
+                {['JPEG XL', 'AVIF', 'WebP'].includes(outputSettings.format) && !outputSettings.lossless && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Checkbox
+                      id="intelligent_effort"
+                      checked={!!outputSettings.intelligent_effort}
+                      onCheckedChange={(v) => updateOutput('intelligent_effort', !!v)}
+                    />
+                    <label htmlFor="intelligent_effort" className="text-sm cursor-pointer">
+                      {t('Intelligent effort')}
+                    </label>
+                  </div>
+                )}
+                {/* Smallest Lossless options */}
+                {outputSettings.format === 'Smallest Lossless' && (
+                  <>
+                    <div className="mt-2 flex items-center gap-4">
+                      <label className="text-sm">{t('Format pool:')}</label>
+                      <Checkbox
+                        id="smallest_png"
+                        checked={!!outputSettings.smallest_format_pool?.png}
+                        onCheckedChange={(v) => updateOutput('smallest_format_pool', { ...outputSettings.smallest_format_pool, png: !!v })}
+                      />
+                      <label htmlFor="smallest_png" className="text-sm cursor-pointer">PNG</label>
+                      <Checkbox
+                        id="smallest_webp"
+                        checked={!!outputSettings.smallest_format_pool?.webp}
+                        onCheckedChange={(v) => updateOutput('smallest_format_pool', { ...outputSettings.smallest_format_pool, webp: !!v })}
+                      />
+                      <label htmlFor="smallest_webp" className="text-sm cursor-pointer">WebP</label>
+                      <Checkbox
+                        id="smallest_jxl"
+                        checked={!!outputSettings.smallest_format_pool?.jxl}
+                        onCheckedChange={(v) => updateOutput('smallest_format_pool', { ...outputSettings.smallest_format_pool, jxl: !!v })}
+                      />
+                      <label htmlFor="smallest_jxl" className="text-sm cursor-pointer">JXL</label>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Checkbox
+                        id="max_compression"
+                        checked={!!outputSettings.max_compression}
+                        onCheckedChange={(v) => updateOutput('max_compression', !!v)}
+                      />
+                      <label htmlFor="max_compression" className="text-sm cursor-pointer">
+                        {t('Max compression')}
+                      </label>
+                    </div>
+                  </>
+                )}
               </Card>
 
               <Card className="p-4">
@@ -716,6 +817,33 @@ export default function App() {
                     />
                     <label htmlFor="delete_original" className="text-sm cursor-pointer">
                       {t('Delete original')}
+                    </label>
+                    {outputSettings.delete_original && (
+                      <Select
+                        value={outputSettings.delete_original_mode || 'To Trash'}
+                        onValueChange={(v) => updateOutput('delete_original_mode', v)}
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['To Trash', 'Permanently'].map((opt) => (
+                            <SelectItem key={opt} value={opt}>
+                              {t(opt)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="clear_after_conv"
+                      checked={!!outputSettings.clear_after_conv}
+                      onCheckedChange={(v) => updateOutput('clear_after_conv', !!v)}
+                    />
+                    <label htmlFor="clear_after_conv" className="text-sm cursor-pointer">
+                      {t('Clear file list after conversion')}
                     </label>
                   </div>
                 </div>

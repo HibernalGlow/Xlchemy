@@ -121,6 +121,23 @@ export const en = {
   'Open log directory': 'Open log directory',
   'Wipe log directory': 'Wipe log directory',
 
+  // Output - JXL options
+  'PNG fallback': 'PNG fallback',
+  'Verify': 'Verify',
+  'Normalize': 'Normalize',
+  'On Fail': 'On Fail',
+  'Always': 'Always',
+  'Intelligent effort': 'Intelligent effort',
+
+  // Output - Smallest Lossless
+  'Format pool:': 'Format pool:',
+  'Max compression': 'Max compression',
+
+  // Output - After conversion
+  'To Trash': 'To Trash',
+  'Permanently': 'Permanently',
+  'Clear file list after conversion': 'Clear file list after conversion',
+
   // Settings - Presets
   'Presets': 'Presets',
   'Preset:': 'Preset:',
