@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
@@ -37,7 +38,7 @@ func main() {
 		},
 	})
 
-	App.Window.NewWithOptions(application.WebviewWindowOptions{
+	win := App.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "Xlchemy",
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
@@ -50,6 +51,19 @@ func main() {
 		Height:           520,
 		MinWidth:         700,
 		MinHeight:        520,
+		EnableFileDrop:   true,
+	})
+
+	win.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		files := event.Context().DroppedFiles()
+		details := event.Context().DropTargetDetails()
+		if len(files) == 0 {
+			return
+		}
+		App.Event.Emit("files-dropped", map[string]any{
+			"files":   files,
+			"details": details,
+		})
 	})
 
 	if err := App.Run(); err != nil {

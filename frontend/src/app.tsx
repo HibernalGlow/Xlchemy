@@ -7,7 +7,7 @@ import {
   Settings,
   SlidersHorizontal,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '~/components/shadcn/badge';
 import { Button } from '~/components/shadcn/button';
 import { Card } from '~/components/shadcn/card';
@@ -48,6 +48,8 @@ const formatOptions = [
   'Lossless JPEG Transcoding', 'JPEG Reconstruction', 'Smallest Lossless',
 ];
 
+const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
+
 export default function App() {
   const t = useT();
 
@@ -65,7 +67,9 @@ export default function App() {
   const [exceptions, setExceptions] = useState<any[]>([]);
   const [constants, setConstants] = useState<any>({});
   const [cpuCount, setCpuCount] = useState(4);
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  const [excludedFormats, setExcludedFormats] = useState<Set<string>>(new Set(DEFAULT_EXCLUDED_FORMATS));
+  const excludedFormatsRef = useRef<Set<string>>(new Set(DEFAULT_EXCLUDED_FORMATS));
+  const isConvertingRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
   const [settingsTab, setSettingsTab] = useState(0);
@@ -88,6 +92,25 @@ export default function App() {
     mql.addEventListener('change', handler as (e: MediaQueryListEvent) => void);
     return () => mql.removeEventListener('change', handler as (e: MediaQueryListEvent) => void);
   }, []);
+
+  useEffect(() => {
+    isConvertingRef.current = isConverting;
+  }, [isConverting]);
+
+  useEffect(() => {
+    excludedFormatsRef.current = excludedFormats;
+  }, [excludedFormats]);
+
+  useEffect(() => {
+    if (Object.keys(appSettings).length === 0) return;
+    if (Array.isArray(appSettings.excluded_formats)) {
+      setExcludedFormats(new Set(appSettings.excluded_formats.map((v: any) => String(v).toLowerCase())));
+      return;
+    }
+    const next = new Set(DEFAULT_EXCLUDED_FORMATS);
+    setExcludedFormats(next);
+    setAppSettings((prev: any) => ({ ...prev, excluded_formats: Array.from(next) }));
+  }, [appSettings.excluded_formats]);
 
   // --- Init ---
   useEffect(() => {
@@ -144,6 +167,41 @@ export default function App() {
     });
   }, []);
 
+  const allowedInput = useMemo((): string[] => {
+    const list = Array.isArray(constants.allowedInput) ? constants.allowedInput : [];
+    return Array.from(new Set(list.map((v: any) => String(v).toLowerCase())));
+  }, [constants]);
+
+  const addFileItems = useCallback((incoming: any[]) => {
+    if (!Array.isArray(incoming) || incoming.length === 0) return;
+    setFileItems((prev) => {
+      const seen = new Set(prev.map((item) => item.absPath));
+      const next = [...prev];
+      const excluded = excludedFormatsRef.current;
+      for (const item of incoming) {
+        const ext = String(item.ext || '').toLowerCase();
+        const absPath = item.absPath;
+        if (!absPath || excluded.has(ext) || seen.has(absPath)) continue;
+        seen.add(absPath);
+        next.push(item);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleExcludedFormat = useCallback((ext: string) => {
+    setExcludedFormats((prev) => {
+      const next = new Set(prev);
+      if (next.has(ext)) next.delete(ext);
+      else next.add(ext);
+      setAppSettings((prevSettings: any) => ({
+        ...prevSettings,
+        excluded_formats: Array.from(next),
+      }));
+      return next;
+    });
+  }, []);
+
   // --- Actions ---
   const handleAddFiles = useCallback(async () => {
     try {
@@ -156,11 +214,11 @@ export default function App() {
       if (!selected || (Array.isArray(selected) && selected.length === 0)) return;
       const paths: string[] = Array.isArray(selected) ? selected : [selected];
       const result = await AppService.AddFiles(paths);
-      setFileItems((prev) => [...prev, ...JSON.parse(result)]);
+      addFileItems(JSON.parse(result));
     } catch (e) {
       console.error('AddFiles error:', e);
     }
-  }, []);
+  }, [addFileItems]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
@@ -173,11 +231,28 @@ export default function App() {
     }
     if (paths.length > 0) {
       const result = await AppService.AddFiles(paths);
-      setFileItems((prev) => [...prev, ...JSON.parse(result)]);
+      setActiveTab(0);
+      addFileItems(JSON.parse(result));
     }
-  }, []);
+  }, [addFileItems]);
 
   const clearFiles = useCallback(() => setFileItems([]), []);
+
+  useEffect(() => {
+    const unsubscribe = Events.On('files-dropped', async (event: any) => {
+      if (isConvertingRef.current) return;
+      const files = event?.data?.files || [];
+      if (files.length === 0) return;
+      try {
+        const result = await AppService.AddFiles(files);
+        setActiveTab(0);
+        addFileItems(JSON.parse(result));
+      } catch (e) {
+        console.error('File drop error:', e);
+      }
+    });
+    return unsubscribe;
+  }, [addFileItems]);
 
   // Auto-save settings when they change
   useEffect(() => {
@@ -224,24 +299,58 @@ export default function App() {
     setCurrentLang(lang);
   }, []);
 
-  const toggleFilter = useCallback((ext: string) => {
-    setActiveFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(ext)) next.delete(ext);
-      else next.add(ext);
-      return next;
-    });
-  }, []);
+  const orderOptions = useMemo(() => [
+    { key: 'Original', label: t('Original') },
+    { key: 'Path Ascending', label: t('Path Ascending') },
+    { key: 'Path Descending', label: t('Path Descending') },
+    { key: 'Size Ascending', label: t('Size Ascending') },
+    { key: 'Size Descending', label: t('Size Descending') },
+    { key: 'Random', label: t('Random') },
+    { key: 'Sequential', label: t('Sequential') },
+  ], [t]);
 
-  const filteredItems = useMemo(() => {
-    if (activeFilters.size === 0) return fileItems;
-    return fileItems.filter((item) => activeFilters.has(item.ext));
-  }, [fileItems, activeFilters]);
+  const processingOrder = appSettings.processing_order || 'Original';
+  const sortingDisabled = !!appSettings.sorting_disabled;
 
-  const uniqueExts = useMemo(
-    () => [...new Set(fileItems.map((f) => f.ext))],
-    [fileItems],
-  );
+  const sortedItems = useMemo(() => {
+    const items = [...fileItems];
+    if (sortingDisabled) return items;
+
+    const compareText = (a: string, b: string) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' });
+
+    switch (processingOrder) {
+      case 'Path Ascending':
+        items.sort((a, b) => compareText(String(a.absPath || ''), String(b.absPath || '')));
+        break;
+      case 'Path Descending':
+        items.sort((a, b) => compareText(String(b.absPath || ''), String(a.absPath || '')));
+        break;
+      case 'Size Ascending':
+        items.sort((a, b) => Number(a.size || 0) - Number(b.size || 0));
+        break;
+      case 'Size Descending':
+        items.sort((a, b) => Number(b.size || 0) - Number(a.size || 0));
+        break;
+      case 'Sequential':
+        items.sort((a, b) => {
+          const dirCmp = compareText(String(a.dir || ''), String(b.dir || ''));
+          if (dirCmp !== 0) return dirCmp;
+          return compareText(String(a.name || ''), String(b.name || ''));
+        });
+        break;
+      case 'Random':
+        for (let i = items.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+        break;
+      case 'Original':
+      default:
+        break;
+    }
+    return items;
+  }, [fileItems, processingOrder, sortingDisabled]);
 
   // --- Helper: update nested settings ---
   const updateOutput = (key: string, value: any) =>
@@ -257,27 +366,6 @@ export default function App() {
     });
 
   const progressPercent = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
-
-  // Sort options for Input page
-  const sortOptions = useMemo(() => [
-    { key: 'name', label: t('Name') },
-    { key: 'ext', label: t('Ext') },
-    { key: 'dir', label: t('Location') },
-    { key: 'size', label: 'Size' },
-  ], [t]);
-
-  const [sortKey, setSortKey] = useState('name');
-  const [sortAsc, setSortAsc] = useState(true);
-
-  const sortedItems = useMemo(() => {
-    const items = filteredItems;
-    return [...items].sort((a, b) => {
-      const va = a[sortKey] || '';
-      const vb = b[sortKey] || '';
-      const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
-      return sortAsc ? cmp : -cmp;
-    });
-  }, [filteredItems, sortKey, sortAsc]);
 
   return (
     <div
@@ -333,27 +421,53 @@ export default function App() {
                 </div>
               </div>
 
-              {fileItems.length > 0 && (
+              {allowedInput.length > 0 && (
                 <div className="flex gap-1 items-center flex-wrap">
-                  {uniqueExts.map((ext) => (
-                    <button
-                      key={ext}
-                      className={cn(
-                        'px-2 py-0.5 text-xs rounded-md border transition-colors cursor-pointer',
-                        activeFilters.has(ext)
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary',
-                      )}
-                      onClick={() => toggleFilter(ext)}
-                    >
-                      .{ext}
-                    </button>
-                  ))}
+                  <span className="text-xs text-muted-foreground">{t('Filter')}:</span>
+                  {allowedInput.map((ext: string) => {
+                    const excluded = excludedFormats.has(ext);
+                    return (
+                      <button
+                        key={ext}
+                        className={cn(
+                          'px-2 py-0.5 text-xs rounded-md border transition-colors cursor-pointer',
+                          excluded
+                            ? 'text-muted-foreground border-border/50 bg-transparent'
+                            : 'bg-primary text-primary-foreground border-primary',
+                        )}
+                        onClick={() => toggleExcludedFormat(ext)}
+                      >
+                        .{ext.toUpperCase()}
+                      </button>
+                    );
+                  })}
                   <span className="text-xs text-muted-foreground ml-auto">
                     {fileItems.length} {t('file(s)')}
                   </span>
                 </div>
               )}
+
+              <div className="flex gap-1 items-center flex-wrap">
+                <span className="text-xs text-muted-foreground">{t('Processing order:')}</span>
+                {orderOptions.map((opt) => (
+                  <button
+                    key={opt.key}
+                    className={cn(
+                      'px-2 py-0.5 text-xs rounded-md border transition-colors',
+                      processingOrder === opt.key
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-secondary border-transparent',
+                      sortingDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                    )}
+                    onClick={() => {
+                      if (sortingDisabled) return;
+                      setAppSettings((prev: any) => ({ ...prev, processing_order: opt.key }));
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
 
               <Card className="flex-1 overflow-auto">
                 <table className="w-full text-sm">
@@ -770,7 +884,7 @@ export default function App() {
                       {[
                         { key: 'disable_downscaling_startup', label: t('Disable downscaling on startup') },
                         { key: 'disable_delete_startup', label: t('Disable delete original on startup') },
-                        { key: 'no_sorting', label: t('Disable sorting') },
+                        { key: 'sorting_disabled', label: t('Disable sorting') },
                         { key: 'enable_quality_precision_snapping', label: t('Quality precision snapping') },
                         { key: 'play_sound_on_finish', label: t('Play sound on finish') },
                       ].map(({ key, label }) => (
@@ -993,29 +1107,6 @@ export default function App() {
                     {t('Exceptions')} ({exceptions.length})
                   </Button>
                 )}
-              </div>
-            )}
-            {/* Sort controls for Input page */}
-            {activeTab === 0 && fileItems.length > 0 && !isConverting && (
-              <div className="flex items-center gap-2">
-                <Select value={sortKey} onValueChange={setSortKey}>
-                  <SelectTrigger className="w-20 h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortOptions.map((opt) => (
-                      <SelectItem key={opt.key} value={opt.key}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2"
-                  onClick={() => setSortAsc(!sortAsc)}
-                >
-                  {sortAsc ? '↑' : '↓'}
-                </Button>
               </div>
             )}
           </div>

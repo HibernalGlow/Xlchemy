@@ -21,6 +21,7 @@ type FileItem struct {
 	Name     string `json:"name"`
 	Ext      string `json:"ext"`
 	Dir      string `json:"dir"`
+	Size     int64  `json:"size"`
 }
 
 // OutputSettings from the Output tab.
@@ -77,6 +78,7 @@ type AppSettings struct {
 	Theme                      string            `json:"theme"`
 	CustomResampling           bool              `json:"custom_resampling"`
 	SortingDisabled            bool              `json:"sorting_disabled"`
+	ExcludedFormats            []string          `json:"excluded_formats"`
 	DisableDownscalingStartup  bool              `json:"disable_downscaling_startup"`
 	DisableDeleteStartup       bool              `json:"disable_delete_startup"`
 	EnableJXLEffort10          bool              `json:"enable_jxl_effort_10"`
@@ -158,6 +160,7 @@ func DefaultAppSettings() AppSettings {
 		Theme:                     "Miku",
 		CustomResampling:          false,
 		SortingDisabled:           false,
+		ExcludedFormats:           []string{"avif", "jxl", "webp", "gif"},
 		DisableDownscalingStartup: false,
 		DisableDeleteStartup:      true,
 		EnableJXLEffort10:         false,

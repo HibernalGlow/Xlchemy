@@ -9,6 +9,7 @@ export const en = {
   // Input page
   'Add Files': 'Add Files',
   'Clear': 'Clear',
+  'Filter': 'Filter',
   'file(s)': 'file(s)',
   'Name': 'Name',
   'Ext': 'Ext',

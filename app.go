@@ -116,16 +116,42 @@ func (a *AppService) GetDefaultPreset() string {
 // AddFiles validates and returns file items for the given paths.
 func (a *AppService) AddFiles(paths []string) string {
 	var items []FileItem
-	for _, p := range paths {
-		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(p), "."))
-		if IsAllowedInput(ext) {
-			items = append(items, FileItem{
-				AbsPath: p,
-				Name:    strings.TrimSuffix(filepath.Base(p), filepath.Ext(p)),
-				Ext:     ext,
-				Dir:     filepath.Dir(p),
-			})
+	seen := make(map[string]struct{})
+
+	addFile := func(path string, info os.FileInfo) {
+		if _, ok := seen[path]; ok {
+			return
 		}
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
+		if !IsAllowedInput(ext) {
+			return
+		}
+		items = append(items, FileItem{
+			AbsPath: path,
+			Name:    strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
+			Ext:     ext,
+			Dir:     filepath.Dir(path),
+			Size:    info.Size(),
+		})
+		seen[path] = struct{}{}
+	}
+
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil {
+			continue
+		}
+		if info.IsDir() {
+			_ = filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
+				if err != nil || info.IsDir() {
+					return nil
+				}
+				addFile(path, info)
+				return nil
+			})
+			continue
+		}
+		addFile(p, info)
 	}
 	b, _ := json.Marshal(items)
 	return string(b)
@@ -134,8 +160,12 @@ func (a *AppService) AddFiles(paths []string) string {
 // ScanDirectory recursively scans a directory for allowed images.
 func (a *AppService) ScanDirectory(dirPath string) string {
 	var items []FileItem
+	seen := make(map[string]struct{})
 	_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
+			return nil
+		}
+		if _, ok := seen[path]; ok {
 			return nil
 		}
 		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
@@ -145,7 +175,9 @@ func (a *AppService) ScanDirectory(dirPath string) string {
 				Name:    strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
 				Ext:     ext,
 				Dir:     filepath.Dir(path),
+				Size:    info.Size(),
 			})
+			seen[path] = struct{}{}
 		}
 		return nil
 	})

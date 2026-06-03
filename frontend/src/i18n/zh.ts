@@ -11,6 +11,7 @@ export const zh: Record<TranslationKeys, string> = {
   // Input page
   'Add Files': '添加文件',
   'Clear': '清空',
+  'Filter': '过滤',
   'file(s)': '个文件',
   'Name': '名称',
   'Ext': '格式',
