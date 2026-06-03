@@ -61,9 +61,8 @@ export default function App() {
   const [modifySettings, setModifySettings] = useState<any>({});
   const [appSettings, setAppSettings] = useState<any>({});
   const [progress, setProgress] = useState({ completed: 0, total: 0, line1: '', line2: '' });
-  const [showProgress, setShowProgress] = useState(false);
-  const [exceptions, setExceptions] = useState<any[]>([]);
   const [showExceptions, setShowExceptions] = useState(false);
+  const [exceptions, setExceptions] = useState<any[]>([]);
   const [constants, setConstants] = useState<any>({});
   const [cpuCount, setCpuCount] = useState(4);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
@@ -130,7 +129,6 @@ export default function App() {
     });
     Events.On('conversion:finished', () => {
       setIsConverting(false);
-      setShowProgress(false);
       setExceptions((prev) => {
         if (prev.length > 0) setShowExceptions(true);
         return prev;
@@ -138,10 +136,8 @@ export default function App() {
     });
     Events.On('conversion:canceled', () => {
       setIsConverting(false);
-      setShowProgress(false);
     });
     Events.On('conversion:started', () => {
-      setShowProgress(true);
       setExceptions([]);
     });
   }, []);
@@ -260,43 +256,66 @@ export default function App() {
 
   const progressPercent = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
 
+  // Sort options for Input page
+  const sortOptions = useMemo(() => [
+    { key: 'name', label: t('Name') },
+    { key: 'ext', label: t('Ext') },
+    { key: 'dir', label: t('Location') },
+    { key: 'size', label: 'Size' },
+  ], [t]);
+
+  const [sortKey, setSortKey] = useState('name');
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sortedItems = useMemo(() => {
+    const items = filteredItems;
+    return [...items].sort((a, b) => {
+      const va = a[sortKey] || '';
+      const vb = b[sortKey] || '';
+      const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
+      return sortAsc ? cmp : -cmp;
+    });
+  }, [filteredItems, sortKey, sortAsc]);
+
   return (
     <div
-      className="flex h-screen bg-background text-foreground select-none"
+      className="flex flex-col h-screen bg-background text-foreground select-none"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      {/* Mobile top bar */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 z-30 flex items-center gap-3 px-4 py-2 bg-background/95 backdrop-blur-sm border-b border-border md:hidden">
-          <button
-            className="p-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle navigation"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="text-sm font-semibold">{t('Xlchemy')}</span>
-        </div>
-      )}
+      {/* Main area: Sidebar + Content */}
+      <div className="flex flex-1 min-h-0">
+        {/* Mobile top bar */}
+        {isMobile && (
+          <div className="fixed top-0 left-0 right-0 z-30 flex items-center gap-3 px-4 py-2 bg-background/95 backdrop-blur-sm border-b border-border md:hidden">
+            <button
+              className="p-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-semibold">{t('Xlchemy')}</span>
+          </div>
+        )}
 
-      <AppSidebar
-        items={navItems}
-        activeIndex={activeTab}
-        collapsed={sidebarCollapsed}
-        onSelect={(i) => {
-          setActiveTab(i);
-          if (isMobile) setMobileOpen(false);
-        }}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-        disabled={isConverting}
-      />
+        <AppSidebar
+          items={navItems}
+          activeIndex={activeTab}
+          collapsed={sidebarCollapsed}
+          onSelect={(i) => {
+            setActiveTab(i);
+            if (isMobile) setMobileOpen(false);
+          }}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+          disabled={isConverting}
+        />
 
-      {/* Main content area */}
-      <main className="flex-1 overflow-auto min-w-0">
-        <div className={isMobile ? 'pt-12' : ''}>
+        {/* Main content area */}
+        <main className="flex-1 overflow-auto min-w-0">
+          <div className={isMobile ? 'pt-12' : ''}>
           {activeTab === 0 && (
             /* ===== Input ===== */
             <div className="flex flex-col flex-1 p-4 gap-3 h-full">
@@ -344,7 +363,7 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item, i) => (
+                    {sortedItems.map((item, i) => (
                       <tr
                         key={i}
                         className="border-b border-border/50 hover:bg-muted/50 transition-colors"
@@ -954,28 +973,62 @@ export default function App() {
           )}
         </div>
       </main>
+      </div>
 
-      {/* Progress Dialog */}
-      <Dialog open={showProgress} onOpenChange={(open) => { if (!open) cancelConversion(); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('Converting...')}</DialogTitle>
-          </DialogHeader>
-          <Progress value={progressPercent} className="h-5" />
-          <div className="flex justify-between mt-2 text-sm">
-            <span>
-              {progress.completed} / {progress.total}
-            </span>
-            <span className="text-muted-foreground">{progress.line2}</span>
+      {/* Bottom Bar - Progress & File List */}
+      {(isConverting || fileItems.length > 0) && (
+        <div className="border-t border-border bg-muted/30 px-4 py-2">
+          <div className="flex items-center justify-between gap-4">
+            {/* Progress section */}
+            {isConverting && (
+              <div className="flex items-center gap-3 flex-1">
+                <Progress value={progressPercent} className="h-2 flex-1 max-w-[200px]" />
+                <span className="text-xs text-muted-foreground">
+                  {progress.completed} / {progress.total}
+                </span>
+                <span className="text-xs truncate max-w-[200px]">{progress.line1}</span>
+                <Button variant="outline" size="sm" onClick={cancelConversion}>
+                  {t('Cancel')}
+                </Button>
+              </div>
+            )}
+            {/* File count */}
+            {!isConverting && fileItems.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{fileItems.length} {t('file(s)')}</Badge>
+                {exceptions.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={() => setShowExceptions(true)}>
+                    {t('Exceptions')} ({exceptions.length})
+                  </Button>
+                )}
+              </div>
+            )}
+            {/* Sort controls for Input page */}
+            {activeTab === 0 && fileItems.length > 0 && !isConverting && (
+              <div className="flex items-center gap-2">
+                <Select value={sortKey} onValueChange={setSortKey}>
+                  <SelectTrigger className="w-20 h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((opt) => (
+                      <SelectItem key={opt.key} value={opt.key}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setSortAsc(!sortAsc)}
+                >
+                  {sortAsc ? '↑' : '↓'}
+                </Button>
+              </div>
+            )}
           </div>
-          <p className="mt-2 text-sm truncate">{progress.line1}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={cancelConversion}>
-              {t('Cancel')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Exception Dialog */}
       <Dialog open={showExceptions} onOpenChange={setShowExceptions}>
