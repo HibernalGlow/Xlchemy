@@ -69,6 +69,7 @@ export default function App() {
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+  const [settingsTab, setSettingsTab] = useState(0);
 
   const navItems: SidebarNavItem[] = useMemo(() => [
     { label: t('Input'), icon: FileInput },
@@ -180,10 +181,11 @@ export default function App() {
 
   const clearFiles = useCallback(() => setFileItems([]), []);
 
-  const saveSettings = useCallback(async () => {
-    await AppService.SaveSettings(
-      JSON.stringify({ output: outputSettings, modify: modifySettings, app: appSettings }),
-    );
+  // Auto-save settings when they change
+  useEffect(() => {
+    if (Object.keys(outputSettings).length > 0 || Object.keys(modifySettings).length > 0 || Object.keys(appSettings).length > 0) {
+      AppService.SaveSettings(JSON.stringify({ output: outputSettings, modify: modifySettings, app: appSettings }));
+    }
   }, [outputSettings, modifySettings, appSettings]);
 
   const startConversion = useCallback(async () => {
@@ -683,369 +685,240 @@ export default function App() {
           {activeTab === 3 && (
             /* ===== Settings ===== */
             <div className="flex flex-col gap-4 p-4 overflow-auto h-full">
-              <h2 className="text-lg font-semibold">{t('Settings')}</h2>
-
-              {/* Appearance */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">{t('Appearance')}</h3>
-                <div className="flex gap-3 items-center mb-4">
-                  <label className="text-sm">{t('Language:')}</label>
-                  <Select
-                    value={currentLang}
-                    onValueChange={(v) => changeLanguage(v)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="zh">中文</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <ThemePanel
-                  currentThemeName={appSettings.theme || 'Miku'}
-                  onThemeChange={changeTheme}
-                />
-              </Card>
-
-              {/* General */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">{t('General')}</h3>
-                <div className="flex flex-col gap-2">
-                  {[
-                    { key: 'disable_downscaling_startup', label: t('Disable downscaling on startup') },
-                    { key: 'disable_delete_startup', label: t('Disable delete original on startup') },
-                    { key: 'no_sorting', label: t('Disable sorting') },
-                    { key: 'enable_quality_precision_snapping', label: t('Quality precision snapping') },
-                    { key: 'play_sound_on_finish', label: t('Play sound on finish') },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <Checkbox
-                        id={key}
-                        checked={!!appSettings[key]}
-                        onCheckedChange={(v) =>
-                          setAppSettings((prev: any) => ({ ...prev, [key]: !!v }))
-                        }
-                      />
-                      <label htmlFor={key} className="text-sm cursor-pointer">
-                        {label}
-                      </label>
-                    </div>
-                  ))}
-                  {appSettings.play_sound_on_finish && (
-                    <div className="flex gap-3 items-center ml-6">
-                      <label className="text-sm">{t('Volume:')}</label>
-                      <Slider
-                        value={[appSettings.play_sound_on_finish_vol ?? 60]}
-                        onValueChange={([v]) =>
-                          setAppSettings((prev: any) => ({ ...prev, play_sound_on_finish_vol: v }))
-                        }
-                        min={0}
-                        max={100}
-                        className="w-32"
-                      />
-                      <span className="text-xs text-muted-foreground w-8">{appSettings.play_sound_on_finish_vol ?? 60}%</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* Conversion */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">{t('Conversion')}</h3>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="jxl_lossy_modular"
-                      checked={!!appSettings.jxl_lossy_modular}
-                      onCheckedChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, jxl_lossy_modular: !!v }))
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">{t('Settings')}</h2>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    const data = JSON.stringify({ output: outputSettings, modify: modifySettings, app: appSettings }, null, 2);
+                    navigator.clipboard.writeText(data);
+                  }}>
+                    {t('Export')}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    try {
+                      const text = prompt('Paste settings JSON:');
+                      if (text) {
+                        const data = JSON.parse(text);
+                        if (data.output) setOutputSettings(data.output);
+                        if (data.modify) setModifySettings(data.modify);
+                        if (data.app) setAppSettings(data.app);
                       }
-                    />
-                    <label htmlFor="jxl_lossy_modular" className="text-sm cursor-pointer">
-                      {t('JXL lossy modular')}
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="jxl_auto_lossless_jpeg"
-                      checked={!!appSettings.jxl_auto_lossless_jpeg}
-                      onCheckedChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, jxl_auto_lossless_jpeg: !!v }))
-                      }
-                    />
-                    <label htmlFor="jxl_auto_lossless_jpeg" className="text-sm cursor-pointer">
-                      {t('Auto lossless JPEG transcode for JXL')}
-                    </label>
-                  </div>
-                  <div className="flex gap-3 items-center mt-1">
-                    <label className="text-sm">{t('JPEG Encoder:')}</label>
-                    <Select
-                      value={appSettings.jpg_encoder || 'JPEGLI'}
-                      onValueChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, jpg_encoder: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-36">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {['JPEGLI', 'libjpeg'].map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {appSettings.jpg_encoder === 'JPEGLI' && (
-                    <div className="flex items-center gap-2 ml-4">
-                      <Checkbox
-                        id="disable_progressive_jpegli"
-                        checked={!!appSettings.disable_progressive_jpegli}
-                        onCheckedChange={(v) =>
-                          setAppSettings((prev: any) => ({ ...prev, disable_progressive_jpegli: !!v }))
-                        }
-                      />
-                      <label htmlFor="disable_progressive_jpegli" className="text-sm cursor-pointer">
-                        {t('Disable progressive JPEGLI')}
-                      </label>
-                    </div>
-                  )}
-                  <div className="flex gap-3 items-center mt-1">
-                    <label className="text-sm">{t('AVIF Encoder:')}</label>
-                    <Select
-                      value={appSettings.avif_encoder || 'AOM AV1'}
-                      onValueChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, avif_encoder: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-36">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {['AOM AV1', 'SVT-AV1-PSY', 'slimg'].map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-3 items-center mt-1">
-                    <label className="text-sm">{t('AVIF bit depth:')}</label>
-                    <Select
-                      value={appSettings.avif_bit_depth || 'Auto'}
-                      onValueChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, avif_bit_depth: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-28">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[t('Auto'), '12', '10', '8'].map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {appSettings.avif_encoder === 'AOM AV1' && (
-                    <div className="flex items-center gap-2 ml-4">
-                      <Checkbox
-                        id="avif_aom_iq_tune"
-                        checked={!!appSettings.avif_aom_iq_tune}
-                        onCheckedChange={(v) =>
-                          setAppSettings((prev: any) => ({ ...prev, avif_aom_iq_tune: !!v }))
-                        }
-                      />
-                      <label htmlFor="avif_aom_iq_tune" className="text-sm cursor-pointer">
-                        {t('AOM IQ Tune')}
-                      </label>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <Checkbox
-                      id="keep_if_larger"
-                      checked={!!appSettings.keep_if_larger}
-                      onCheckedChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, keep_if_larger: !!v }))
-                      }
-                    />
-                    <label htmlFor="keep_if_larger" className="text-sm cursor-pointer">
-                      {t('Keep original if result is larger')}
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="copy_if_larger"
-                      checked={!!appSettings.copy_if_larger}
-                      onCheckedChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, copy_if_larger: !!v }))
-                      }
-                    />
-                    <label htmlFor="copy_if_larger" className="text-sm cursor-pointer">
-                      {t('Copy original if result is larger')}
-                    </label>
-                  </div>
-                </div>
-              </Card>
-
-              {/* ExifTool */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">{t('ExifTool')}</h3>
-                <div className="flex flex-col gap-2">
-                  {[
-                    { key: 'ExifTool - Wipe', label: t('Wipe command:') },
-                    { key: 'ExifTool - Preserve', label: t('Preserve command:') },
-                    { key: 'ExifTool - Unsafe Wipe', label: t('Unsafe Wipe command:') },
-                    { key: 'ExifTool - Custom', label: t('Custom command:') },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex flex-col gap-1">
-                      <label className="text-sm">{label}</label>
-                      <Textarea
-                        value={appSettings.exiftool_args?.[key] || ''}
-                        onChange={(e) =>
-                          setAppSettings((prev: any) => ({
-                            ...prev,
-                            exiftool_args: { ...prev.exiftool_args, [key]: e.target.value },
-                          }))
-                        }
-                        className="min-h-[48px] text-xs font-mono"
-                      />
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-fit mt-1"
-                    onClick={() => {
-                      setAppSettings((prev: any) => ({
-                        ...prev,
-                        exiftool_args: {
-                          'ExifTool - Wipe': '-overwrite_original -all= -tagsFromFile @ -ICC_Profile -ColorSpace -Orientation',
-                          'ExifTool - Preserve': '-overwrite_original -tagsFromFile @',
-                          'ExifTool - Unsafe Wipe': '-overwrite_original -all=',
-                          'ExifTool - Custom': '',
-                        },
-                      }));
-                    }}
-                  >
-                    {t('Reset to defaults')}
+                    } catch {}
+                  }}>
+                    {t('Import')}
                   </Button>
                 </div>
-              </Card>
+              </div>
 
-              {/* Advanced */}
-              <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground">{t('Advanced')}</h3>
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-3 items-center">
-                    <label className="text-sm">{t('RAM optimizer:')}</label>
-                    <Select
-                      value={appSettings.ram_optimizer || 'Dynamic'}
-                      onValueChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, ram_optimizer: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-28">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[t('Dynamic'), t('Static'), t('Disabled')].map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {appSettings.ram_optimizer === 'Static' && (
-                    <div className="flex flex-col gap-1 ml-4">
-                      <label className="text-sm">{t('Optimization rules:')}</label>
-                      <Textarea
-                        value={appSettings.ram_optimizer_rules || ''}
-                        onChange={(e) =>
-                          setAppSettings((prev: any) => ({ ...prev, ram_optimizer_rules: e.target.value }))
-                        }
-                        className="min-h-[48px] text-xs font-mono"
-                      />
+              {/* Horizontal Tabs */}
+              <div className="flex gap-1 border-b border-border pb-1">
+                {[
+                  t('Appearance'),
+                  t('General'),
+                  t('Conversion'),
+                  t('ExifTool'),
+                  t('Advanced'),
+                ].map((label, i) => (
+                  <button
+                    key={label}
+                    className={`px-3 py-1.5 text-sm rounded-t-md transition-colors cursor-pointer ${
+                      settingsTab === i
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted text-muted-foreground'
+                    }`}
+                    onClick={() => setSettingsTab(i)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content */}
+              <div className="flex-1 overflow-auto">
+                {settingsTab === 0 && (
+                  /* Appearance */
+                  <Card className="p-4">
+                    <div className="flex gap-3 items-center mb-4">
+                      <label className="text-sm">{t('Language:')}</label>
+                      <Select value={currentLang} onValueChange={(v) => changeLanguage(v)}>
+                        <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="zh">中文</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
-                  {[
-                    { key: 'enable_jxl_effort_10', label: t('JXL effort 10') },
-                    { key: 'custom_resampling', label: t('Custom resampling') },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <Checkbox
-                        id={key}
-                        checked={!!appSettings[key]}
-                        onCheckedChange={(v) =>
-                          setAppSettings((prev: any) => ({ ...prev, [key]: !!v }))
-                        }
-                      />
-                      <label htmlFor={key} className="text-sm cursor-pointer">{label}</label>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2 mt-1">
-                    <Checkbox
-                      id="enable_custom_args"
-                      checked={!!appSettings.enable_custom_args}
-                      onCheckedChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, enable_custom_args: !!v }))
-                      }
-                    />
-                    <label htmlFor="enable_custom_args" className="text-sm cursor-pointer">
-                      {t('Extra encoder args')}
-                    </label>
-                  </div>
-                  {appSettings.enable_custom_args && (
-                    <div className="flex flex-col gap-2 ml-4">
+                    <ThemePanel currentThemeName={appSettings.theme || 'Miku'} onThemeChange={changeTheme} />
+                  </Card>
+                )}
+
+                {settingsTab === 1 && (
+                  /* General */
+                  <Card className="p-4">
+                    <div className="flex flex-col gap-2">
                       {[
-                        { key: 'cjxl_args', label: t('cjxl args:') },
-                        { key: 'avifenc_args', label: t('avifenc args:') },
-                        { key: 'cjpegli_args', label: t('cjpegli args:') },
-                        { key: 'im_args', label: t('ImageMagick args:') },
+                        { key: 'disable_downscaling_startup', label: t('Disable downscaling on startup') },
+                        { key: 'disable_delete_startup', label: t('Disable delete original on startup') },
+                        { key: 'no_sorting', label: t('Disable sorting') },
+                        { key: 'enable_quality_precision_snapping', label: t('Quality precision snapping') },
+                        { key: 'play_sound_on_finish', label: t('Play sound on finish') },
                       ].map(({ key, label }) => (
-                        <div key={key} className="flex flex-col gap-1">
-                          <label className="text-xs text-muted-foreground">{label}</label>
-                          <Input
-                            value={appSettings[key] || ''}
-                            onChange={(e) =>
-                              setAppSettings((prev: any) => ({ ...prev, [key]: e.target.value }))
-                            }
-                            className="h-7 text-xs font-mono"
-                          />
+                        <div key={key} className="flex items-center gap-2">
+                          <Checkbox id={key} checked={!!appSettings[key]} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, [key]: !!v }))} />
+                          <label htmlFor={key} className="text-sm cursor-pointer">{label}</label>
                         </div>
                       ))}
+                      {appSettings.play_sound_on_finish && (
+                        <div className="flex gap-3 items-center ml-6">
+                          <label className="text-sm">{t('Volume:')}</label>
+                          <Slider value={[appSettings.play_sound_on_finish_vol ?? 60]} onValueChange={([v]) => setAppSettings((prev: any) => ({ ...prev, play_sound_on_finish_vol: v }))} min={0} max={100} className="w-32" />
+                          <span className="text-xs text-muted-foreground w-8">{appSettings.play_sound_on_finish_vol ?? 60}%</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="flex gap-3 items-center mt-1">
-                    <label className="text-sm">{t('Processing order:')}</label>
-                    <Select
-                      value={appSettings.processing_order || 'Original'}
-                      onValueChange={(v) =>
-                        setAppSettings((prev: any) => ({ ...prev, processing_order: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-44">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[t('Original'), t('Random'), t('Sequential'), t('Path Ascending'), t('Path Descending'), t('Size Ascending'), t('Size Descending')].map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button variant="outline" size="sm" onClick={() => {}}>
-                      {t('Start logging')}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => {}}>
-                      {t('Open log directory')}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => {}}>
-                      {t('Wipe log directory')}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                  </Card>
+                )}
+
+                {settingsTab === 2 && (
+                  /* Conversion */
+                  <Card className="p-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="jxl_lossy_modular" checked={!!appSettings.jxl_lossy_modular} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, jxl_lossy_modular: !!v }))} />
+                        <label htmlFor="jxl_lossy_modular" className="text-sm cursor-pointer">{t('JXL lossy modular')}</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="jxl_auto_lossless_jpeg" checked={!!appSettings.jxl_auto_lossless_jpeg} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, jxl_auto_lossless_jpeg: !!v }))} />
+                        <label htmlFor="jxl_auto_lossless_jpeg" className="text-sm cursor-pointer">{t('Auto lossless JPEG transcode for JXL')}</label>
+                      </div>
+                      <div className="flex gap-3 items-center mt-1">
+                        <label className="text-sm">{t('JPEG Encoder:')}</label>
+                        <Select value={appSettings.jpg_encoder || 'JPEGLI'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, jpg_encoder: v }))}>
+                          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                          <SelectContent>{['JPEGLI', 'libjpeg'].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      {appSettings.jpg_encoder === 'JPEGLI' && (
+                        <div className="flex items-center gap-2 ml-4">
+                          <Checkbox id="disable_progressive_jpegli" checked={!!appSettings.disable_progressive_jpegli} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, disable_progressive_jpegli: !!v }))} />
+                          <label htmlFor="disable_progressive_jpegli" className="text-sm cursor-pointer">{t('Disable progressive JPEGLI')}</label>
+                        </div>
+                      )}
+                      <div className="flex gap-3 items-center mt-1">
+                        <label className="text-sm">{t('AVIF Encoder:')}</label>
+                        <Select value={appSettings.avif_encoder || 'AOM AV1'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, avif_encoder: v }))}>
+                          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                          <SelectContent>{['AOM AV1', 'SVT-AV1-PSY', 'slimg'].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-3 items-center mt-1">
+                        <label className="text-sm">{t('AVIF bit depth:')}</label>
+                        <Select value={appSettings.avif_bit_depth || 'Auto'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, avif_bit_depth: v }))}>
+                          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                          <SelectContent>{[t('Auto'), '12', '10', '8'].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      {appSettings.avif_encoder === 'AOM AV1' && (
+                        <div className="flex items-center gap-2 ml-4">
+                          <Checkbox id="avif_aom_iq_tune" checked={!!appSettings.avif_aom_iq_tune} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, avif_aom_iq_tune: !!v }))} />
+                          <label htmlFor="avif_aom_iq_tune" className="text-sm cursor-pointer">{t('AOM IQ Tune')}</label>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Checkbox id="keep_if_larger" checked={!!appSettings.keep_if_larger} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, keep_if_larger: !!v }))} />
+                        <label htmlFor="keep_if_larger" className="text-sm cursor-pointer">{t('Keep original if result is larger')}</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="copy_if_larger" checked={!!appSettings.copy_if_larger} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, copy_if_larger: !!v }))} />
+                        <label htmlFor="copy_if_larger" className="text-sm cursor-pointer">{t('Copy original if result is larger')}</label>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {settingsTab === 3 && (
+                  /* ExifTool */
+                  <Card className="p-4">
+                    <div className="flex flex-col gap-2">
+                      {[
+                        { key: 'ExifTool - Wipe', label: t('Wipe command:') },
+                        { key: 'ExifTool - Preserve', label: t('Preserve command:') },
+                        { key: 'ExifTool - Unsafe Wipe', label: t('Unsafe Wipe command:') },
+                        { key: 'ExifTool - Custom', label: t('Custom command:') },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="flex flex-col gap-1">
+                          <label className="text-sm">{label}</label>
+                          <Textarea value={appSettings.exiftool_args?.[key] || ''} onChange={(e) => setAppSettings((prev: any) => ({ ...prev, exiftool_args: { ...prev.exiftool_args, [key]: e.target.value } }))} className="min-h-[48px] text-xs font-mono" />
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" className="w-fit mt-1" onClick={() => setAppSettings((prev: any) => ({ ...prev, exiftool_args: { 'ExifTool - Wipe': '-overwrite_original -all= -tagsFromFile @ -ICC_Profile -ColorSpace -Orientation', 'ExifTool - Preserve': '-overwrite_original -tagsFromFile @', 'ExifTool - Unsafe Wipe': '-overwrite_original -all=', 'ExifTool - Custom': '' } }))}>
+                        {t('Reset to defaults')}
+                      </Button>
+                    </div>
+                  </Card>
+                )}
+
+                {settingsTab === 4 && (
+                  /* Advanced */
+                  <Card className="p-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-3 items-center">
+                        <label className="text-sm">{t('RAM optimizer:')}</label>
+                        <Select value={appSettings.ram_optimizer || 'Dynamic'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, ram_optimizer: v }))}>
+                          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                          <SelectContent>{[t('Dynamic'), t('Static'), t('Disabled')].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      {appSettings.ram_optimizer === 'Static' && (
+                        <div className="flex flex-col gap-1 ml-4">
+                          <label className="text-sm">{t('Optimization rules:')}</label>
+                          <Textarea value={appSettings.ram_optimizer_rules || ''} onChange={(e) => setAppSettings((prev: any) => ({ ...prev, ram_optimizer_rules: e.target.value }))} className="min-h-[48px] text-xs font-mono" />
+                        </div>
+                      )}
+                      {[
+                        { key: 'enable_jxl_effort_10', label: t('JXL effort 10') },
+                        { key: 'custom_resampling', label: t('Custom resampling') },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <Checkbox id={key} checked={!!appSettings[key]} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, [key]: !!v }))} />
+                          <label htmlFor={key} className="text-sm cursor-pointer">{label}</label>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Checkbox id="enable_custom_args" checked={!!appSettings.enable_custom_args} onCheckedChange={(v) => setAppSettings((prev: any) => ({ ...prev, enable_custom_args: !!v }))} />
+                        <label htmlFor="enable_custom_args" className="text-sm cursor-pointer">{t('Extra encoder args')}</label>
+                      </div>
+                      {appSettings.enable_custom_args && (
+                        <div className="flex flex-col gap-2 ml-4">
+                          {[
+                            { key: 'cjxl_args', label: t('cjxl args:') },
+                            { key: 'avifenc_args', label: t('avifenc args:') },
+                            { key: 'cjpegli_args', label: t('cjpegli args:') },
+                            { key: 'im_args', label: t('ImageMagick args:') },
+                          ].map(({ key, label }) => (
+                            <div key={key} className="flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">{label}</label>
+                              <Input value={appSettings[key] || ''} onChange={(e) => setAppSettings((prev: any) => ({ ...prev, [key]: e.target.value }))} className="h-7 text-xs font-mono" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-3 items-center mt-1">
+                        <label className="text-sm">{t('Processing order:')}</label>
+                        <Select value={appSettings.processing_order || 'Original'} onValueChange={(v) => setAppSettings((prev: any) => ({ ...prev, processing_order: v }))}>
+                          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                          <SelectContent>{[t('Original'), t('Random'), t('Sequential'), t('Path Ascending'), t('Path Descending'), t('Size Ascending'), t('Size Descending')].map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Button variant="outline" size="sm" onClick={() => {}}>{t('Start logging')}</Button>
+                        <Button variant="outline" size="sm" onClick={() => {}}>{t('Open log directory')}</Button>
+                        <Button variant="outline" size="sm" onClick={() => {}}>{t('Wipe log directory')}</Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
             </div>
           )}
 

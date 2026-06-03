@@ -358,8 +358,39 @@ export function deleteCustomTheme(name: string): void {
 /** Apply CSS variables from a color variant to the document root */
 function applyColorVariant(colors: ThemeColorsVariant): void {
   const root = document.documentElement;
+
+  // Sidebar fallback mapping: if sidebar vars not defined, use base vars
+  const sidebarFallbacks: Record<string, string> = {
+    'sidebar-background': 'background',
+    'sidebar-foreground': 'foreground',
+    'sidebar-primary': 'primary',
+    'sidebar-primary-foreground': 'primary-foreground',
+    'sidebar-accent': 'accent',
+    'sidebar-accent-foreground': 'accent-foreground',
+    'sidebar-border': 'border',
+    'sidebar-ring': 'ring',
+  };
+
   for (const [key, value] of Object.entries(colors)) {
-    root.style.setProperty(`--${key}`, value);
+    if (typeof value === 'string') {
+      root.style.setProperty(`--${key}`, value);
+
+      // Special handling: 'sidebar' key maps to sidebar-background
+      if (key === 'sidebar') {
+        root.style.setProperty('--sidebar-background', value);
+      }
+
+      // Apply fallbacks for sidebar vars
+      for (const [sKey, bKey] of Object.entries(sidebarFallbacks)) {
+        if (key === bKey) {
+          // Only apply fallback if sidebar var not explicitly defined
+          const hasExplicit = colors[sKey] || (sKey === 'sidebar-background' && colors['sidebar']);
+          if (!hasExplicit) {
+            root.style.setProperty(`--${sKey}`, value);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -436,19 +467,33 @@ function parseTweakcnColor(obj: any): ThemeColorsVariant {
 }
 
 export function importThemeFromJSON(json: string): CustomThemeConfig[] {
-  const parsed = JSON.parse(json);
+  try {
+    const parsed = JSON.parse(json);
+    const items = Array.isArray(parsed) ? parsed : [parsed];
+    const results: CustomThemeConfig[] = [];
 
-  // Support array format
-  const items = Array.isArray(parsed) ? parsed : [parsed];
+    for (const item of items) {
+      // Support both 'colors' (our format) and 'cssVars' (tweakcn format)
+      const cssVars = item.cssVars || item.colors;
+      if (!cssVars) continue;
 
-  return items.map((item: any) => ({
-    name: item.name || 'Imported Theme',
-    description: item.description || '',
-    colors: {
-      light: parseTweakcnColor(item.colors?.light),
-      dark: parseTweakcnColor(item.colors?.dark),
-    },
-  }));
+      // theme is the base vars that apply to both light and dark
+      const base = cssVars.theme ?? {};
+      const light = { ...base, ...(cssVars.light ?? {}) };
+      const dark = { ...base, ...(cssVars.dark ?? cssVars.light ?? {}) };
+
+      results.push({
+        name: item.name || 'Imported Theme',
+        description: item.description || '',
+        colors: { light, dark },
+      });
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Import theme failed:', error);
+    return [];
+  }
 }
 
 export async function importThemeFromURL(url: string): Promise<CustomThemeConfig[]> {

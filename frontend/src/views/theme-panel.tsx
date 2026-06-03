@@ -83,6 +83,11 @@ export function ThemePanel({ currentThemeName, onThemeChange }: ThemePanelProps)
       }
       setCustomThemes(getCustomThemes());
       setImportURL('');
+      // Auto-select first imported theme
+      if (themes.length > 0) {
+        applyThemeColors(mode, themes[0].name);
+        onThemeChange(themes[0].name);
+      }
     } catch (e) {
       setImportError(String(e));
     }
@@ -97,6 +102,11 @@ export function ThemePanel({ currentThemeName, onThemeChange }: ThemePanelProps)
       }
       setCustomThemes(getCustomThemes());
       setImportJSON('');
+      // Auto-select first imported theme
+      if (themes.length > 0) {
+        applyThemeColors(mode, themes[0].name);
+        onThemeChange(themes[0].name);
+      }
     } catch (e) {
       setImportError(String(e));
     }
