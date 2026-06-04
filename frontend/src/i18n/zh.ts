@@ -17,6 +17,8 @@ export const zh: Record<TranslationKeys, string> = {
   'Name': '名称',
   'Ext': '格式',
   'Location': '位置',
+  'List View': '列表视图',
+  'Tree View': '树状视图',
   'Convert': '转换',
 
   // Output page

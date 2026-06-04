@@ -15,6 +15,8 @@ export const en = {
   'Name': 'Name',
   'Ext': 'Ext',
   'Location': 'Location',
+  'List View': 'List View',
+  'Tree View': 'Tree View',
   'Convert': 'Convert',
 
   // Output page

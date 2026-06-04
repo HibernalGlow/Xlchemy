@@ -534,9 +534,9 @@
 .canvas-bg {
   background-color: var(--bg-3);
   background-image:
-    radial-gradient(color-mix(in oklch, var(--text-2) 18%, transparent) 1px, transparent 1px),
+    radial-gradient(color-mix(in oklch, var(--text-2) 18%, transparent) 0.8px, transparent 0.8px),
     linear-gradient(180deg, color-mix(in oklch, white 36%, transparent), transparent 42%);
-  background-size: 5px 5px, 100% 100%;
+  background-size: 20px 20px, 100% 100%;
 }
 
 /* ─── Scroll Container ─── */
