@@ -6,6 +6,7 @@
     FileImage,
     Folder,
     FolderTree,
+    Trash2,
     Rows3,
   } from '@lucide/svelte';
   import {
@@ -18,6 +19,7 @@
   } from '@tanstack/table-core';
   import { createSvelteTable, FlexRender } from '$lib/components/ui/data-table';
   import Button from '$lib/components/ui/Button.svelte';
+  import Checkbox from '$lib/components/ui/Checkbox.svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
@@ -55,6 +57,7 @@
     node: FileTreeNode;
     depth: number;
   };
+  type SelectionState = 'none' | 'partial' | 'all';
 
   let { laneId }: Props = $props();
 
@@ -299,6 +302,100 @@
     return sorted === 'desc' ? 'desc' : sorted === 'asc' ? 'asc' : null;
   }
 
+  function toggleSelection(path: string, checked: boolean) {
+    const next = new Set(selectedPaths);
+    if (checked) next.add(path);
+    else next.delete(path);
+    selectedPaths = next;
+  }
+
+  function collectFilePaths(node: FileTreeNode, paths: string[] = []): string[] {
+    if (node.kind === 'file') {
+      paths.push(node.path);
+      return paths;
+    }
+
+    for (const child of node.children) {
+      collectFilePaths(child, paths);
+    }
+
+    return paths;
+  }
+
+  function buildFolderSelectionIndex(nodes: FileTreeNode[]): Record<string, string[]> {
+    const index: Record<string, string[]> = {};
+
+    function visit(node: FileTreeNode) {
+      if (node.kind !== 'folder') return;
+      index[node.id] = collectFilePaths(node);
+      for (const child of node.children) {
+        visit(child);
+      }
+    }
+
+    for (const node of nodes) {
+      visit(node);
+    }
+
+    return index;
+  }
+
+  function isSelected(path: string): boolean {
+    return selectedPaths.has(path);
+  }
+
+  function visibleFilePaths(): string[] {
+    if (viewMode === 'list') {
+      return fileTable.getRowModel().rows.map((row) => row.original.absPath);
+    }
+    return visibleTreeRows.filter((row) => row.node.kind === 'file').map((row) => row.node.path);
+  }
+
+  function toggleSelectVisible(checked: boolean) {
+    const visiblePaths = visibleFilePaths();
+    const next = new Set(selectedPaths);
+
+    for (const path of visiblePaths) {
+      if (checked) next.add(path);
+      else next.delete(path);
+    }
+
+    selectedPaths = next;
+  }
+
+  function getFolderSelectionState(node: FileTreeNode): SelectionState {
+    const paths = folderSelectionIndex[node.id] || [];
+    if (paths.length === 0) return 'none';
+
+    let count = 0;
+    for (const path of paths) {
+      if (selectedPaths.has(path)) count += 1;
+    }
+
+    if (count === 0) return 'none';
+    if (count === paths.length) return 'all';
+    return 'partial';
+  }
+
+  function toggleFolderSelection(node: FileTreeNode, checked: boolean) {
+    const paths = folderSelectionIndex[node.id] || [];
+    const next = new Set(selectedPaths);
+
+    for (const path of paths) {
+      if (checked) next.add(path);
+      else next.delete(path);
+    }
+
+    selectedPaths = next;
+  }
+
+  function removeSelected() {
+    if (selectedPaths.size === 0) return;
+    const next = appState.fileItems.filter((item) => !selectedPaths.has(item.absPath));
+    appState.fileItems = next;
+    selectedPaths = new Set<string>();
+  }
+
   const sortByField = (field: SortField): SortingFn<FileItem> => (rowA, rowB) =>
     compareFileItems(rowA.original, rowB.original, field);
 
@@ -334,6 +431,7 @@
   let viewMode = $state<ViewMode>(loadViewMode());
   let sorting = $state<SortingState>(loadSorting());
   let expandedFolders = $state<Record<string, boolean>>({});
+  let selectedPaths = $state<Set<string>>(new Set());
 
   const activeSort = $derived(resolveSort(sorting));
   const fileTable = createSvelteTable<FileItem>({
@@ -356,6 +454,12 @@
   });
   const treeModel = $derived(buildTree(appState.fileItems, activeSort));
   const visibleTreeRows = $derived(flattenNodes(treeModel.nodes, expandedFolders));
+  const folderSelectionIndex = $derived(buildFolderSelectionIndex(treeModel.nodes));
+  const visiblePaths = $derived(visibleFilePaths());
+  const visibleSelectedCount = $derived(visiblePaths.filter((path) => selectedPaths.has(path)).length);
+  const allVisibleSelected = $derived(visiblePaths.length > 0 && visibleSelectedCount === visiblePaths.length);
+  const someVisibleSelected = $derived(visibleSelectedCount > 0 && visibleSelectedCount < visiblePaths.length);
+  const selectedCount = $derived(selectedPaths.size);
 
   $effect(() => {
     try {
@@ -368,6 +472,17 @@
       localStorage.setItem('xlchemy-input-files-sorting', JSON.stringify(sorting));
     } catch {}
   });
+
+  $effect(() => {
+    const available = new Set(appState.fileItems.map((item) => item.absPath));
+    const next = new Set<string>();
+    for (const path of selectedPaths) {
+      if (available.has(path)) next.add(path);
+    }
+    if (next.size !== selectedPaths.size) {
+      selectedPaths = next;
+    }
+  });
 </script>
 
 <LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`}>
@@ -376,6 +491,10 @@
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{$_('input.add_files')}</Button>
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{$_('input.add_folder')}</Button>
       <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{$_('input.clear')}</Button>
+      <Button kind="ghost" variant="neutral" size="sm" onclick={removeSelected} disabled={selectedCount === 0}>
+        <Trash2 class="h-3.5 w-3.5" />
+        Delete
+      </Button>
 
       <div class="ml-auto flex items-center gap-1">
         <Select class="w-28" value={activeSort.field} options={sortOptions()} onChange={setSortField} />
@@ -423,6 +542,7 @@
           {#if viewMode === 'list'}
             <table class="w-full table-fixed border-collapse text-left">
               <colgroup>
+                <col style="width: 2.5rem;" />
                 <col style="width: 42%;" />
                 <col style="width: 4.75rem;" />
                 <col style="width: 6rem;" />
@@ -435,7 +555,18 @@
                       <th
                         class="sticky top-0 z-[1] bg-[color-mix(in_oklch,var(--bg-2)_88%,transparent)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-text-2 backdrop-blur-xl"
                       >
-                        {#if !header.isPlaceholder}
+                        {#if header.column.id === 'name'}
+                          <div class="flex items-center gap-2">
+                            <Checkbox
+                              checked={allVisibleSelected}
+                              indeterminate={someVisibleSelected}
+                              onCheckedChange={toggleSelectVisible}
+                            />
+                            {#if someVisibleSelected}
+                              <span class="text-[10px] normal-case tracking-normal text-text-2">{visibleSelectedCount}/{visiblePaths.length}</span>
+                            {/if}
+                          </div>
+                        {:else if !header.isPlaceholder}
                           <button
                             type="button"
                             class="flex w-full min-w-0 items-center gap-1.5 text-left transition-colors hover:text-text-1"
@@ -459,6 +590,11 @@
               <tbody>
                 {#each fileTable.getRowModel().rows as row (row.original.absPath)}
                   <tr class="border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55">
+                    <td class="px-3 py-2.5 align-top">
+                      <div class="flex h-9 items-center justify-center">
+                        <Checkbox checked={isSelected(row.original.absPath)} onCheckedChange={(checked) => toggleSelection(row.original.absPath, checked)} />
+                      </div>
+                    </td>
                     <td class="min-w-0 px-3 py-2.5">
                       <div class="flex min-w-0 items-center gap-3" title={row.original.absPath}>
                         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
@@ -489,29 +625,50 @@
             <div class="py-1">
               {#if treeModel.rootLabel}
                 <div class="border-b border-border-2/50 px-3 py-2 text-[11px] text-text-2">
-                  {treeModel.rootLabel}
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      checked={allVisibleSelected}
+                      indeterminate={someVisibleSelected}
+                      onCheckedChange={toggleSelectVisible}
+                    />
+                    <span class="truncate">{treeModel.rootLabel}</span>
+                    {#if selectedCount > 0}
+                      <span class="ml-auto text-[10px] text-text-2">{selectedCount} selected</span>
+                    {/if}
+                  </div>
                 </div>
               {/if}
 
               {#each visibleTreeRows as row (row.node.id)}
                 {#if row.node.kind === 'folder'}
-                  <button
-                    type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-bg-3/60"
+                  {@const folderState = getFolderSelectionState(row.node)}
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
                     style={`padding-left:${12 + row.depth * 16}px`}
-                    onclick={() => toggleFolder(row.node.id)}
                   >
-                    <ChevronRight class={`h-3.5 w-3.5 shrink-0 text-text-2 transition-transform ${isExpanded(row.node.id) ? 'rotate-90' : ''}`} />
-                    <Folder class="h-4 w-4 shrink-0 text-text-2" />
-                    <span class="min-w-0 flex-1 truncate text-xs font-medium text-text-1">{row.node.name}</span>
+                    <Checkbox
+                      checked={folderState === 'all'}
+                      indeterminate={folderState === 'partial'}
+                      onCheckedChange={(checked) => toggleFolderSelection(row.node, checked)}
+                    />
+                    <button
+                      type="button"
+                      class="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      onclick={() => toggleFolder(row.node.id)}
+                    >
+                      <ChevronRight class={`h-3.5 w-3.5 shrink-0 text-text-2 transition-transform ${isExpanded(row.node.id) ? 'rotate-90' : ''}`} />
+                      <Folder class="h-4 w-4 shrink-0 text-text-2" />
+                      <span class="min-w-0 flex-1 truncate text-xs font-medium text-text-1">{row.node.name}</span>
+                    </button>
                     <span class="shrink-0 text-[10px] tabular-nums text-text-2">{row.node.fileCount}</span>
                     <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
-                  </button>
+                  </div>
                 {:else}
                   <div
                     class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
-                    style={`padding-left:${31 + row.depth * 16}px`}
+                    style={`padding-left:${12 + row.depth * 16}px`}
                   >
+                    <Checkbox checked={isSelected(row.node.path)} onCheckedChange={(checked) => toggleSelection(row.node.path, checked)} />
                     <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border-2/70 bg-bg-1/70">
                       <FileImage class="h-3.5 w-3.5 text-text-2" />
                     </div>

@@ -15,6 +15,11 @@ type ExceptionEvent struct {
 	Path string `json:"path"`
 }
 
+// FileDropEvent is emitted when the window receives external file drops.
+type FileDropEvent struct {
+	Files []string `json:"files"`
+}
+
 // FileItem represents a file in the input list.
 type FileItem struct {
 	AbsPath  string `json:"absPath"`

@@ -21,6 +21,7 @@ func init() {
 	application.RegisterEvent[struct{}]("conversion:finished")
 	application.RegisterEvent[struct{}]("conversion:canceled")
 	application.RegisterEvent[struct{}]("conversion:started")
+	application.RegisterEvent[FileDropEvent]("files-dropped")
 }
 
 func main() {
@@ -56,14 +57,10 @@ func main() {
 
 	win.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
 		files := event.Context().DroppedFiles()
-		details := event.Context().DropTargetDetails()
 		if len(files) == 0 {
 			return
 		}
-		App.Event.Emit("files-dropped", map[string]any{
-			"files":   files,
-			"details": details,
-		})
+		App.Event.Emit("files-dropped", FileDropEvent{Files: files})
 	})
 
 	if err := App.Run(); err != nil {
