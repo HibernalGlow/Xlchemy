@@ -191,4 +191,5 @@ export const zh: Record<TranslationKeys, string> = {
   'Language': '语言',
   'Expand sidebar': '展开侧边栏',
   'Collapse sidebar': '收起侧边栏',
+  'Lane max width:': 'Lane 最大宽度：',
 };

@@ -58,6 +58,7 @@ export interface ModifySettings {
 
 export interface AppSettings {
   theme: string;
+  lane_max_width: number;
   custom_resampling: boolean;
   sorting_disabled: boolean;
   excluded_formats: string[];

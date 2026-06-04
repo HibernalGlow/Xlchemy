@@ -72,6 +72,7 @@ export const en = {
   'General': 'General',
   'Disable downscaling on startup': 'Disable downscaling on startup',
   'Disable delete original on startup': 'Disable delete original on startup',
+  'Lane max width:': 'Lane max width:',
   'Disable sorting': 'Disable sorting',
   'Quality precision snapping': 'Quality precision snapping',
   'Play sound on finish': 'Play sound on finish',

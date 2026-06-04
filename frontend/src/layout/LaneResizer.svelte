@@ -1,29 +1,41 @@
 <script lang="ts">
   interface Props {
     onResize?: (delta: number) => void;
+    onResizeEnd?: () => void;
   }
 
-  let { onResize }: Props = $props();
+  let { onResize, onResizeEnd }: Props = $props();
   let startX = 0;
+  let pointerId: number | null = null;
+  let resizerEl = $state<HTMLButtonElement | null>(null);
 
-  function handleMouseDown(e: MouseEvent) {
+  function handlePointerDown(e: PointerEvent) {
     e.preventDefault();
     startX = e.clientX;
+    pointerId = e.pointerId;
+    resizerEl?.setPointerCapture(e.pointerId);
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (pointerId !== moveEvent.pointerId) return;
       const delta = moveEvent.clientX - startX;
       startX = moveEvent.clientX;
       onResize?.(delta);
     };
 
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      if (pointerId !== upEvent.pointerId) return;
+      pointerId = null;
+      resizerEl?.releasePointerCapture(upEvent.pointerId);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      onResizeEnd?.();
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
   }
 </script>
 
-<button type="button" aria-label="Resize lane" class="lane-resizer" onmousedown={handleMouseDown}></button>
+<button bind:this={resizerEl} type="button" aria-label="Resize lane" class="lane-resizer" onpointerdown={handlePointerDown}></button>

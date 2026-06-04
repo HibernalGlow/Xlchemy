@@ -65,6 +65,7 @@ export function normalizeAppSettings(raw: Partial<AppSettings>): AppSettings {
 
   return {
     theme: raw.theme ?? DEFAULT_APP_SETTINGS.theme,
+    lane_max_width: clamp(raw.lane_max_width ?? DEFAULT_APP_SETTINGS.lane_max_width, 24, 80),
     custom_resampling: raw.custom_resampling ?? DEFAULT_APP_SETTINGS.custom_resampling,
     sorting_disabled: raw.sorting_disabled ?? DEFAULT_APP_SETTINGS.sorting_disabled,
     excluded_formats: Array.isArray(raw.excluded_formats) ? raw.excluded_formats : DEFAULT_APP_SETTINGS.excluded_formats,

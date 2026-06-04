@@ -46,6 +46,7 @@ export const DEFAULT_MODIFY_SETTINGS: ModifySettings = {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'Miku',
+  lane_max_width: 44,
   custom_resampling: false,
   sorting_disabled: false,
   excluded_formats: ['avif', 'jxl', 'webp', 'gif'],

@@ -58,6 +58,7 @@ const testModify: ModifySettings = {
 
 const testApp: AppSettings = {
   theme: 'Miku',
+  lane_max_width: 44,
   custom_resampling: false,
   sorting_disabled: false,
   excluded_formats: ['avif', 'jxl', 'webp', 'gif'],

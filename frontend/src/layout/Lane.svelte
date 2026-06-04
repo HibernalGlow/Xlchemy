@@ -12,17 +12,51 @@
     collapsed: boolean;
     onToggleCollapse: () => void;
     width: number;
+    maxWidth?: number;
     fill?: boolean;
     dragOverId?: string | null;
     onRename?: () => void;
     onDelete?: () => void;
-    onResize?: (delta: number) => void;
+    onResize?: (nextWidth: number) => void;
+    onResizeEnd?: (nextWidth: number) => void;
   }
 
-  let { id, title, children, collapsed, onToggleCollapse, width, fill = false, dragOverId = null, onRename, onDelete, onResize }: Props = $props();
+  let {
+    id,
+    title,
+    children,
+    collapsed,
+    onToggleCollapse,
+    width,
+    maxWidth = 44,
+    fill = false,
+    dragOverId = null,
+    onRename,
+    onDelete,
+    onResize,
+    onResizeEnd,
+  }: Props = $props();
   let isDragging = $state(false);
+  let isResizing = $state(false);
   let laneEl = $state<HTMLDivElement | null>(null);
   let poppedOut = $state(false);
+  let liveWidth = $state(18);
+
+  function clampWidth(value: number): number {
+    return Math.max(14, Math.min(maxWidth, value));
+  }
+
+  function handleResize(deltaPx: number) {
+    isResizing = true;
+    const nextWidth = clampWidth(liveWidth + deltaPx / 16);
+    liveWidth = nextWidth;
+    onResize?.(nextWidth);
+  }
+
+  function handleResizeEnd() {
+    isResizing = false;
+    onResizeEnd?.(liveWidth);
+  }
 
   function handleDragStart(e: DragEvent) {
     setLaneDrag(id);
@@ -37,6 +71,11 @@
   }
 
   const isDragOver = $derived(dragOverId === id);
+
+  $effect(() => {
+    if (isResizing) return;
+    liveWidth = clampWidth(width);
+  });
 </script>
 
 {#if collapsed}
@@ -48,7 +87,7 @@
     bind:this={laneEl}
     class={cn('lane', fill && 'lane--fill', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
     data-lane-id={id}
-    style={fill ? 'width:100%;min-width:0;flex:1;' : `width:${width}rem;min-width:14rem;max-width:30rem;`}
+    style={fill ? 'width:100%;min-width:0;flex:1;' : `width:${liveWidth}rem;min-width:14rem;max-width:${maxWidth}rem;`}
   >
     <div class="stack-view">
       <LaneDragHandle
@@ -66,7 +105,7 @@
         {@render children?.()}
       </div>
       {#if !fill}
-        <LaneResizer {onResize} />
+        <LaneResizer onResize={handleResize} onResizeEnd={handleResizeEnd} />
       {/if}
     </div>
   </div>
