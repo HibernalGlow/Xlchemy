@@ -7,9 +7,23 @@
     version?: string;
     fileCount?: number;
     currentTheme?: string;
+    isConverting?: boolean;
+    onConvert?: () => void;
+    onCancel?: () => void;
+    singleLaneMode?: boolean;
+    onToggleSingleLaneMode?: () => void;
   }
 
-  let { version = '', fileCount = 0, currentTheme = 'Miku' }: Props = $props();
+  let {
+    version = '',
+    fileCount = 0,
+    currentTheme = 'Miku',
+    isConverting = false,
+    onConvert,
+    onCancel,
+    singleLaneMode = false,
+    onToggleSingleLaneMode,
+  }: Props = $props();
   const t = i18n.t;
 </script>
 
@@ -34,6 +48,12 @@
   </div>
 
   <div class="chrome-header__right">
+    <Button kind="outline" variant={singleLaneMode ? 'pop' : 'neutral'} size="sm" onclick={onToggleSingleLaneMode}>{singleLaneMode ? 'Single lane' : 'Multi lane'}</Button>
+    {#if isConverting}
+      <Button kind="outline" variant="neutral" size="sm" onclick={onCancel}>{t('Cancel')}</Button>
+    {:else}
+      <Button kind="solid" variant="pop" size="sm" onclick={onConvert}>{t('Convert')}</Button>
+    {/if}
     <Button kind="outline" variant="neutral" size="sm">{currentTheme}</Button>
   </div>
 </header>

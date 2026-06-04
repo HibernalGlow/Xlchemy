@@ -1,42 +1,42 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import CardLaneRenderer from '$lib/cards/CardLaneRenderer.svelte';
   import ExceptionsDialog from '$lib/dialogs/ExceptionsDialog.svelte';
   import ImportSettingsDialog from '$lib/dialogs/ImportSettingsDialog.svelte';
   import BottomBar from '$lib/layout/BottomBar.svelte';
   import ChromeSidebar from '$lib/layout/ChromeSidebar.svelte';
   import CustomScrollbar from '$lib/layout/CustomScrollbar.svelte';
+  import FloatingLaneSwitcher from '$lib/layout/FloatingLaneSwitcher.svelte';
   import HeaderBar from '$lib/layout/HeaderBar.svelte';
   import Lane from '$lib/layout/Lane.svelte';
   import LaneContainer from '$lib/layout/LaneContainer.svelte';
-  import AboutLane from '$lib/sections/AboutLane.svelte';
-  import InputLane from '$lib/sections/InputLane.svelte';
-  import ModifyLane from '$lib/sections/ModifyLane.svelte';
-  import OutputLane from '$lib/sections/OutputLane.svelte';
-  import SettingsLane from '$lib/sections/SettingsLane.svelte';
   import { i18n } from '$lib/i18n/t.svelte';
   import { appState } from '$lib/state/app.svelte';
   import { canvasState } from '$lib/state/canvas.svelte';
   import { initConversionEvents } from '$lib/state/conversion.svelte';
   import { backend } from '$lib/backend';
+  import type { LaneId } from '$lib/cards/definitions';
 
   const t = i18n.t;
 
-  function lanes() {
+  type LaneItem = { id: LaneId; title: string };
+
+  function lanes(): LaneItem[] {
     return [
-      { id: 'input', title: t('Input'), component: InputLane },
-      { id: 'output', title: t('Output'), component: OutputLane },
-      { id: 'modify', title: t('Modify'), component: ModifyLane },
-      { id: 'settings', title: t('Settings'), component: SettingsLane },
-      { id: 'about', title: t('About'), component: AboutLane },
+      { id: 'input', title: t('Input') },
+      { id: 'output', title: t('Output') },
+      { id: 'modify', title: t('Modify') },
+      { id: 'settings', title: t('Settings') },
+      { id: 'about', title: t('About') },
     ];
   }
 
   function sortedLanes() {
     const order = appState.laneOrder;
     const source = lanes();
-    const map = new Map(source.map((lane) => [lane.id, lane]));
-    const sorted: typeof source = [];
-    for (const id of order) {
+    const map = new Map<LaneId, LaneItem>(source.map((lane) => [lane.id, lane]));
+    const sorted: LaneItem[] = [];
+    for (const id of order as LaneId[]) {
       const lane = map.get(id);
       if (lane) {
         sorted.push(lane);
@@ -64,6 +64,12 @@
     e.preventDefault();
   }
 
+  function visibleLanes() {
+    return appState.singleLaneMode
+      ? sortedLanes().filter((lane) => lane.id === appState.activeLaneId)
+      : sortedLanes();
+  }
+
   onMount(() => {
     appState.init();
     const cleanupConversion = initConversionEvents();
@@ -86,31 +92,47 @@
 </script>
 
 <div role="application" class="app-shell text-text-1 select-none" data-file-drop-target ondragover={preventDefault} ondrop={appState.handleDrop}>
-  <HeaderBar version={appState.constants.version} fileCount={appState.fileItems.length} currentTheme={appState.appSettings.theme || 'Miku'} />
+  <HeaderBar
+    version={appState.constants.version}
+    fileCount={appState.fileItems.length}
+    currentTheme={appState.appSettings.theme || 'Miku'}
+    isConverting={appState.isConverting}
+    onConvert={() => appState.startConversion()}
+    onCancel={() => appState.cancelConversion()}
+    singleLaneMode={appState.singleLaneMode}
+    onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
+  />
 
   <div class="chrome-body">
     <ChromeSidebar
       laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: canvasState.visibleLanes.includes(lane.id) }))}
-      onLaneSelect={(laneId) => canvasState.scrollToLane(laneId)}
+      onLaneSelect={(laneId) => canvasState.scrollToLane(laneId as LaneId)}
     />
 
     <div class="chrome-content">
       <div class="chrome-workspace canvas-bg">
-        <LaneContainer onReorderLanes={handleReorderLanes}>
-          {#each sortedLanes() as lane (lane.id)}
-            {@const LaneComponent = lane.component}
+        <LaneContainer onReorderLanes={handleReorderLanes} onMoveCard={(cardId, fromLaneId, toLaneId) => appState.moveCard(cardId as any, fromLaneId as any, toLaneId as any)}>
+          {#each visibleLanes() as lane (lane.id)}
             <Lane
               id={lane.id}
               title={lane.title}
               collapsed={appState.collapsedLanes.has(lane.id)}
               onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
-              width={appState.laneWidth}
+              width={appState.singleLaneMode ? 28 : appState.laneWidth}
               dragOverId={canvasState.dragOverId}
             >
-              <LaneComponent />
+              <CardLaneRenderer laneId={lane.id} />
             </Lane>
           {/each}
         </LaneContainer>
+
+        {#if appState.singleLaneMode}
+          <FloatingLaneSwitcher
+            laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: lane.id === appState.activeLaneId }))}
+            activeLaneId={appState.activeLaneId}
+            onSelect={(laneId) => appState.setActiveLaneId(laneId as LaneId)}
+          />
+        {/if}
 
         <CustomScrollbar viewport={canvasState.canvasEl} />
 

@@ -1,5 +1,14 @@
 import { getCurrentLanguage, setLanguage } from '$lib/i18n';
 import { backend } from '$lib/backend';
+import {
+  cloneCardLayout,
+  DEFAULT_CARD_LAYOUT,
+  DEFAULT_PROGRESS_CARD_CONFIG,
+  type CardId,
+  type CardLayout,
+  type LaneId,
+  type ProgressCardConfig,
+} from '$lib/cards/definitions';
 import { applyThemeColors, getThemeMode, loadThemeName, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
 
 const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
@@ -39,10 +48,57 @@ function loadLaneWidth(): number {
   return DEFAULT_LANE_WIDTH;
 }
 
+function loadCardLayout(): CardLayout {
+  try {
+    const raw = localStorage.getItem('xlchemy-card-layout');
+    if (!raw) return cloneCardLayout(DEFAULT_CARD_LAYOUT);
+    const parsed = JSON.parse(raw);
+    return {
+      input: Array.isArray(parsed?.input) ? parsed.input : [...DEFAULT_CARD_LAYOUT.input],
+      output: Array.isArray(parsed?.output) ? parsed.output : [...DEFAULT_CARD_LAYOUT.output],
+      modify: Array.isArray(parsed?.modify) ? parsed.modify : [...DEFAULT_CARD_LAYOUT.modify],
+      settings: Array.isArray(parsed?.settings) ? parsed.settings : [...DEFAULT_CARD_LAYOUT.settings],
+      about: Array.isArray(parsed?.about) ? parsed.about : [...DEFAULT_CARD_LAYOUT.about],
+    };
+  } catch {
+    return cloneCardLayout(DEFAULT_CARD_LAYOUT);
+  }
+}
+
+function loadSingleLaneMode(): boolean {
+  try {
+    return localStorage.getItem('xlchemy-single-lane-mode') === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function loadActiveLaneId(): LaneId {
+  try {
+    const value = localStorage.getItem('xlchemy-active-lane-id') as LaneId | null;
+    if (value && DEFAULT_LANE_ORDER.includes(value)) return value;
+  } catch {}
+  return 'input';
+}
+
+function loadProgressCardConfig(): ProgressCardConfig {
+  try {
+    const raw = localStorage.getItem('xlchemy-progress-card-config');
+    if (!raw) return { ...DEFAULT_PROGRESS_CARD_CONFIG };
+    return { ...DEFAULT_PROGRESS_CARD_CONFIG, ...JSON.parse(raw) };
+  } catch {
+    return { ...DEFAULT_PROGRESS_CARD_CONFIG };
+  }
+}
+
 export class AppState {
   laneOrder = $state<string[]>(loadLaneOrder());
   collapsedLanes = $state<Set<string>>(loadCollapsedLanes());
   laneWidth = $state<number>(loadLaneWidth());
+  cardLayout = $state<CardLayout>(loadCardLayout());
+  singleLaneMode = $state<boolean>(loadSingleLaneMode());
+  activeLaneId = $state<LaneId>(loadActiveLaneId());
+  progressCardConfig = $state<ProgressCardConfig>(loadProgressCardConfig());
 
   fileItems = $state<any[]>([]);
   outputSettings = $state<any>({});
@@ -78,6 +134,66 @@ export class AppState {
   setLaneWidth(width: number) {
     this.laneWidth = width;
     localStorage.setItem('xlchemy-lane-width', String(width));
+  }
+
+  setSingleLaneMode(enabled: boolean) {
+    this.singleLaneMode = enabled;
+    localStorage.setItem('xlchemy-single-lane-mode', String(enabled));
+  }
+
+  setActiveLaneId(laneId: LaneId) {
+    this.activeLaneId = laneId;
+    localStorage.setItem('xlchemy-active-lane-id', laneId);
+  }
+
+  cardsForLane(laneId: LaneId): CardId[] {
+    return this.cardLayout[laneId] || [];
+  }
+
+  moveCard(cardId: CardId, fromLaneId: LaneId, toLaneId: LaneId) {
+    if (fromLaneId === toLaneId) return;
+    const next = cloneCardLayout(this.cardLayout);
+    next[fromLaneId] = next[fromLaneId].filter((id) => id !== cardId);
+    if (!next[toLaneId].includes(cardId)) {
+      next[toLaneId] = [...next[toLaneId], cardId];
+    }
+    this.cardLayout = next;
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
+  }
+
+  reorderCardWithinLane(laneId: LaneId, fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return;
+    const next = cloneCardLayout(this.cardLayout);
+    const list = [...next[laneId]];
+    const [item] = list.splice(fromIndex, 1);
+    if (!item) return;
+    list.splice(toIndex, 0, item);
+    next[laneId] = list;
+    this.cardLayout = next;
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
+  }
+
+  updateProgressCardConfig(key: keyof ProgressCardConfig, value: boolean) {
+    this.progressCardConfig = { ...this.progressCardConfig, [key]: value };
+    localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
+  }
+
+  progressSummary() {
+    const lines = [] as string[];
+    if (this.progressCardConfig.showCounter) {
+      lines.push(`${this.progress.completed}/${this.progress.total}`);
+    }
+    if (this.progressCardConfig.showFormat && this.outputSettings.format) {
+      lines.push(this.outputSettings.format);
+    }
+    if (this.progressCardConfig.showEncoder) {
+      if (this.outputSettings.format === 'AVIF' && this.appSettings.avif_encoder) {
+        lines.push(this.appSettings.avif_encoder);
+      } else if (this.outputSettings.format === 'JPEG' && this.appSettings.jpg_encoder) {
+        lines.push(this.appSettings.jpg_encoder);
+      }
+    }
+    return lines.join(' · ');
   }
 
   allowedInput(): string[] {
