@@ -3,9 +3,10 @@
   import CardLaneRenderer from '$lib/cards/CardLaneRenderer.svelte';
   import ExceptionsDialog from '$lib/dialogs/ExceptionsDialog.svelte';
   import ImportSettingsDialog from '$lib/dialogs/ImportSettingsDialog.svelte';
-  import BottomLaneNav from '$lib/layout/BottomLaneNav.svelte';
+
   import ChromeSidebar from '$lib/layout/ChromeSidebar.svelte';
   import CustomScrollbar from '$lib/layout/CustomScrollbar.svelte';
+  import BottomLaneNav from '$lib/layout/BottomLaneNav.svelte';
   import FloatingLaneSwitcher from '$lib/layout/FloatingLaneSwitcher.svelte';
   import HeaderBar from '$lib/layout/HeaderBar.svelte';
   import Lane from '$lib/layout/Lane.svelte';
@@ -137,14 +138,13 @@
         <CustomScrollbar viewport={canvasState.canvasEl} />
 
         <BottomLaneNav
-          laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: canvasState.visibleLanes.includes(lane.id) || lane.id === appState.activeLaneId }))}
+          laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: lane.id === appState.activeLaneId }))}
           onSelect={(laneId) => {
             appState.setActiveLaneId(laneId as LaneId);
             canvasState.scrollToLane(laneId as LaneId);
           }}
+          onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
         />
-
-
       </div>
     </div>
   </div>
