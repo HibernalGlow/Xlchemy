@@ -35,7 +35,7 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 z-modal" role="dialog" aria-modal="true">
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick={handleClose} aria-hidden="true"></div>
     <div class="fixed inset-0 flex items-center justify-center p-4">
       <div

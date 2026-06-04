@@ -27,8 +27,18 @@
 
   let open = $state(false);
   let rootEl = $state<HTMLDivElement | null>(null);
+  let panelEl = $state<HTMLDivElement | null>(null);
+  let panelStyle = $state('');
 
   const selectedLabel = $derived(options.find((o) => o.value === value)?.label || '');
+
+  function updatePanelPosition() {
+    if (!rootEl || !panelEl) return;
+    const rect = rootEl.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+    panelStyle = `position:fixed;top:${rect.bottom + scrollY}px;left:${rect.left + scrollX}px;min-width:${rect.width}px;z-index:9999;`;
+  }
 
   function handleSelect(v: string) {
     value = v;
@@ -37,13 +47,14 @@
   }
 
   function handleClickOutside(e: MouseEvent) {
-    if (rootEl && !rootEl.contains(e.target as Node)) {
+    if (rootEl && !rootEl.contains(e.target as Node) && panelEl && !panelEl.contains(e.target as Node)) {
       open = false;
     }
   }
 
   $effect(() => {
     if (open) {
+      updatePanelPosition();
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
@@ -68,7 +79,7 @@
   </button>
 
   {#if open}
-    <div class="absolute z-50 mt-1 max-h-60 min-w-[8rem] overflow-hidden rounded-gb border border-border-2 bg-bg-1 shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+    <div bind:this={panelEl} class="max-h-60 overflow-hidden rounded-gb border border-border-2 bg-bg-1 shadow-[0_4px_16px_rgba(0,0,0,0.3)]" style={panelStyle}>
       <div class="p-1">
         {#each options as option}
           <button
