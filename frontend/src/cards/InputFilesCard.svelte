@@ -20,6 +20,7 @@
   import { createSvelteTable, FlexRender } from '$lib/components/ui/data-table';
   import Button from '$lib/components/ui/Button.svelte';
   import Checkbox from '$lib/components/ui/Checkbox.svelte';
+  import LocalFilePreview from '$lib/components/ui/LocalFilePreview.svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
@@ -89,6 +90,14 @@
       }
     } catch {}
     return [{ id: 'name', desc: false }];
+  }
+
+  function loadOriginalPreviewEnabled(): boolean {
+    try {
+      return localStorage.getItem('xlchemy-input-files-original-preview') === 'true';
+    } catch {
+      return false;
+    }
   }
 
   function formatBytes(size: number): string {
@@ -430,6 +439,7 @@
 
   let viewMode = $state<ViewMode>(loadViewMode());
   let sorting = $state<SortingState>(loadSorting());
+  let showOriginalPreview = $state(loadOriginalPreviewEnabled());
   let expandedFolders = $state<Record<string, boolean>>({});
   let selectedPaths = $state<Set<string>>(new Set());
 
@@ -474,6 +484,12 @@
   });
 
   $effect(() => {
+    try {
+      localStorage.setItem('xlchemy-input-files-original-preview', String(showOriginalPreview));
+    } catch {}
+  });
+
+  $effect(() => {
     const available = new Set(appState.fileItems.map((item) => item.absPath));
     const next = new Set<string>();
     for (const path of selectedPaths) {
@@ -495,6 +511,20 @@
         <Trash2 class="h-3.5 w-3.5" />
         Delete
       </Button>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={showOriginalPreview}
+        class="inline-flex h-8 items-center gap-2 rounded-full border border-border-2/70 bg-bg-1/75 px-2.5 text-[11px] text-text-2 transition-colors hover:border-border-2 hover:text-text-1"
+        onclick={() => (showOriginalPreview = !showOriginalPreview)}
+      >
+        <span class="whitespace-nowrap">Preview</span>
+        <span class={`relative h-4 w-7 rounded-full transition-colors ${showOriginalPreview ? 'bg-fill-pop' : 'bg-bg-3'}`}>
+          <span
+            class={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform ${showOriginalPreview ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+          ></span>
+        </span>
+      </button>
 
       <div class="ml-auto flex items-center gap-1">
         <Select class="w-28" value={activeSort.field} options={sortOptions()} onChange={setSortField} />
@@ -598,7 +628,14 @@
                     <td class="min-w-0 px-3 py-2.5">
                       <div class="flex min-w-0 items-center gap-3" title={row.original.absPath}>
                         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-                          <FileImage class="h-4 w-4 text-text-2" />
+                          <LocalFilePreview
+                            path={row.original.absPath}
+                            name={row.original.name}
+                            enabled={showOriginalPreview}
+                            class="h-full w-full"
+                            iconClass="h-4 w-4 text-text-2"
+                            imageClass="h-full w-full object-cover"
+                          />
                         </div>
                         <div class="min-w-0">
                           <div class="truncate text-xs font-medium text-text-1">{row.original.name}</div>
@@ -670,7 +707,14 @@
                   >
                     <Checkbox checked={isSelected(row.node.path)} onCheckedChange={(checked) => toggleSelection(row.node.path, checked)} />
                     <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border-2/70 bg-bg-1/70">
-                      <FileImage class="h-3.5 w-3.5 text-text-2" />
+                      <LocalFilePreview
+                        path={row.node.path}
+                        name={row.node.name}
+                        enabled={showOriginalPreview}
+                        class="h-full w-full"
+                        iconClass="h-3.5 w-3.5 text-text-2"
+                        imageClass="h-full w-full object-cover"
+                      />
                     </div>
                     <div class="min-w-0 flex-1" title={row.node.path}>
                       <div class="truncate text-xs text-text-1">{row.node.name}</div>
