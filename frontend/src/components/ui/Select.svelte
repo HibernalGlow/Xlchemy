@@ -67,8 +67,9 @@
     {disabled}
     onclick={() => (open = !open)}
     class={cn(
-      'flex h-7 w-full items-center justify-between gap-1.5 rounded-gb border border-border-2 bg-bg-1 px-2 text-xs text-text-1',
-      'transition-[color,border-color] duration-50 ease-in-out',
+      'flex h-7 w-full items-center justify-between gap-1.5 rounded-gb border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)] px-2 text-xs text-text-1',
+      'backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]',
+      'transition-[color,border-color,box-shadow] duration-50 ease-in-out',
       'focus:outline-none focus:ring-2 focus:ring-fill-pop focus:ring-offset-1 focus:ring-offset-bg-1',
       'disabled:cursor-not-allowed disabled:opacity-50',
       '[&>span]:truncate',
@@ -79,7 +80,7 @@
   </button>
 
   {#if open}
-    <div bind:this={panelEl} class="max-h-60 overflow-hidden rounded-gb border border-border-2 bg-bg-1 shadow-[0_4px_16px_rgba(0,0,0,0.3)]" style={panelStyle}>
+    <div bind:this={panelEl} class="max-h-60 overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl" style={panelStyle}>
       <div class="p-1">
         {#each options as option}
           <button
@@ -88,8 +89,8 @@
             class={cn(
               'relative flex h-7 w-full cursor-default select-none items-center rounded-[4px] pr-8 pl-2 text-xs text-text-1 outline-none',
               'transition-colors duration-50',
-              'hover:bg-bg-3 hover:text-text-1',
-              option.value === value && 'bg-bg-3',
+              'hover:bg-[color-mix(in_oklch,var(--bg-3)_66%,white_34%)] hover:text-text-1',
+              option.value === value && 'bg-[color-mix(in_oklch,var(--fill-pop-bg)_14%,transparent)]',
             )}
           >
             <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">

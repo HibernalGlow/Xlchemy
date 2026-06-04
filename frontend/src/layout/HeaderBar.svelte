@@ -33,12 +33,16 @@
   <div class="chrome-header__left">
     <div class="chrome-header__brand">
       <div class="chrome-header__logo">X</div>
-      <span class="text-sm font-semibold text-text-1">Xlchemy</span>
-      {#if version}
-        <Badge variant="secondary" class="text-[10px]">v{version}</Badge>
-      {/if}
+      <div class="chrome-header__brand-copy">
+        <div class="chrome-header__brand-row">
+          <span class="chrome-header__brand-name">Xlchemy</span>
+          {#if version}
+            <Badge variant="secondary" class="chrome-header__version">v{version}</Badge>
+          {/if}
+        </div>
+        <div class="chrome-header__status text-xs text-text-2">{fileCount} {t('file(s)')}</div>
+      </div>
     </div>
-    <div class="chrome-header__status text-xs text-text-2">{fileCount} {t('file(s)')}</div>
   </div>
 
   <div class="chrome-header__center"></div>
@@ -51,6 +55,6 @@
     {:else}
       <Button kind="solid" variant="pop" size="sm" onclick={onConvert}>{t('Convert')}</Button>
     {/if}
-    <Button kind="outline" variant="neutral" size="sm">{currentTheme}</Button>
+    <Button kind="outline" variant="neutral" size="sm" class="chrome-header__theme-button">{currentTheme}</Button>
   </div>
 </header>

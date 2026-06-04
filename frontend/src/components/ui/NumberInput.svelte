@@ -41,7 +41,8 @@
     value={value}
     oninput={handleInput}
     class={cn(
-      'h-7 w-20 shrink-0 rounded-gb border border-border-2 bg-bg-1 px-2 text-center text-xs text-text-1',
+      'h-7 w-20 shrink-0 rounded-gb border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)] px-2 text-center text-xs text-text-1',
+      'backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]',
       'transition-[border-color,box-shadow] duration-50 ease-in-out',
       'focus-visible:outline-none focus-visible:border-fill-pop focus-visible:ring-2 focus-visible:ring-fill-pop focus-visible:ring-offset-1 focus-visible:ring-offset-bg-1',
       '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',

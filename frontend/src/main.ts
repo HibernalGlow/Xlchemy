@@ -2,6 +2,7 @@ import { mount } from 'svelte';
 import App from './app.svelte';
 import { initI18n } from './i18n';
 import '@fontsource-variable/inter';
+import '../package/fonts/fonts.css';
 import './input.css';
 
 initI18n();

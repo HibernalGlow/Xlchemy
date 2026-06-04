@@ -19,8 +19,8 @@
       variants: {
         variant: {
           default: 'bg-fill-pop text-bg-2',
-          secondary: 'bg-bg-3 text-text-1',
-          outline: 'border border-border-2 bg-transparent text-text-1',
+          secondary: 'border border-[color-mix(in_oklch,var(--border-2)_60%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_70%,transparent)] text-text-1 shadow-[0_1px_0_rgba(255,255,255,0.65)_inset]',
+          outline: 'border border-[color-mix(in_oklch,var(--border-2)_72%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_40%,transparent)] text-text-1',
         },
       },
       defaultVariants: { variant: 'default' },
