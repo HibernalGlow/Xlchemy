@@ -17,6 +17,7 @@
     dragOverId?: string | null;
     onRename?: () => void;
     onDelete?: () => void;
+    onHide?: () => void;
     onResize?: (nextWidth: number) => void;
     onResizeEnd?: (nextWidth: number) => void;
   }
@@ -33,6 +34,7 @@
     dragOverId = null,
     onRename,
     onDelete,
+    onHide,
     onResize,
     onResizeEnd,
   }: Props = $props();
@@ -98,6 +100,7 @@
         onDragEnd={handleDragEnd}
         {onRename}
         {onDelete}
+        {onHide}
         onPopout={() => (poppedOut = true)}
         poppedOut={poppedOut}
       />
@@ -121,6 +124,7 @@
             onToggleCollapse={onToggleCollapse}
             {onRename}
             {onDelete}
+            {onHide}
             onPopout={() => (poppedOut = false)}
             poppedOut={poppedOut}
           />

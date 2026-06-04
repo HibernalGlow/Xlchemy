@@ -11,11 +11,12 @@
     actions?: import('svelte').Snippet;
     onRename?: () => void;
     onDelete?: () => void;
+    onHide?: () => void;
     onPopout?: () => void;
     poppedOut?: boolean;
   }
 
-  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onPopout, poppedOut = false }: Props = $props();
+  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onHide, onPopout, poppedOut = false }: Props = $props();
   let menuOpen = $state(false);
 </script>
 
@@ -52,6 +53,9 @@
           <button type="button" onclick={() => { menuOpen = false; onPopout?.(); }}>{poppedOut ? 'Close pop out' : 'Pop out lane'}</button>
           <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>Rename lane</button>
           <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>{collapsed ? 'Expand lane' : 'Collapse lane'}</button>
+          {#if onHide}
+            <button type="button" onclick={() => { menuOpen = false; onHide?.(); }}>Hide lane</button>
+          {/if}
           {#if onDelete}
             <button type="button" class="danger" onclick={() => { menuOpen = false; onDelete?.(); }}>Delete lane</button>
           {/if}

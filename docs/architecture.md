@@ -285,7 +285,16 @@ interface AppStateSnapshot {
 | `SaveSettings(json)` | `saveAppState(snapshotJSON)` | 保存前端状态快照 |
 | `GetSettings()` | `loadAppState()` | 加载前端状态快照 |
 
-## 8. 关键文件索引
+## 8. 中间层能力清单
+
+详见 [middleware-capabilities.md](docs/middleware-capabilities.md)。该文档详细列出了：
+
+- 前端中间层（Orchestrator + Domain）**已实现**的功能
+- 从 Python 后端（`core/`、`data/`）**可以/应该迁移**到前端中间层的功能
+- **必须保留在后端**的功能（文件系统、进程执行、原生对话框）
+- 各功能的迁移优先级与实现建议
+
+## 9. 关键文件索引
 
 ### 前端
 
@@ -311,7 +320,7 @@ interface AppStateSnapshot {
 | `main.go` | 应用入口、窗口配置、文件拖入事件转发 |
 | `controller.go` | 任务执行引擎 |
 
-## 9. 验证清单
+## 10. 验证清单
 
 - [x] 前端通过 `pnpm check` 与 `pnpm build`，新分层不破坏 Svelte 5 工程
 - [x] 用当前 Wails 3 executor 跑通完整流程：选文件 → 扫目录 → 生成计划 → 开始转换 → 接收事件 → 取消/完成
