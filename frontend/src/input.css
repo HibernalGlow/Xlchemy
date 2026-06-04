@@ -505,7 +505,9 @@
   display: flex;
   position: relative;
   height: 100%;
-  gap: 0;
+  gap: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 /* ─── Lane (floating panel) ─── */
@@ -516,13 +518,25 @@
   height: 100%;
   position: relative;
   background-color: var(--bg-1);
-  border-right: 1px solid var(--border-2);
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
   overflow: hidden;
   transition: box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-.lane:first-child {
-  border-left: 1px solid var(--border-2);
+.lane-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: var(--z-floating);
+}
+
+.lane-resizer:hover {
+  background: var(--fill-pop-bg);
+  opacity: 0.3;
 }
 
 .lane:hover {
@@ -603,6 +617,7 @@
   color: var(--text-2);
   transition: color 0.05s ease;
   position: relative;
+  flex-shrink: 0;
 }
 
 .lane-drag-handle__collapse:hover {
@@ -640,10 +655,15 @@
   background-color: var(--bg-2);
   color: var(--text-2);
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.lane-drag-handle:hover .lane-drag-handle__grip {
+  opacity: 1;
 }
 
 .lane-drag-handle__title {
-  flex: 1;
   font-size: 11px;
   font-weight: 500;
   color: var(--text-2);
@@ -658,7 +678,7 @@
   align-items: center;
   flex-shrink: 0;
   gap: 4px;
-  min-width: 24px;
+  width: 24px;
   justify-content: flex-end;
 }
 
@@ -726,7 +746,12 @@
   color: var(--text-2);
   cursor: grab;
   flex-shrink: 0;
-  transition: color 0.1s ease, background 0.1s ease;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.1s ease, background 0.1s ease;
+}
+
+.drawer:hover .card-grip {
+  opacity: 1;
 }
 
 .card-grip:hover {
