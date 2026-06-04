@@ -112,7 +112,8 @@
               title={lane.title}
               collapsed={appState.collapsedLanes.has(lane.id)}
               onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
-              width={appState.singleLaneMode ? 28 : appState.laneWidth}
+              width={appState.singleLaneMode ? 28 : appState.laneWidth(lane.id)}
+              onResize={(delta) => appState.setLaneWidth(lane.id, Math.max(14, Math.min(36, appState.laneWidth(lane.id) + delta / 16)))}
               dragOverId={canvasState.dragOverId}
               onRename={() => appState.renameLane(lane.id, prompt('Lane name', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}
               onDelete={['input', 'output', 'modify', 'settings', 'about'].includes(lane.id) ? undefined : () => appState.deleteLane(lane.id)}

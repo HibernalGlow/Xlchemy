@@ -52,15 +52,15 @@ function loadCollapsedLanes(): Set<string> {
   return new Set<string>();
 }
 
-function loadLaneWidth(): number {
+function loadLaneWidths(): Record<string, number> {
   try {
-    const v = localStorage.getItem('xlchemy-lane-width');
-    if (v) {
-      const n = Number(v);
-      if (n > 0) return n;
-    }
-  } catch {}
-  return DEFAULT_LANE_WIDTH;
+    const raw = localStorage.getItem('xlchemy-lane-widths');
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 function loadLaneLabels(): Record<string, string> {
@@ -119,7 +119,7 @@ function loadProgressCardConfig(): ProgressCardConfig {
 export class AppState {
   laneOrder = $state<string[]>(loadLaneOrder());
   collapsedLanes = $state<Set<string>>(loadCollapsedLanes());
-  laneWidth = $state<number>(loadLaneWidth());
+  laneWidths = $state<Record<string, number>>(loadLaneWidths());
   laneLabels = $state<Record<string, string>>(loadLaneLabels());
   cardLayout = $state<CardLayout>(loadCardLayout());
   singleLaneMode = $state<boolean>(loadSingleLaneMode());
@@ -161,8 +161,10 @@ export class AppState {
     this.laneOrder = [...this.laneOrder, id];
     this.laneLabels = { ...this.laneLabels, [id]: name.trim() || 'New Lane' };
     this.cardLayout = { ...this.cardLayout, [id]: [] };
+    this.laneWidths = { ...this.laneWidths, [id]: DEFAULT_LANE_WIDTH };
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
     localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
     this.activeLaneId = id;
   }
@@ -181,12 +183,15 @@ export class AppState {
     delete nextLayout[laneId];
     nextLayout.input = [...(nextLayout.input || []), ...cards];
     const { [laneId]: _removed, ...nextLabels } = this.laneLabels;
+    const { [laneId]: _removedWidth, ...nextWidths } = this.laneWidths;
     this.cardLayout = nextLayout;
     this.laneLabels = nextLabels;
+    this.laneWidths = nextWidths;
     this.laneOrder = this.laneOrder.filter((id) => id !== laneId);
     if (this.activeLaneId === laneId) this.activeLaneId = 'input';
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
     localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
   }
 
@@ -194,6 +199,7 @@ export class AppState {
     return {
       laneOrder: this.laneOrder,
       laneLabels: this.laneLabels,
+      laneWidths: this.laneWidths,
       cardLayout: this.cardLayout,
       singleLaneMode: this.singleLaneMode,
       activeLaneId: this.activeLaneId,
@@ -205,12 +211,14 @@ export class AppState {
     if (!layout || typeof layout !== 'object') return;
     if (Array.isArray(layout.laneOrder)) this.laneOrder = layout.laneOrder;
     if (layout.laneLabels && typeof layout.laneLabels === 'object') this.laneLabels = { ...DEFAULT_LANE_LABELS, ...layout.laneLabels };
+    if (layout.laneWidths && typeof layout.laneWidths === 'object') this.laneWidths = layout.laneWidths;
     if (layout.cardLayout && typeof layout.cardLayout === 'object') this.cardLayout = layout.cardLayout;
     if (typeof layout.singleLaneMode === 'boolean') this.singleLaneMode = layout.singleLaneMode;
     if (layout.activeLaneId) this.activeLaneId = layout.activeLaneId;
     if (layout.progressCardConfig && typeof layout.progressCardConfig === 'object') this.progressCardConfig = { ...this.progressCardConfig, ...layout.progressCardConfig };
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
     localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
     localStorage.setItem('xlchemy-single-lane-mode', String(this.singleLaneMode));
     localStorage.setItem('xlchemy-active-lane-id', this.activeLaneId);
@@ -225,9 +233,14 @@ export class AppState {
     localStorage.setItem('xlchemy-collapsed-lanes', JSON.stringify(Array.from(next)));
   }
 
-  setLaneWidth(width: number) {
-    this.laneWidth = width;
-    localStorage.setItem('xlchemy-lane-width', String(width));
+  laneWidth(laneId: LaneId): number {
+    return this.laneWidths[laneId] || DEFAULT_LANE_WIDTH;
+  }
+
+  setLaneWidth(laneId: LaneId, width: number) {
+    const next = { ...this.laneWidths, [laneId]: width };
+    this.laneWidths = next;
+    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(next));
   }
 
   setSingleLaneMode(enabled: boolean) {

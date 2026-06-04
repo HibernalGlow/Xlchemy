@@ -3,6 +3,7 @@
   import { clearDrag, setLaneDrag } from '$lib/state/dragState';
   import CollapsedLane from './CollapsedLane.svelte';
   import LaneDragHandle from './LaneDragHandle.svelte';
+  import LaneResizer from './LaneResizer.svelte';
 
   interface Props {
     id: string;
@@ -15,9 +16,10 @@
     dragOverId?: string | null;
     onRename?: () => void;
     onDelete?: () => void;
+    onResize?: (delta: number) => void;
   }
 
-  let { id, title, children, collapsed, onToggleCollapse, width, fill = false, dragOverId = null, onRename, onDelete }: Props = $props();
+  let { id, title, children, collapsed, onToggleCollapse, width, fill = false, dragOverId = null, onRename, onDelete, onResize }: Props = $props();
   let isDragging = $state(false);
   let laneEl = $state<HTMLDivElement | null>(null);
   let poppedOut = $state(false);
@@ -63,6 +65,9 @@
       <div class="stack-content">
         {@render children?.()}
       </div>
+      {#if !fill}
+        <LaneResizer {onResize} />
+      {/if}
     </div>
   </div>
 
