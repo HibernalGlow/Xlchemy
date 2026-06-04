@@ -95,6 +95,17 @@ function loadCardLayout(): CardLayout {
         next[laneId] = Array.isArray(cards) ? (cards as CardId[]).filter(Boolean) : [];
       }
     }
+    // Ensure new cards from DEFAULT_CARD_LAYOUT are present (migration)
+    for (const laneId of Object.keys(DEFAULT_CARD_LAYOUT)) {
+      const defaultCards = DEFAULT_CARD_LAYOUT[laneId];
+      const existing = next[laneId] || [];
+      for (const cardId of defaultCards) {
+        if (!existing.includes(cardId)) {
+          existing.push(cardId);
+        }
+      }
+      next[laneId] = existing;
+    }
     return next;
   } catch {
     return cloneCardLayout(DEFAULT_CARD_LAYOUT);

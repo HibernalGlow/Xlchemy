@@ -13,6 +13,7 @@
   import SettingsConversionCard from '$lib/cards/SettingsConversionCard.svelte';
   import SettingsExifToolCard from '$lib/cards/SettingsExifToolCard.svelte';
   import SettingsGeneralCard from '$lib/cards/SettingsGeneralCard.svelte';
+  import SettingsFrontendCard from '$lib/cards/SettingsFrontendCard.svelte';
   import { appState } from '$lib/state/app.svelte';
   import type { CardId, LaneId } from '$lib/cards/definitions';
 
@@ -55,6 +56,8 @@
       <SettingsExifToolCard {laneId} />
     {:else if cardId === 'settings-advanced'}
       <SettingsAdvancedCard {laneId} />
+    {:else if cardId === 'settings-frontend'}
+      <SettingsFrontendCard {laneId} />
     {:else if cardId === 'about-info'}
       <AboutInfoCard {laneId} />
     {/if}
