@@ -372,7 +372,7 @@
 </script>
 
 <LaneCard id="input-files" laneId={laneId} movable header={`${t('Input')} (${appState.fileItems.length})`}>
-  <div class="flex min-h-0 flex-col gap-3">
+  <div class="flex min-h-0 min-w-0 flex-col gap-3">
     <div class="flex flex-wrap gap-1.5">
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{t('Add Files')}</Button>
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{t('Add Folder')}</Button>
@@ -420,26 +420,29 @@
           No files added
         </div>
       {:else}
-        <div class="overflow-auto" style="max-height:min(46vh, 31rem);">
+        <div class="min-w-0 overflow-auto pr-1" style="max-height:min(46vh, 31rem);">
           {#if viewMode === 'list'}
-            <table class="w-full border-collapse text-left">
+            <table class="w-full table-fixed border-collapse text-left">
+              <colgroup>
+                <col style="width: 42%;" />
+                <col style="width: 4.75rem;" />
+                <col style="width: 6rem;" />
+                <col />
+              </colgroup>
               <thead>
                 {#each fileTable.getHeaderGroups() as headerGroup (headerGroup.id)}
                   <tr class="border-b border-border-2/70">
                     {#each headerGroup.headers as header (header.id)}
                       <th
                         class="sticky top-0 z-[1] bg-[color-mix(in_oklch,var(--bg-2)_88%,transparent)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-text-2 backdrop-blur-xl"
-                        class:w-[46%]={header.column.id === 'name'}
-                        class:w-[76px]={header.column.id === 'ext'}
-                        class:w-[96px]={header.column.id === 'size'}
                       >
                         {#if !header.isPlaceholder}
                           <button
                             type="button"
-                            class="flex w-full items-center gap-1.5 text-left transition-colors hover:text-text-1"
+                            class="flex w-full min-w-0 items-center gap-1.5 text-left transition-colors hover:text-text-1"
                             onclick={header.column.getToggleSortingHandler()}
                           >
-                            <span class={header.column.id === 'size' ? 'text-right' : ''}>
+                            <span class={`min-w-0 flex-1 truncate ${header.column.id === 'size' ? 'text-right' : ''}`}>
                               <FlexRender content={header.column.columnDef.header} context={header.getContext()} />
                             </span>
                             {#if sortIndicator(header.column.id) === 'asc'}
@@ -457,7 +460,7 @@
               <tbody>
                 {#each fileTable.getRowModel().rows as row (row.original.absPath)}
                   <tr class="border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55">
-                    <td class="px-3 py-2.5">
+                    <td class="min-w-0 px-3 py-2.5">
                       <div class="flex min-w-0 items-center gap-3" title={row.original.absPath}>
                         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
                           <FileImage class="h-4 w-4 text-text-2" />
@@ -468,15 +471,15 @@
                         </div>
                       </div>
                     </td>
-                    <td class="px-3 py-2.5">
+                    <td class="min-w-0 px-3 py-2.5">
                       <span class="inline-flex max-w-full truncate rounded-full border border-border-2/70 bg-bg-1/75 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
                         {row.original.ext || '-'}
                       </span>
                     </td>
-                    <td class="px-3 py-2.5 text-right text-[11px] tabular-nums text-text-2">
+                    <td class="min-w-0 px-3 py-2.5 text-right text-[11px] tabular-nums text-text-2">
                       {formatBytes(row.original.size)}
                     </td>
-                    <td class="px-3 py-2.5">
+                    <td class="min-w-0 px-3 py-2.5">
                       <div class="truncate text-[11px] text-text-2" title={row.original.dir}>{row.original.dir}</div>
                     </td>
                   </tr>
