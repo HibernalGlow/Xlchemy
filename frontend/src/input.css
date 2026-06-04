@@ -402,7 +402,7 @@
   }
 
   .chrome-header__theme-button {
-    min-width: 56px;
+    /* now scoped in HeaderBar.svelte */
   }
 
   .chrome-selector-btn {
@@ -532,11 +532,30 @@
 
 /* ─── Dot Grid Background ─── */
 .canvas-bg {
+  position: relative;
   background-color: var(--bg-3);
   background-image:
     radial-gradient(color-mix(in oklch, var(--text-2) 18%, transparent) 0.8px, transparent 0.8px),
     linear-gradient(180deg, color-mix(in oklch, white 36%, transparent), transparent 42%);
   background-size: 20px 20px, 100% 100%;
+}
+
+/* Remove dot-grid when image mode or none mode is active */
+.canvas-bg--image,
+.canvas-bg--none {
+  background-image: none;
+}
+
+/* Background image overlay (neoview-style) */
+.canvas-bg-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
 /* ─── Scroll Container ─── */

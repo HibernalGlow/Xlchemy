@@ -147,23 +147,37 @@ func runItemTasks(ctx context.Context, fi FileItem, plan ExecutionPlan, threadCo
 	srcSize, _ := getFileSize(fi.AbsPath)
 
 	var finalOutput string
+	var firstEncodeOutput string
+
+	for _, task := range itemTasks {
+		if task.StepType == "encode" {
+			firstEncodeOutput = task.OutputPath
+			break
+		}
+	}
+
+	if plan.Policies.IfFileExists == "Skip" && firstEncodeOutput != "" {
+		if _, err := os.Stat(firstEncodeOutput); err == nil {
+			return srcSize, 0, true, nil
+		}
+	}
 
 	for _, task := range itemTasks {
 		if GlobalTaskStatus.WasCanceled() {
 			return srcSize, 0, false, &conversionError{"X0", "Canceled"}
 		}
 
+		if task.StepType == "cleanup" {
+			if err := os.Remove(task.OutputPath); err != nil && !os.IsNotExist(err) {
+				return srcSize, 0, false, &conversionError{"S1", fmt.Sprintf("Failed to clean up temporary file: %s", err)}
+			}
+			continue
+		}
+
 		// Resolve command path from toolchain if relative
 		cmdPath := resolveCommandPath(task.Command, plan.Toolchain)
 		if cmdPath == "" {
 			return srcSize, 0, false, &conversionError{"C4", fmt.Sprintf("Command not found: %s", task.Command)}
-		}
-
-		// Handle "if file exists" skip policy before encoding
-		if task.StepType == "encode" && plan.Policies.IfFileExists == "Skip" {
-			if _, err := os.Stat(task.OutputPath); err == nil {
-				return srcSize, 0, true, nil
-			}
 		}
 
 		// Create output directory

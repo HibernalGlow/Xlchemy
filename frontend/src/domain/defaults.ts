@@ -107,7 +107,7 @@ export const DEFAULT_CARD_LAYOUT: Record<string, string[]> = {
   input: ['input-files', 'progress-status', 'input-filter'],
   output: ['output-format', 'output-conversion', 'output-save'],
   modify: ['modify-downscaling', 'modify-misc'],
-  settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend'],
+  settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend', 'layout-manager'],
   about: ['about-info'],
 };
 

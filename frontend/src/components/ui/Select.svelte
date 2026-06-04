@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { ChevronDown, Check } from '@lucide/svelte';
   import { cn } from '$lib/utils/cn';
 
@@ -32,12 +33,46 @@
 
   const selectedLabel = $derived(options.find((o) => o.value === value)?.label || '');
 
-  function updatePanelPosition() {
-    if (!rootEl || !panelEl) return;
+  function buildPanelStyle() {
+    if (!rootEl) return '';
     const rect = rootEl.getBoundingClientRect();
-    const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
-    panelStyle = `position:fixed;top:${rect.bottom + scrollY}px;left:${rect.left + scrollX}px;min-width:${rect.width}px;z-index:9999;`;
+
+    const margin = 8;
+    const viewportWidth = window.innerWidth;
+    const desiredWidth = Math.max(rect.width, panelEl?.offsetWidth ?? rect.width);
+    const maxWidth = Math.max(120, viewportWidth - margin * 2);
+    const width = Math.min(desiredWidth, maxWidth);
+    const left = Math.min(
+      Math.max(margin, rect.left),
+      Math.max(margin, viewportWidth - width - margin),
+    );
+    const top = Math.max(margin, rect.bottom + 6);
+    const maxHeight = Math.max(140, window.innerHeight - top - margin);
+
+    return `position:fixed;top:${top}px;left:${left}px;min-width:${rect.width}px;max-width:${maxWidth}px;max-height:${maxHeight}px;z-index:9999;`;
+  }
+
+  function updatePanelPosition() {
+    panelStyle = buildPanelStyle();
+  }
+
+  async function syncPanelPosition() {
+    updatePanelPosition();
+    await tick();
+    updatePanelPosition();
+    requestAnimationFrame(() => updatePanelPosition());
+  }
+
+  async function toggleOpen() {
+    if (disabled) return;
+    if (open) {
+      open = false;
+      return;
+    }
+
+    panelStyle = buildPanelStyle();
+    open = true;
+    await syncPanelPosition();
   }
 
   function handleSelect(v: string) {
@@ -53,11 +88,19 @@
   }
 
   $effect(() => {
-    if (open) {
-      updatePanelPosition();
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
+    if (!open) return;
+
+    void syncPanelPosition();
+    const handleViewportChange = () => updatePanelPosition();
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange, true);
+    };
   });
 </script>
 
@@ -65,7 +108,7 @@
   <button
     type="button"
     {disabled}
-    onclick={() => (open = !open)}
+    onclick={toggleOpen}
     class={cn(
       'flex h-7 w-full items-center justify-between gap-1.5 rounded-gb border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)] px-2 text-xs text-text-1',
       'backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]',
@@ -80,7 +123,11 @@
   </button>
 
   {#if open}
-    <div bind:this={panelEl} class="max-h-60 overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl" style={panelStyle}>
+    <div
+      bind:this={panelEl}
+      class="overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl"
+      style={panelStyle}
+    >
       <div class="p-1">
         {#each options as option}
           <button

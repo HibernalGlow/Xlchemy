@@ -116,7 +116,7 @@
     />
 
     <div class="chrome-content">
-      <div class="chrome-workspace canvas-bg">
+      <div class="chrome-workspace canvas-bg canvas-bg--{appState.backgroundSettings.mode}">
         {#if appState.backgroundSettings.mode === 'image' && appState.backgroundSettings.imageUrl}
           <div
             class="canvas-bg-image"
