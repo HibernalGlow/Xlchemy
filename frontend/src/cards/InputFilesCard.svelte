@@ -28,10 +28,10 @@
           </tr>
         </thead>
         <tbody>
-          {#if appState.sortedItems().length === 0}
+          {#if appState.sortedItems.length === 0}
             <tr><td colspan="3" class="p-4 text-center text-text-2 text-xs">No files added</td></tr>
           {:else}
-            {#each appState.sortedItems() as item, i (item.absPath ?? i)}
+            {#each appState.sortedItems as item, i (item.absPath ?? i)}
               <tr class="border-b border-border-2/50 hover:bg-bg-3 transition-colors">
                 <td class="p-1.5 text-text-1">{item.name}</td>
                 <td class="p-1.5 text-text-2">{item.ext}</td>

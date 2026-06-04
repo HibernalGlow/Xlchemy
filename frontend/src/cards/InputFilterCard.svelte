@@ -25,7 +25,7 @@
 <LaneCard id="input-filter" laneId={laneId} movable header={t('Filter')}>
   <div class="flex flex-col gap-3">
     <div class="flex gap-1 items-center flex-wrap">
-      {#each appState.allowedInput() as ext}
+      {#each appState.allowedInputList as ext}
         <button
           type="button"
           class={`px-1.5 py-0.5 text-[10px] rounded border transition-colors cursor-pointer font-medium ${appState.excludedFormats.has(ext) ? 'text-text-2 border-[var(--border-2)] bg-transparent' : 'bg-fill-pop text-[var(--bg-2)] border-fill-pop'}`}
@@ -36,6 +36,6 @@
       {/each}
     </div>
 
-    <Select value={appState.processingOrder()} options={orderOptions()} onChange={(value) => appState.updateApp('processing_order', value)} />
+    <Select value={appState.appSettings.processing_order || 'Original'} options={orderOptions()} onChange={(value) => appState.updateApp('processing_order', value)} />
   </div>
 </LaneCard>

@@ -15,7 +15,7 @@
       <h2 class="text-xl font-light text-text-1">{t('Xlchemy')}</h2>
       <Badge variant="secondary">v{appState.constants.version || '1.2.6'}</Badge>
       <p class="text-[11px] text-text-2">{t('High-performance image converter')}</p>
-      <p class="text-[10px] text-text-2">Built with Wails 3 + Svelte + Go</p>
+      <p class="text-[10px] text-text-2">Built with Wails 3 + Svelte + Go + Rust</p>
       <div class="flex gap-2 mt-2">
         <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://codepoems.eu', '_blank')}>{t('Website')}</Button>
         <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://github.com/nicjacek/xlchemy', '_blank')}>{t('Source')}</Button>

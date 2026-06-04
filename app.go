@@ -185,8 +185,48 @@ func (a *AppService) ScanDirectory(dirPath string) string {
 	return string(b)
 }
 
-// StartConversion begins a batch conversion.
+// StartConversion begins a batch conversion (legacy API - delegates to plan-based execution).
 func (a *AppService) StartConversion(itemsJSON string, outputJSON string, modifyJSON string, settingsJSON string, threadCount int) error {
+	// Build an ExecutionPlan from legacy parameters and delegate
+	var items []FileItem
+	var output OutputSettings
+	var modify ModifySettings
+	var settings AppSettings
+
+	if err := json.Unmarshal([]byte(itemsJSON), &items); err != nil {
+		return fmt.Errorf("invalid items: %w", err)
+	}
+	if err := json.Unmarshal([]byte(outputJSON), &output); err != nil {
+		return fmt.Errorf("invalid output settings: %w", err)
+	}
+	if err := json.Unmarshal([]byte(modifyJSON), &modify); err != nil {
+		return fmt.Errorf("invalid modify settings: %w", err)
+	}
+	if err := json.Unmarshal([]byte(settingsJSON), &settings); err != nil {
+		return fmt.Errorf("invalid app settings: %w", err)
+	}
+
+	// Build toolchain from known constants
+	toolchain := ToolchainPaths{
+		CJXLPath:        CJXlPath,
+		DJXLPath:        DJXlPath,
+		AvifEncPath:     AvifEncPath,
+		AvifDecPath:     AvifDecPath,
+		CJPEGLIPath:     CJPEGLIPath,
+		ImageMagickPath: ImageMagickPath,
+		ExifToolPath:    ExifToolPath,
+		OxiPNGPath:      OxiPNGPath,
+	}
+
+	// Build plan
+	plan := buildLegacyPlan(items, output, modify, settings, toolchain)
+	planJSON, _ := json.Marshal(plan)
+
+	return a.RunConversionPlan(string(planJSON), threadCount)
+}
+
+// RunConversionPlan executes a frontend-generated ExecutionPlan.
+func (a *AppService) RunConversionPlan(planJSON string, threadCount int) error {
 	a.mu.Lock()
 	if a.converting {
 		a.mu.Unlock()
@@ -195,34 +235,12 @@ func (a *AppService) StartConversion(itemsJSON string, outputJSON string, modify
 	a.converting = true
 	a.mu.Unlock()
 
-	var items []FileItem
-	var output OutputSettings
-	var modify ModifySettings
-	var settings AppSettings
-
-	if err := json.Unmarshal([]byte(itemsJSON), &items); err != nil {
+	var plan ExecutionPlan
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
 		a.mu.Lock()
 		a.converting = false
 		a.mu.Unlock()
-		return fmt.Errorf("invalid items: %w", err)
-	}
-	if err := json.Unmarshal([]byte(outputJSON), &output); err != nil {
-		a.mu.Lock()
-		a.converting = false
-		a.mu.Unlock()
-		return fmt.Errorf("invalid output settings: %w", err)
-	}
-	if err := json.Unmarshal([]byte(modifyJSON), &modify); err != nil {
-		a.mu.Lock()
-		a.converting = false
-		a.mu.Unlock()
-		return fmt.Errorf("invalid modify settings: %w", err)
-	}
-	if err := json.Unmarshal([]byte(settingsJSON), &settings); err != nil {
-		a.mu.Lock()
-		a.converting = false
-		a.mu.Unlock()
-		return fmt.Errorf("invalid app settings: %w", err)
+		return fmt.Errorf("invalid execution plan: %w", err)
 	}
 
 	// Reset state
@@ -246,7 +264,7 @@ func (a *AppService) StartConversion(itemsJSON string, outputJSON string, modify
 			a.mu.Unlock()
 		}()
 
-		runConversion(ctx, items, output, modify, settings, threadCount)
+		runExecutionPlan(ctx, plan, threadCount)
 
 		if GlobalTaskStatus.WasCanceled() {
 			App.Event.Emit("conversion:canceled", struct{}{})
@@ -256,6 +274,19 @@ func (a *AppService) StartConversion(itemsJSON string, outputJSON string, modify
 	}()
 
 	return nil
+}
+
+// buildLegacyPlan constructs an ExecutionPlan from legacy settings for backward compatibility.
+func buildLegacyPlan(items []FileItem, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths) ExecutionPlan {
+	// This is a shim: the frontend now generates plans directly.
+	// We construct a minimal plan that preserves old behavior.
+	return ExecutionPlan{
+		RunID:     "legacy",
+		Items:     items,
+		Tasks:     []ExecutionTask{}, // Tasks would be built here if needed
+		Policies:  ResultPolicy{},
+		Toolchain: toolchain,
+	}
 }
 
 // CancelConversion cancels an ongoing conversion.

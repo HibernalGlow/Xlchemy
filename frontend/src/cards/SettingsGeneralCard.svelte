@@ -12,14 +12,10 @@
 
 <LaneCard id="settings-general" laneId={laneId} movable header={t('General')}>
   <div class="flex flex-col gap-2">
-    {#each [
-      ['disable_downscaling_startup', t('Disable downscaling on startup')],
-      ['disable_delete_startup', t('Disable delete original on startup')],
-      ['sorting_disabled', t('Disable sorting')],
-      ['enable_quality_precision_snapping', t('Quality precision snapping')],
-      ['play_sound_on_finish', t('Play sound on finish')],
-    ] as [key, label]}
-      <label class="flex items-center gap-2 text-[11px] text-text-1"><Checkbox checked={!!appState.appSettings[key]} onCheckedChange={(v) => appState.updateApp(key, v)} />{label}</label>
-    {/each}
+    <label class="flex items-center gap-2 text-[11px] text-text-1"><Checkbox checked={!!appState.appSettings.disable_downscaling_startup} onCheckedChange={(v) => appState.updateApp('disable_downscaling_startup', v)} />{t('Disable downscaling on startup')}</label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1"><Checkbox checked={!!appState.appSettings.disable_delete_startup} onCheckedChange={(v) => appState.updateApp('disable_delete_startup', v)} />{t('Disable delete original on startup')}</label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1"><Checkbox checked={!!appState.appSettings.sorting_disabled} onCheckedChange={(v) => appState.updateApp('sorting_disabled', v)} />{t('Disable sorting')}</label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1"><Checkbox checked={!!appState.appSettings.enable_quality_precision_snapping} onCheckedChange={(v) => appState.updateApp('enable_quality_precision_snapping', v)} />{t('Quality precision snapping')}</label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1"><Checkbox checked={!!appState.appSettings.play_sound_on_finish} onCheckedChange={(v) => appState.updateApp('play_sound_on_finish', v)} />{t('Play sound on finish')}</label>
   </div>
 </LaneCard>

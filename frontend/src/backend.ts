@@ -1,97 +1,105 @@
-import { Dialogs, Events } from '@wailsio/runtime';
-import { AppService } from '$lib/utils/bindings';
+// backend.ts - Transition layer
+// Re-exports the executor API for backward compatibility.
+// New code should import from $lib/executor directly.
 
-export interface BackendSettingsPayload {
-  output: any;
-  modify: any;
-  app: any;
-}
+import { getExecutor } from '$lib/executor';
 
-function imageFilePattern() {
-  return '*.jpg;*.jpeg;*.png;*.webp;*.avif;*.jxl;*.gif;*.bmp;*.ico;*.tiff;*.tif;*.apng;*.jp2';
-}
+const executor = getExecutor();
 
 export const backend = {
   async getConstants() {
-    return JSON.parse(await AppService.GetConstants());
+    return executor.getConstants();
   },
 
   async getSettings() {
-    return JSON.parse(await AppService.GetSettings());
+    const snapshot = await executor.loadAppState();
+    return {
+      output: snapshot.domain?.output || {},
+      modify: snapshot.domain?.modify || {},
+      app: snapshot.domain?.app || {},
+    };
   },
 
-  saveSettings(payload: BackendSettingsPayload) {
-    return AppService.SaveSettings(JSON.stringify(payload));
+  saveSettings(payload: { output: any; modify: any; app: any }) {
+    // Transition: this is now handled by appState.buildSnapshot + executor.saveAppState
+    // Kept for backward compat with existing cards
+    return Promise.resolve();
   },
 
   async selectImageFiles(): Promise<string[]> {
-    const selected = await Dialogs.OpenFile({
-      CanChooseFiles: true,
-      AllowsMultipleSelection: true,
-      Title: 'Select image files',
-      Filters: [{ DisplayName: 'Images', Pattern: imageFilePattern() }],
-    });
-
-    if (!selected || (Array.isArray(selected) && selected.length === 0)) return [];
-    return Array.isArray(selected) ? selected : [selected];
+    return executor.pickFiles();
   },
 
   async selectFolder(): Promise<string | null> {
-    const selected = await Dialogs.OpenFile({
-      CanChooseDirectories: true,
-      CanChooseFiles: false,
-      Title: 'Select folder',
-    });
-
-    return selected ? String(selected) : null;
+    return executor.pickDirectory();
   },
 
   async addFiles(paths: string[]) {
-    return JSON.parse(await AppService.AddFiles(paths));
+    const items = await executor.statFiles(paths);
+    return items;
   },
 
   async scanDirectory(path: string) {
-    return JSON.parse(await AppService.ScanDirectory(path));
+    return executor.scanDirectory(path);
   },
 
   startConversion(items: any[], output: any, modify: any, app: any, threadCount: number) {
-    return AppService.StartConversion(
-      JSON.stringify(items),
-      JSON.stringify(output),
-      JSON.stringify(modify),
-      JSON.stringify(app),
-      threadCount,
-    );
+    // Transition: appState.startConversion now uses buildExecutionPlan + executor.runConversionPlan
+    // This shim is kept for emergency fallback only
+    console.warn('backend.startConversion is deprecated, use appState.startConversion');
+    return Promise.resolve();
   },
 
   cancelConversion() {
-    return AppService.CancelConversion();
+    return executor.cancelRun('current');
   },
 
   onProgress(handler: (data: any) => void) {
-    return Events.On('conversion:progress', (data: any) => handler(data.data));
+    return executor.subscribeEvents((event) => {
+      if (event.type === 'task_progress') {
+        handler({
+          completed: event.completed,
+          total: event.total,
+          line1: event.line1,
+          line2: event.line2,
+        });
+      }
+    });
   },
 
   onException(handler: (data: any) => void) {
-    return Events.On('conversion:exception', (data: any) => handler(data.data));
+    return executor.subscribeEvents((event) => {
+      if (event.type === 'task_failed') {
+        handler({
+          id: event.errorId,
+          msg: event.errorMsg,
+          path: event.inputPath,
+        });
+      }
+    });
   },
 
   onFinished(handler: () => void) {
-    return Events.On('conversion:finished', handler);
+    return executor.subscribeEvents((event) => {
+      if (event.type === 'run_finished') handler();
+    });
   },
 
   onCanceled(handler: () => void) {
-    return Events.On('conversion:canceled', handler);
+    return executor.subscribeEvents((event) => {
+      if (event.type === 'run_canceled') handler();
+    });
   },
 
   onStarted(handler: () => void) {
-    return Events.On('conversion:started', handler);
+    return executor.subscribeEvents((event) => {
+      if (event.type === 'run_started') handler();
+    });
   },
 
   onFilesDropped(handler: (files: string[]) => void | Promise<void>) {
-    return Events.On('files-dropped', (event: any) => {
-      const files = event?.data?.files || [];
-      if (files.length > 0) handler(files);
-    });
+    // File drop events still come through Wails window events
+    // This is handled in app.svelte directly
+    return () => {};
   },
 };

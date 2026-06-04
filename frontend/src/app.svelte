@@ -13,7 +13,7 @@
   import { appState } from '$lib/state/app.svelte';
   import { canvasState } from '$lib/state/canvas.svelte';
   import { initConversionEvents } from '$lib/state/conversion.svelte';
-  import { backend } from '$lib/backend';
+  import { getExecutor } from '$lib/executor';
   import type { LaneId } from '$lib/cards/definitions';
 
   const t = i18n.t;
@@ -79,7 +79,9 @@
     const mod = appState.modifySettings;
     const app = appState.appSettings;
     if (Object.keys(out).length > 0 || Object.keys(mod).length > 0 || Object.keys(app).length > 0) {
-      backend.saveSettings({ output: out, modify: mod, app });
+      const snapshot = appState.buildSnapshot();
+      const executor = getExecutor();
+      executor.saveAppState(snapshot).catch((e: any) => console.error('saveAppState error:', e));
     }
   });
 </script>

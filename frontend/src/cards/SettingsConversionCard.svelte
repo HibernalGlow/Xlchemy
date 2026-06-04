@@ -20,20 +20,29 @@
     <Select value={appState.appSettings.avif_encoder || 'AOM AV1'} options={avifEncoderOptions} onChange={(v) => appState.updateApp('avif_encoder', v)} />
     <Select value={appState.appSettings.avif_bit_depth || 'Auto'} options={avifBitDepthOptions} onChange={(v) => appState.updateApp('avif_bit_depth', v)} />
 
-    {#each [
-      ['disable_progressive_jpegli', t('Disable progressive JPEGLI')],
-      ['avif_aom_iq_tune', t('AOM IQ Tune')],
-      ['keep_if_larger', t('Keep original if result is larger')],
-      ['copy_if_larger', t('Copy original if result is larger')],
-      ['jxl_lossy_modular', t('JXL lossy modular')],
-      ['jxl_auto_lossless_jpeg', t('Auto lossless JPEG transcode for JXL')],
-    ] as [string, string][] as item}
-      {@const key = item[0]}
-      {@const label = item[1]}
-      <label class="flex items-center gap-2 text-[11px] text-text-1">
-        <Checkbox checked={!!appState.appSettings[key]} onCheckedChange={(v) => appState.updateApp(key, v)} />
-        {label}
-      </label>
-    {/each}
+    <label class="flex items-center gap-2 text-[11px] text-text-1">
+      <Checkbox checked={!!appState.appSettings.disable_progressive_jpegli} onCheckedChange={(v) => appState.updateApp('disable_progressive_jpegli', v)} />
+      {t('Disable progressive JPEGLI')}
+    </label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1">
+      <Checkbox checked={!!appState.appSettings.avif_aom_iq_tune} onCheckedChange={(v) => appState.updateApp('avif_aom_iq_tune', v)} />
+      {t('AOM IQ Tune')}
+    </label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1">
+      <Checkbox checked={!!appState.appSettings.keep_if_larger} onCheckedChange={(v) => appState.updateApp('keep_if_larger', v)} />
+      {t('Keep original if result is larger')}
+    </label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1">
+      <Checkbox checked={!!appState.appSettings.copy_if_larger} onCheckedChange={(v) => appState.updateApp('copy_if_larger', v)} />
+      {t('Copy original if result is larger')}
+    </label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1">
+      <Checkbox checked={!!appState.appSettings.jxl_lossy_modular} onCheckedChange={(v) => appState.updateApp('jxl_lossy_modular', v)} />
+      {t('JXL lossy modular')}
+    </label>
+    <label class="flex items-center gap-2 text-[11px] text-text-1">
+      <Checkbox checked={!!appState.appSettings.jxl_auto_lossless_jpeg} onCheckedChange={(v) => appState.updateApp('jxl_auto_lossless_jpeg', v)} />
+      {t('Auto lossless JPEG transcode for JXL')}
+    </label>
   </div>
 </LaneCard>

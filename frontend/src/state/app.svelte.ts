@@ -1,5 +1,6 @@
 import { getCurrentLanguage, setLanguage } from '$lib/i18n';
-import { backend } from '$lib/backend';
+import { getExecutor } from '$lib/executor';
+import type { BackendExecutor } from '$lib/executor';
 import {
   cloneCardLayout,
   DEFAULT_CARD_LAYOUT,
@@ -10,17 +11,26 @@ import {
   type ProgressCardConfig,
 } from '$lib/cards/definitions';
 import { applyThemeColors, getThemeMode, loadThemeName, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
+import {
+  type FileItem,
+  type OutputSettings,
+  type ModifySettings,
+  type AppSettings,
+  type AppStateSnapshot,
+  type AppConstants,
+  type ToolchainSelection,
+  normalizeOutputSettings,
+  normalizeModifySettings,
+  normalizeAppSettings,
+  createDefaultSnapshot,
+} from '$lib/domain';
+import {
+  sortItems,
+  mergeFileItems,
+  buildExecutionPlan,
+} from '$lib/orchestrator';
 
 const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
-export const DEFAULT_LANE_ORDER = ['input', 'output', 'modify', 'settings', 'about'];
-const DEFAULT_LANE_WIDTH = 18;
-const DEFAULT_LANE_LABELS: Record<string, string> = {
-  input: 'Input',
-  output: 'Output',
-  modify: 'Modify',
-  settings: 'Settings',
-  about: 'About',
-};
 
 function sanitizeLaneId(value: string): LaneId {
   return value
@@ -38,7 +48,7 @@ function loadLaneOrder(): string[] {
       if (Array.isArray(arr)) return arr;
     }
   } catch {}
-  return DEFAULT_LANE_ORDER;
+  return createDefaultSnapshot().layout.laneOrder;
 }
 
 function loadCollapsedLanes(): Set<string> {
@@ -66,10 +76,10 @@ function loadLaneWidths(): Record<string, number> {
 function loadLaneLabels(): Record<string, string> {
   try {
     const raw = localStorage.getItem('xlchemy-lane-labels');
-    if (!raw) return { ...DEFAULT_LANE_LABELS };
-    return { ...DEFAULT_LANE_LABELS, ...JSON.parse(raw) };
+    if (!raw) return { ...createDefaultSnapshot().layout.laneLabels };
+    return { ...createDefaultSnapshot().layout.laneLabels, ...JSON.parse(raw) };
   } catch {
-    return { ...DEFAULT_LANE_LABELS };
+    return { ...createDefaultSnapshot().layout.laneLabels };
   }
 }
 
@@ -101,7 +111,7 @@ function loadSingleLaneMode(): boolean {
 function loadActiveLaneId(): LaneId {
   try {
     const value = localStorage.getItem('xlchemy-active-lane-id') as LaneId | null;
-    if (value && DEFAULT_LANE_ORDER.includes(value)) return value;
+    if (value && createDefaultSnapshot().layout.laneOrder.includes(value)) return value;
   } catch {}
   return 'input';
 }
@@ -117,6 +127,7 @@ function loadProgressCardConfig(): ProgressCardConfig {
 }
 
 export class AppState {
+  // Layout state
   laneOrder = $state<string[]>(loadLaneOrder());
   collapsedLanes = $state<Set<string>>(loadCollapsedLanes());
   laneWidths = $state<Record<string, number>>(loadLaneWidths());
@@ -126,16 +137,27 @@ export class AppState {
   activeLaneId = $state<LaneId>(loadActiveLaneId());
   progressCardConfig = $state<ProgressCardConfig>(loadProgressCardConfig());
 
-  fileItems = $state<any[]>([]);
-  outputSettings = $state<any>({});
-  modifySettings = $state<any>({});
-  appSettings = $state<any>({});
-  constants = $state<any>({});
+  // Domain state
+  fileItems = $state<FileItem[]>([]);
+  outputSettings = $state<OutputSettings>(normalizeOutputSettings({}));
+  modifySettings = $state<ModifySettings>(normalizeModifySettings({}));
+  appSettings = $state<AppSettings>(normalizeAppSettings({}));
+
+  // Runtime state
+  constants = $state<AppConstants>({
+    version: '',
+    allowedInput: [],
+    allowedResampling: [],
+    allowedInputFilters: [],
+    jpegAliases: [],
+    cpuCount: 4,
+    updateCheckerEnabled: false,
+  });
   cpuCount = $state<number>(4);
 
   isConverting = $state<boolean>(false);
   progress = $state({ completed: 0, total: 0, line1: '', line2: '' });
-  exceptions = $state<any[]>([]);
+  exceptions = $state<{ id: string; msg: string; path: string }[]>([]);
   showExceptions = $state<boolean>(false);
 
   excludedFormats = $state<Set<string>>(new Set(DEFAULT_EXCLUDED_FORMATS));
@@ -144,13 +166,32 @@ export class AppState {
   importSettingsJson = $state<string>('');
   currentLang = $state<string>(getCurrentLanguage());
 
+  private executor: BackendExecutor = getExecutor();
+
+  // Computed
+  get sortedItems(): FileItem[] {
+    return sortItems(
+      this.fileItems,
+      this.appSettings.processing_order || 'Original',
+      !!this.appSettings.sorting_disabled
+    );
+  }
+
+  get allowedInputList(): string[] {
+    const list = Array.isArray(this.constants.allowedInput)
+      ? this.constants.allowedInput
+      : [];
+    return Array.from(new Set(list.map((v: any) => String(v).toLowerCase())));
+  }
+
+  // Layout actions
   setLaneOrder(order: string[]) {
     this.laneOrder = order;
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(order));
   }
 
   laneTitle(laneId: LaneId): string {
-    return this.laneLabels[laneId] || DEFAULT_LANE_LABELS[laneId] || laneId;
+    return this.laneLabels[laneId] || createDefaultSnapshot().layout.laneLabels[laneId] || laneId;
   }
 
   createLane(name = 'New Lane') {
@@ -161,7 +202,7 @@ export class AppState {
     this.laneOrder = [...this.laneOrder, id];
     this.laneLabels = { ...this.laneLabels, [id]: name.trim() || 'New Lane' };
     this.cardLayout = { ...this.cardLayout, [id]: [] };
-    this.laneWidths = { ...this.laneWidths, [id]: DEFAULT_LANE_WIDTH };
+    this.laneWidths = { ...this.laneWidths, [id]: createDefaultSnapshot().layout.laneWidths[id] || 18 };
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
     localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
@@ -177,7 +218,8 @@ export class AppState {
   }
 
   deleteLane(laneId: LaneId) {
-    if (DEFAULT_LANE_ORDER.includes(laneId)) return;
+    const defaultOrder = createDefaultSnapshot().layout.laneOrder;
+    if (defaultOrder.includes(laneId)) return;
     const cards = this.cardLayout[laneId] || [];
     const nextLayout: CardLayout = { ...this.cardLayout };
     delete nextLayout[laneId];
@@ -210,12 +252,16 @@ export class AppState {
   importLayoutSettings(layout: any) {
     if (!layout || typeof layout !== 'object') return;
     if (Array.isArray(layout.laneOrder)) this.laneOrder = layout.laneOrder;
-    if (layout.laneLabels && typeof layout.laneLabels === 'object') this.laneLabels = { ...DEFAULT_LANE_LABELS, ...layout.laneLabels };
+    if (layout.laneLabels && typeof layout.laneLabels === 'object') {
+      this.laneLabels = { ...createDefaultSnapshot().layout.laneLabels, ...layout.laneLabels };
+    }
     if (layout.laneWidths && typeof layout.laneWidths === 'object') this.laneWidths = layout.laneWidths;
     if (layout.cardLayout && typeof layout.cardLayout === 'object') this.cardLayout = layout.cardLayout;
     if (typeof layout.singleLaneMode === 'boolean') this.singleLaneMode = layout.singleLaneMode;
     if (layout.activeLaneId) this.activeLaneId = layout.activeLaneId;
-    if (layout.progressCardConfig && typeof layout.progressCardConfig === 'object') this.progressCardConfig = { ...this.progressCardConfig, ...layout.progressCardConfig };
+    if (layout.progressCardConfig && typeof layout.progressCardConfig === 'object') {
+      this.progressCardConfig = { ...this.progressCardConfig, ...layout.progressCardConfig };
+    }
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
     localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
@@ -234,7 +280,7 @@ export class AppState {
   }
 
   laneWidth(laneId: LaneId): number {
-    return this.laneWidths[laneId] || DEFAULT_LANE_WIDTH;
+    return this.laneWidths[laneId] || createDefaultSnapshot().layout.laneWidths[laneId] || 18;
   }
 
   setLaneWidth(laneId: LaneId, width: number) {
@@ -259,9 +305,7 @@ export class AppState {
 
   moveCard(cardId: CardId, fromLaneId: LaneId, toLaneId: LaneId, targetCardId?: CardId | null) {
     const next = cloneCardLayout(this.cardLayout);
-
     next[fromLaneId] = next[fromLaneId].filter((id) => id !== cardId);
-
     const destination = next[toLaneId].filter((id) => id !== cardId);
     const insertAfter = targetCardId?.endsWith('::after') ?? false;
     const rawTargetId = (targetCardId?.replace(/::after$/, '') ?? null) as CardId | null;
@@ -271,7 +315,6 @@ export class AppState {
     } else {
       destination.push(cardId);
     }
-
     next[toLaneId] = destination;
     this.cardLayout = next;
     localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
@@ -294,6 +337,7 @@ export class AppState {
     localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
   }
 
+  // Progress display helpers
   progressCurrentFile() {
     const line = this.progress.line1 || '';
     const idx = line.indexOf(' : ');
@@ -324,70 +368,14 @@ export class AppState {
     return lines.join(' · ');
   }
 
-  allowedInput(): string[] {
-    const list = Array.isArray(this.constants.allowedInput) ? this.constants.allowedInput : [];
-    return Array.from(new Set(list.map((v: any) => String(v).toLowerCase())));
-  }
-
-  processingOrder(): string {
-    return this.appSettings.processing_order || 'Original';
-  }
-
-  sortingDisabled(): boolean {
-    return !!this.appSettings.sorting_disabled;
-  }
-
-  sortedItems() {
-    const items = [...this.fileItems];
-    if (this.sortingDisabled()) return items;
-
-    const compareText = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
-
-    switch (this.processingOrder()) {
-      case 'Path Ascending':
-        items.sort((a, b) => compareText(String(a.absPath || ''), String(b.absPath || '')));
-        break;
-      case 'Path Descending':
-        items.sort((a, b) => compareText(String(b.absPath || ''), String(a.absPath || '')));
-        break;
-      case 'Size Ascending':
-        items.sort((a, b) => Number(a.size || 0) - Number(b.size || 0));
-        break;
-      case 'Size Descending':
-        items.sort((a, b) => Number(b.size || 0) - Number(a.size || 0));
-        break;
-      case 'Sequential':
-        items.sort((a, b) => {
-          const dirCmp = compareText(String(a.dir || ''), String(b.dir || ''));
-          if (dirCmp !== 0) return dirCmp;
-          return compareText(String(a.name || ''), String(b.name || ''));
-        });
-        break;
-      case 'Random':
-        for (let i = items.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [items[i], items[j]] = [items[j], items[i]];
-        }
-        break;
-      default:
-        break;
-    }
-
-    return items;
-  }
-
+  // Domain actions
   addFileItems(incoming: any[]) {
     if (!Array.isArray(incoming) || incoming.length === 0) return;
-    const seen = new Set(this.fileItems.map((item) => item.absPath));
-    const next = [...this.fileItems];
-    for (const item of incoming) {
-      const ext = String(item.ext || '').toLowerCase();
-      const absPath = item.absPath;
-      if (!absPath || this.excludedFormats.has(ext) || seen.has(absPath)) continue;
-      seen.add(absPath);
-      next.push(item);
-    }
-    this.fileItems = next;
+    this.fileItems = mergeFileItems(
+      this.fileItems,
+      incoming,
+      this.excludedFormats
+    );
   }
 
   toggleExcludedFormat(ext: string) {
@@ -400,9 +388,9 @@ export class AppState {
 
   async handleAddFiles() {
     try {
-      const selected = await backend.selectImageFiles();
+      const selected = await this.executor.pickFiles();
       if (selected.length === 0) return;
-      const result = await backend.addFiles(selected);
+      const result = await this.executor.statFiles(selected);
       this.addFileItems(result);
     } catch (e) {
       console.error('AddFiles error:', e);
@@ -411,9 +399,9 @@ export class AppState {
 
   async handleAddFolder() {
     try {
-      const selected = await backend.selectFolder();
+      const selected = await this.executor.pickDirectory();
       if (!selected) return;
-      const result = await backend.scanDirectory(selected);
+      const result = await this.executor.scanDirectory(selected);
       this.addFileItems(result);
     } catch (e) {
       console.error('AddFolder error:', e);
@@ -430,7 +418,7 @@ export class AppState {
       if (file.path) paths.push(file.path);
     }
     if (paths.length > 0) {
-      const result = await backend.addFiles(paths);
+      const result = await this.executor.statFiles(paths);
       this.addFileItems(result);
     }
   }
@@ -441,15 +429,37 @@ export class AppState {
 
   async startConversion() {
     if (this.fileItems.length === 0) return;
+
+    const toolchain: ToolchainSelection = {
+      cjxlPath: 'cjxl',
+      djxlPath: 'djxl',
+      avifencPath: 'avifenc',
+      avifdecPath: 'avifdec',
+      cjpegliPath: 'cjpegli',
+      imagemagickPath: 'magick',
+      exiftoolPath: 'exiftool',
+      oxipngPath: 'oxipng',
+    };
+
+    const { plan, validation } = buildExecutionPlan(
+      this.sortedItems,
+      this.outputSettings,
+      this.modifySettings,
+      this.appSettings,
+      toolchain
+    );
+
+    if (!validation.valid) {
+      // TODO: show error dialog
+      console.error('Validation failed:', validation.errorTitle, validation.errorDescription);
+      return;
+    }
+
     this.isConverting = true;
+    this.exceptions = [];
+
     try {
-      await backend.startConversion(
-        this.fileItems,
-        this.outputSettings,
-        this.modifySettings,
-        this.appSettings,
-        this.outputSettings.threads || this.cpuCount,
-      );
+      await this.executor.runConversionPlan(plan);
     } catch (e) {
       console.error('Conversion error:', e);
       this.isConverting = false;
@@ -457,7 +467,7 @@ export class AppState {
   }
 
   async cancelConversion() {
-    await backend.cancelConversion();
+    await this.executor.cancelRun('current');
   }
 
   clearExceptions() {
@@ -502,9 +512,9 @@ export class AppState {
   handleImportSettings() {
     try {
       const data = JSON.parse(this.importSettingsJson);
-      if (data.output) this.outputSettings = data.output;
-      if (data.modify) this.modifySettings = data.modify;
-      if (data.app) this.appSettings = data.app;
+      if (data.output) this.outputSettings = normalizeOutputSettings(data.output);
+      if (data.modify) this.modifySettings = normalizeModifySettings(data.modify);
+      if (data.app) this.appSettings = normalizeAppSettings(data.app);
       if (data.layout) this.importLayoutSettings(data.layout);
       this.importSettingsJson = '';
       this.showImportDialog = false;
@@ -514,41 +524,56 @@ export class AppState {
   }
 
   handleExportSettings() {
-    const data = JSON.stringify({ output: this.outputSettings, modify: this.modifySettings, app: this.appSettings, layout: this.exportLayoutSettings() }, null, 2);
+    const snapshot = this.buildSnapshot();
+    const data = JSON.stringify(snapshot, null, 2);
     navigator.clipboard.writeText(data);
+  }
+
+  buildSnapshot(): AppStateSnapshot {
+    return {
+      domain: {
+        output: this.outputSettings,
+        modify: this.modifySettings,
+        app: this.appSettings,
+      },
+      layout: this.exportLayoutSettings(),
+      presets: [],
+      theme: {
+        name: this.appSettings.theme || loadThemeName(),
+        mode: getThemeMode(),
+        customThemes: [],
+      },
+      lang: this.currentLang,
+      executor: this.executor.name,
+    };
   }
 
   async init() {
     try {
-      const c = await backend.getConstants();
+      const c = await this.executor.getConstants();
       this.constants = c;
       this.cpuCount = c.cpuCount || 4;
 
-      const settings = await backend.getSettings();
-      this.outputSettings = settings.output || {};
-
-      const metadataMap: Record<string, string> = {
-        'Encoder - 清除': 'Encoder - Wipe',
-        'Encoder - 保留': 'Encoder - Preserve',
-        'ExifTool - 清除': 'ExifTool - Wipe',
-        'ExifTool - 保留': 'ExifTool - Preserve',
-        'ExifTool - 不安全清除': 'ExifTool - Unsafe Wipe',
-        'ExifTool - 自定义': 'ExifTool - Custom',
-      };
-      if (settings.modify?.misc?.keep_metadata) {
-        const mapped = metadataMap[settings.modify.misc.keep_metadata];
-        if (mapped) settings.modify.misc.keep_metadata = mapped;
+      const saved = await this.executor.loadAppState();
+      if (saved.domain?.output) {
+        this.outputSettings = normalizeOutputSettings(saved.domain.output);
+      }
+      if (saved.domain?.modify) {
+        this.modifySettings = normalizeModifySettings(saved.domain.modify);
+      }
+      if (saved.domain?.app) {
+        this.appSettings = normalizeAppSettings(saved.domain.app);
       }
 
-      this.modifySettings = settings.modify || {};
-      this.appSettings = settings.app || {};
       this.currentLang = getCurrentLanguage();
 
-      const themeName = settings.app?.theme || loadThemeName();
+      const themeName = this.appSettings.theme || loadThemeName();
       applyThemeColors(getThemeMode(), themeName);
 
       if (Array.isArray(this.appSettings.excluded_formats)) {
-        this.excludedFormats = new Set(this.appSettings.excluded_formats.map((v: any) => String(v).toLowerCase()));
+        this.excludedFormats = new Set(
+          this.appSettings.excluded_formats.map((v: any) => String(v).toLowerCase())
+        );
       } else {
         this.excludedFormats = new Set(DEFAULT_EXCLUDED_FORMATS);
         this.appSettings = { ...this.appSettings, excluded_formats: Array.from(this.excludedFormats) };

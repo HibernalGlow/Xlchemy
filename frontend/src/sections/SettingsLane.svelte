@@ -32,18 +32,26 @@
 
   <LaneCard id="settings-general" header={t('General')}>
     <div class="flex flex-col gap-2">
-      {#each [
-        ['disable_downscaling_startup', t('Disable downscaling on startup')],
-        ['disable_delete_startup', t('Disable delete original on startup')],
-        ['sorting_disabled', t('Disable sorting')],
-        ['enable_quality_precision_snapping', t('Quality precision snapping')],
-        ['play_sound_on_finish', t('Play sound on finish')],
-      ] as [key, label]}
-        <label class="flex items-center gap-2 text-[11px] text-text-1">
-          <Checkbox checked={!!appState.appSettings[key]} onCheckedChange={(v) => appState.updateApp(key, v)} />
-          {label}
-        </label>
-      {/each}
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.disable_downscaling_startup} onCheckedChange={(v) => appState.updateApp('disable_downscaling_startup', v)} />
+        {t('Disable downscaling on startup')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.disable_delete_startup} onCheckedChange={(v) => appState.updateApp('disable_delete_startup', v)} />
+        {t('Disable delete original on startup')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.sorting_disabled} onCheckedChange={(v) => appState.updateApp('sorting_disabled', v)} />
+        {t('Disable sorting')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.enable_quality_precision_snapping} onCheckedChange={(v) => appState.updateApp('enable_quality_precision_snapping', v)} />
+        {t('Quality precision snapping')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.play_sound_on_finish} onCheckedChange={(v) => appState.updateApp('play_sound_on_finish', v)} />
+        {t('Play sound on finish')}
+      </label>
 
       {#if appState.appSettings.play_sound_on_finish}
         <div class="flex items-center gap-2 ml-5">
@@ -68,39 +76,51 @@
       <Select value={appState.appSettings.avif_encoder || 'AOM AV1'} options={avifEncoderOptions} onChange={(v) => appState.updateApp('avif_encoder', v)} />
       <Select value={appState.appSettings.avif_bit_depth || 'Auto'} options={avifBitDepthOptions} onChange={(v) => appState.updateApp('avif_bit_depth', v)} />
 
-      {#each [
-        ['disable_progressive_jpegli', t('Disable progressive JPEGLI')],
-        ['avif_aom_iq_tune', t('AOM IQ Tune')],
-        ['keep_if_larger', t('Keep original if result is larger')],
-        ['copy_if_larger', t('Copy original if result is larger')],
-        ['jxl_lossy_modular', t('JXL lossy modular')],
-        ['jxl_auto_lossless_jpeg', t('Auto lossless JPEG transcode for JXL')],
-      ] as [key, label]}
-        <label class="flex items-center gap-2 text-[11px] text-text-1">
-          <Checkbox checked={!!appState.appSettings[key]} onCheckedChange={(v) => appState.updateApp(key, v)} />
-          {label}
-        </label>
-      {/each}
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.disable_progressive_jpegli} onCheckedChange={(v) => appState.updateApp('disable_progressive_jpegli', v)} />
+        {t('Disable progressive JPEGLI')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.avif_aom_iq_tune} onCheckedChange={(v) => appState.updateApp('avif_aom_iq_tune', v)} />
+        {t('AOM IQ Tune')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.keep_if_larger} onCheckedChange={(v) => appState.updateApp('keep_if_larger', v)} />
+        {t('Keep original if result is larger')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.copy_if_larger} onCheckedChange={(v) => appState.updateApp('copy_if_larger', v)} />
+        {t('Copy original if result is larger')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.jxl_lossy_modular} onCheckedChange={(v) => appState.updateApp('jxl_lossy_modular', v)} />
+        {t('JXL lossy modular')}
+      </label>
+      <label class="flex items-center gap-2 text-[11px] text-text-1">
+        <Checkbox checked={!!appState.appSettings.jxl_auto_lossless_jpeg} onCheckedChange={(v) => appState.updateApp('jxl_auto_lossless_jpeg', v)} />
+        {t('Auto lossless JPEG transcode for JXL')}
+      </label>
     </div>
   </LaneCard>
 
   <LaneCard id="settings-exiftool" header={t('ExifTool')}>
     <div class="flex flex-col gap-2">
-      {#each [
-        ['ExifTool - Wipe', t('Wipe command:')],
-        ['ExifTool - Preserve', t('Preserve command:')],
-        ['ExifTool - Unsafe Wipe', t('Unsafe Wipe command:')],
-        ['ExifTool - Custom', t('Custom command:')],
-      ] as [key, label]}
-        <div class="flex flex-col gap-1">
-          <span class="text-[11px] text-text-2">{label}</span>
-          <Textarea
-            value={appState.appSettings.exiftool_args?.[key] || ''}
-            onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), [key]: (e.currentTarget as HTMLTextAreaElement).value })}
-            class="min-h-[40px] text-xs font-mono"
-          />
-        </div>
-      {/each}
+      <div class="flex flex-col gap-1">
+        <span class="text-[11px] text-text-2">{t('Wipe command:')}</span>
+        <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Wipe'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Wipe': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[11px] text-text-2">{t('Preserve command:')}</span>
+        <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Preserve'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Preserve': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[11px] text-text-2">{t('Unsafe Wipe command:')}</span>
+        <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Unsafe Wipe'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Unsafe Wipe': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[11px] text-text-2">{t('Custom command:')}</span>
+        <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Custom'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Custom': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
+      </div>
     </div>
   </LaneCard>
 
