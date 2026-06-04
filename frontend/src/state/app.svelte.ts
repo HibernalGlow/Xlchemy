@@ -149,6 +149,17 @@ function loadHiddenLanes(): Set<string> {
   return new Set<string>();
 }
 
+function loadHiddenCards(): Set<string> {
+  try {
+    const v = localStorage.getItem('xlchemy-hidden-cards');
+    if (v) {
+      const arr = JSON.parse(v);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set<string>();
+}
+
 export class AppState {
   // Layout state
   laneOrder = $state<string[]>(loadLaneOrder());
@@ -160,6 +171,7 @@ export class AppState {
   activeLaneId = $state<LaneId>(loadActiveLaneId());
   progressCardConfig = $state<ProgressCardConfig>(loadProgressCardConfig());
   hiddenLanes = $state<Set<string>>(loadHiddenLanes());
+  hiddenCards = $state<Set<string>>(loadHiddenCards());
 
   // Domain state
   fileItems = $state<FileItem[]>([]);
@@ -271,6 +283,7 @@ export class AppState {
       activeLaneId: this.activeLaneId,
       progressCardConfig: this.progressCardConfig,
       hiddenLanes: Array.from(this.hiddenLanes),
+      hiddenCards: Array.from(this.hiddenCards),
     };
   }
 
@@ -290,6 +303,9 @@ export class AppState {
     if (Array.isArray(layout.hiddenLanes)) {
       this.hiddenLanes = new Set(layout.hiddenLanes);
     }
+    if (Array.isArray(layout.hiddenCards)) {
+      this.hiddenCards = new Set(layout.hiddenCards);
+    }
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
     localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
@@ -298,6 +314,7 @@ export class AppState {
     localStorage.setItem('xlchemy-active-lane-id', this.activeLaneId);
     localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
     localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify(Array.from(this.hiddenLanes)));
+    localStorage.setItem('xlchemy-hidden-cards', JSON.stringify(Array.from(this.hiddenCards)));
   }
 
   toggleLaneCollapsed(id: string) {
@@ -319,6 +336,46 @@ export class AppState {
   showAllLanes() {
     this.hiddenLanes = new Set<string>();
     localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify([]));
+  }
+
+  toggleCardHidden(cardId: string) {
+    const next = new Set(this.hiddenCards);
+    if (next.has(cardId)) next.delete(cardId);
+    else next.add(cardId);
+    this.hiddenCards = next;
+    localStorage.setItem('xlchemy-hidden-cards', JSON.stringify(Array.from(next)));
+  }
+
+  moveCardToLane(cardId: string, targetLaneId: string) {
+    const next: CardLayout = cloneCardLayout(this.cardLayout);
+    // Remove from all lanes
+    for (const laneId of Object.keys(next)) {
+      next[laneId] = next[laneId].filter((id) => id !== cardId);
+    }
+    // Add to target lane
+    if (!next[targetLaneId]) next[targetLaneId] = [];
+    next[targetLaneId].push(cardId);
+    this.cardLayout = next;
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
+  }
+
+  reorderCardInLane(cardId: string, direction: 'up' | 'down') {
+    const next: CardLayout = cloneCardLayout(this.cardLayout);
+    for (const laneId of Object.keys(next)) {
+      const idx = next[laneId].indexOf(cardId);
+      if (idx >= 0) {
+        const newIdx = direction === 'up' ? Math.max(0, idx - 1) : Math.min(next[laneId].length - 1, idx + 1);
+        if (newIdx !== idx) {
+          const list = [...next[laneId]];
+          const [item] = list.splice(idx, 1);
+          list.splice(newIdx, 0, item);
+          next[laneId] = list;
+        }
+        break;
+      }
+    }
+    this.cardLayout = next;
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
 
   laneWidth(laneId: LaneId): number {

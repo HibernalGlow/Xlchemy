@@ -15,6 +15,7 @@ export type CardId =
   | 'settings-exiftool'
   | 'settings-advanced'
   | 'settings-frontend'
+  | 'layout-manager'
   | 'about-info';
 
 export type CardLayout = Record<LaneId, CardId[]>;
@@ -23,7 +24,7 @@ export const DEFAULT_CARD_LAYOUT: CardLayout = {
   input: ['input-files', 'progress-status', 'input-filter'],
   output: ['output-format', 'output-conversion', 'output-save'],
   modify: ['modify-downscaling', 'modify-misc'],
-  settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend'],
+  settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend', 'layout-manager'],
   about: ['about-info'],
 };
 

@@ -14,6 +14,7 @@
   import SettingsExifToolCard from '$lib/cards/SettingsExifToolCard.svelte';
   import SettingsGeneralCard from '$lib/cards/SettingsGeneralCard.svelte';
   import SettingsFrontendCard from '$lib/cards/SettingsFrontendCard.svelte';
+  import LayoutManagerCard from '$lib/cards/LayoutManagerCard.svelte';
   import { appState } from '$lib/state/app.svelte';
   import type { CardId, LaneId } from '$lib/cards/definitions';
 
@@ -30,7 +31,9 @@
 
 <div class="flex flex-col gap-2 h-full">
   {#each cardIds() as cardId (cardId)}
-    {#if cardId === 'input-files'}
+    {#if appState.hiddenCards.has(cardId)}
+      <!-- hidden -->
+    {:else if cardId === 'input-files'}
       <InputFilesCard {laneId} />
     {:else if cardId === 'input-filter'}
       <InputFilterCard {laneId} />
@@ -60,6 +63,8 @@
       <SettingsFrontendCard {laneId} />
     {:else if cardId === 'about-info'}
       <AboutInfoCard {laneId} />
+    {:else if cardId === 'layout-manager'}
+      <LayoutManagerCard {laneId} />
     {/if}
   {/each}
 </div>

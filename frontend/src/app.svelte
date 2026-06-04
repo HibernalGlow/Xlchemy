@@ -102,8 +102,6 @@
     singleLaneMode={appState.singleLaneMode}
     onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
     onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
-    hiddenLaneCount={appState.hiddenLanes.size}
-    onShowAllLanes={() => appState.showAllLanes()}
   />
 
   <div class="chrome-body">
