@@ -22,8 +22,10 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tanstack/table-core": "^8.21.3",
     "@types/node": "^25.9.1",
     "autoprefixer": "^10.4.20",
+    "bits-ui": "^1.4.7",
     "esbuild": "^0.28.0",
     "postcss": "^8.4.49",
     "svelte": "^5.0.0",

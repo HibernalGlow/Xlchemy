@@ -39,3 +39,7 @@ xlchemy.exe~
 slimg_cffi.dll
 dav1d.dll
 *.dll
+frontend/.vite-dev.err
+.gitignore
+frontend/components.json
+frontend/.vite-dev.log
