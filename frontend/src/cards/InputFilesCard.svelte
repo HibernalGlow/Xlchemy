@@ -1,15 +1,41 @@
 <script lang="ts">
-  import { ChevronRight, FileImage, Folder, FolderTree, Rows3 } from '@lucide/svelte';
+  import {
+    ArrowDown,
+    ArrowUp,
+    ChevronRight,
+    FileImage,
+    Folder,
+    FolderTree,
+    Rows3,
+  } from '@lucide/svelte';
+  import {
+    getCoreRowModel,
+    getSortedRowModel,
+    type ColumnDef,
+    type SortingFn,
+    type SortingState,
+    type Updater,
+  } from '@tanstack/table-core';
+  import { createSvelteTable, FlexRender } from '$lib/components/ui/data-table';
   import Button from '$lib/components/ui/Button.svelte';
+  import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
   import { i18n } from '$lib/i18n/t.svelte';
   import type { LaneId } from '$lib/cards/definitions';
   import type { FileItem } from '$lib/domain';
 
-  interface Props { laneId: LaneId }
+  interface Props {
+    laneId: LaneId;
+  }
 
   type ViewMode = 'list' | 'tree';
+  const VALID_SORT_FIELDS = ['name', 'ext', 'size', 'dir'] as const;
+  type SortField = (typeof VALID_SORT_FIELDS)[number];
+  type ActiveSort = {
+    field: SortField;
+    desc: boolean;
+  };
   type FileTreeNode = {
     id: string;
     kind: 'folder' | 'file';
@@ -22,6 +48,9 @@
     item?: FileItem;
     children: FileTreeNode[];
   };
+  type MutableTreeNode = Omit<FileTreeNode, 'children'> & {
+    childMap: Map<string, MutableTreeNode>;
+  };
   type VisibleTreeRow = {
     node: FileTreeNode;
     depth: number;
@@ -29,6 +58,14 @@
 
   let { laneId }: Props = $props();
   const t = i18n.t;
+
+  function isSortField(value: string): value is SortField {
+    return VALID_SORT_FIELDS.includes(value as SortField);
+  }
+
+  function compareText(a: string, b: string): number {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  }
 
   function loadViewMode(): ViewMode {
     try {
@@ -39,14 +76,18 @@
     }
   }
 
-  let viewMode = $state<ViewMode>(loadViewMode());
-  let expandedFolders = $state<Record<string, boolean>>({});
-
-  $effect(() => {
+  function loadSorting(): SortingState {
     try {
-      localStorage.setItem('xlchemy-input-files-view', viewMode);
+      const raw = localStorage.getItem('xlchemy-input-files-sorting');
+      if (!raw) return [{ id: 'name', desc: false }];
+      const parsed = JSON.parse(raw);
+      const first = Array.isArray(parsed) ? parsed[0] : null;
+      if (first && isSortField(String(first.id))) {
+        return [{ id: String(first.id), desc: !!first.desc }];
+      }
     } catch {}
-  });
+    return [{ id: 'name', desc: false }];
+  }
 
   function formatBytes(size: number): string {
     if (!Number.isFinite(size) || size <= 0) return '0 B';
@@ -56,14 +97,70 @@
     return `${value >= 10 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
   }
 
+  function resolveSort(state: SortingState): ActiveSort {
+    const first = state[0];
+    if (!first || !isSortField(String(first.id))) {
+      return { field: 'name', desc: false };
+    }
+    return { field: String(first.id) as SortField, desc: !!first.desc };
+  }
+
+  function compareFileItems(a: FileItem, b: FileItem, field: SortField): number {
+    let result = 0;
+
+    switch (field) {
+      case 'size':
+        result = a.size - b.size;
+        break;
+      case 'ext':
+        result = compareText(a.ext || '', b.ext || '');
+        if (result === 0) result = compareText(a.name, b.name);
+        break;
+      case 'dir':
+        result = compareText(a.dir || '', b.dir || '');
+        if (result === 0) result = compareText(a.name, b.name);
+        break;
+      case 'name':
+      default:
+        result = compareText(a.name, b.name);
+        break;
+    }
+
+    return result === 0 ? compareText(a.absPath, b.absPath) : result;
+  }
+
+  function compareTreeNodes(a: FileTreeNode, b: FileTreeNode, sort: ActiveSort): number {
+    if (a.kind !== b.kind) return a.kind === 'folder' ? -1 : 1;
+
+    let result = 0;
+    switch (sort.field) {
+      case 'size':
+        result = a.size - b.size;
+        break;
+      case 'ext':
+        result = compareText(a.kind === 'file' ? a.ext || '' : a.name, b.kind === 'file' ? b.ext || '' : b.name);
+        break;
+      case 'dir':
+        result = compareText(a.path, b.path);
+        break;
+      case 'name':
+      default:
+        result = compareText(a.name, b.name);
+        break;
+    }
+
+    if (result === 0) result = compareText(a.name, b.name);
+    if (result === 0) result = compareText(a.path, b.path);
+    return sort.desc ? -result : result;
+  }
+
   function pathSegments(item: FileItem): string[] {
     const rawPath = item.absPath || `${item.dir}\\${item.name}`;
     return rawPath.split(/[\\/]+/).filter(Boolean);
   }
 
   function directorySegments(item: FileItem): string[] {
-    const segments = pathSegments(item);
-    return segments.slice(0, -1);
+    return pathSegments(item).slice(0, -1);
   }
 
   function commonPrefixLength(items: FileItem[]): number {
@@ -79,12 +176,24 @@
     return index;
   }
 
-  function buildTree(items: FileItem[]): { rootLabel: string; nodes: FileTreeNode[] } {
+  function finalizeNodes(nodes: Map<string, MutableTreeNode>, sort: ActiveSort): FileTreeNode[] {
+    return [...nodes.values()]
+      .map((node) => {
+        const { childMap, ...base } = node;
+        return {
+          ...base,
+          children: node.kind === 'folder' ? finalizeNodes(childMap, sort) : [],
+        };
+      })
+      .sort((a, b) => compareTreeNodes(a, b, sort));
+  }
+
+  function buildTree(items: FileItem[], sort: ActiveSort): { rootLabel: string; nodes: FileTreeNode[] } {
     const prefixLength = commonPrefixLength(items);
     const rootLabel = items.length > 1
       ? directorySegments(items[0]).slice(0, prefixLength).join('\\')
       : '';
-    const roots = new Map<string, FileTreeNode>();
+    const roots = new Map<string, MutableTreeNode>();
 
     for (const item of items) {
       const segments = pathSegments(item);
@@ -95,6 +204,7 @@
       for (const folderName of relativeFolders) {
         currentPath = currentPath ? `${currentPath}\\${folderName}` : folderName;
         let folderNode = currentChildren.get(currentPath);
+
         if (!folderNode) {
           folderNode = {
             id: `folder:${currentPath}`,
@@ -103,22 +213,17 @@
             path: currentPath,
             size: 0,
             fileCount: 0,
-            children: [],
+            childMap: new Map(),
           };
           currentChildren.set(currentPath, folderNode);
         }
+
         folderNode.size += item.size;
         folderNode.fileCount += 1;
-
-        const nextChildren = new Map<string, FileTreeNode>();
-        for (const child of folderNode.children) {
-          nextChildren.set(child.path, child);
-        }
-        currentChildren = nextChildren;
-        folderNode.children = Array.from(nextChildren.values());
+        currentChildren = folderNode.childMap;
       }
 
-      const fileNode: FileTreeNode = {
+      const fileNode: MutableTreeNode = {
         id: `file:${item.absPath}`,
         kind: 'file',
         name: item.name,
@@ -128,63 +233,16 @@
         ext: item.ext,
         dir: item.dir,
         item,
-        children: [],
+        childMap: new Map(),
       };
 
       currentChildren.set(fileNode.path, fileNode);
-
-      if (relativeFolders.length === 0) {
-        roots.set(fileNode.path, fileNode);
-      } else {
-        let parentMap = roots;
-        let parentPath = rootLabel;
-        for (const folderName of relativeFolders.slice(0, -1)) {
-          parentPath = parentPath ? `${parentPath}\\${folderName}` : folderName;
-          const folderNode = parentMap.get(parentPath);
-          if (!folderNode) break;
-          const childMap = new Map<string, FileTreeNode>();
-          for (const child of folderNode.children) childMap.set(child.path, child);
-          parentMap = childMap;
-        }
-        const parentFolderPath = relativeFolders.reduce((acc, segment) => acc ? `${acc}\\${segment}` : segment, rootLabel);
-        const parentKey = `folder:${parentFolderPath}`;
-        const parentNode = findFolderNode(Array.from(roots.values()), parentKey);
-        if (parentNode) {
-          const childMap = new Map(parentNode.children.map((child) => [child.path, child]));
-          childMap.set(fileNode.path, fileNode);
-          parentNode.children = Array.from(childMap.values());
-        }
-      }
     }
 
-    const nodes = sortNodes(Array.from(roots.values()));
-    return { rootLabel, nodes };
-  }
-
-  function findFolderNode(nodes: FileTreeNode[], id: string): FileTreeNode | null {
-    for (const node of nodes) {
-      if (node.id === id) return node;
-      if (node.kind === 'folder') {
-        const nested = findFolderNode(node.children, id);
-        if (nested) return nested;
-      }
-    }
-    return null;
-  }
-
-  function sortNodes(nodes: FileTreeNode[]): FileTreeNode[] {
-    const sorted = [...nodes].sort((a, b) => {
-      if (a.kind !== b.kind) return a.kind === 'folder' ? -1 : 1;
-      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
-    });
-
-    for (const node of sorted) {
-      if (node.kind === 'folder') {
-        node.children = sortNodes(node.children);
-      }
-    }
-
-    return sorted;
+    return {
+      rootLabel,
+      nodes: finalizeNodes(roots, sort),
+    };
   }
 
   function flattenNodes(nodes: FileTreeNode[], expanded: Record<string, boolean>, depth = 0): VisibleTreeRow[] {
@@ -211,18 +269,126 @@
     };
   }
 
-  const treeModel = $derived(buildTree(appState.sortedItems));
+  function updateSorting(updater: Updater<SortingState>) {
+    const next = typeof updater === 'function' ? updater(sorting) : updater;
+    const first = next[0];
+    sorting = first && isSortField(String(first.id))
+      ? [{ id: String(first.id), desc: !!first.desc }]
+      : [{ id: 'name', desc: false }];
+  }
+
+  function setSortField(value: string) {
+    if (!isSortField(value)) return;
+    sorting = [{ id: value, desc: activeSort.desc }];
+  }
+
+  function toggleSortDirection() {
+    sorting = [{ id: activeSort.field, desc: !activeSort.desc }];
+  }
+
+  function sortOptions() {
+    return [
+      { value: 'name', label: t('Name') },
+      { value: 'ext', label: t('Ext') },
+      { value: 'size', label: t('File Size') },
+      { value: 'dir', label: t('Location') },
+    ];
+  }
+
+  function sortIndicator(columnId: string) {
+    const sorted = fileTable.getColumn(columnId)?.getIsSorted();
+    return sorted === 'desc' ? 'desc' : sorted === 'asc' ? 'asc' : null;
+  }
+
+  const sortByField = (field: SortField): SortingFn<FileItem> => (rowA, rowB) =>
+    compareFileItems(rowA.original, rowB.original, field);
+
+  function tableColumns(): ColumnDef<FileItem>[] {
+    return [
+      {
+        id: 'name',
+        accessorFn: (item) => item.name,
+        header: t('Name'),
+        sortingFn: sortByField('name'),
+      },
+      {
+        id: 'ext',
+        accessorFn: (item) => item.ext || '',
+        header: t('Ext'),
+        sortingFn: sortByField('ext'),
+      },
+      {
+        id: 'size',
+        accessorFn: (item) => item.size,
+        header: t('File Size'),
+        sortingFn: sortByField('size'),
+      },
+      {
+        id: 'dir',
+        accessorFn: (item) => item.dir || '',
+        header: t('Location'),
+        sortingFn: sortByField('dir'),
+      },
+    ];
+  }
+
+  let viewMode = $state<ViewMode>(loadViewMode());
+  let sorting = $state<SortingState>(loadSorting());
+  let expandedFolders = $state<Record<string, boolean>>({});
+
+  const activeSort = $derived(resolveSort(sorting));
+  const fileTable = createSvelteTable<FileItem>({
+    get data() {
+      return appState.fileItems;
+    },
+    get columns() {
+      return tableColumns();
+    },
+    state: {
+      get sorting() {
+        return sorting;
+      },
+    },
+    onSortingChange: updateSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    enableMultiSort: false,
+    enableSortingRemoval: false,
+  });
+  const treeModel = $derived(buildTree(appState.fileItems, activeSort));
   const visibleTreeRows = $derived(flattenNodes(treeModel.nodes, expandedFolders));
+
+  $effect(() => {
+    try {
+      localStorage.setItem('xlchemy-input-files-view', viewMode);
+    } catch {}
+  });
+
+  $effect(() => {
+    try {
+      localStorage.setItem('xlchemy-input-files-sorting', JSON.stringify(sorting));
+    } catch {}
+  });
 </script>
 
-<LaneCard id="input-files" laneId={laneId} movable header={`${t('Input')} (${appState.fileItems.length})`} grow scrollable>
-  <div class="flex h-full flex-col gap-3">
+<LaneCard id="input-files" laneId={laneId} movable header={`${t('Input')} (${appState.fileItems.length})`}>
+  <div class="flex min-h-0 flex-col gap-3">
     <div class="flex flex-wrap gap-1.5">
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{t('Add Files')}</Button>
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{t('Add Folder')}</Button>
       <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{t('Clear')}</Button>
 
       <div class="ml-auto flex items-center gap-1">
+        <Select class="w-28" value={activeSort.field} options={sortOptions()} onChange={setSortField} />
+        <div title={activeSort.desc ? 'Descending' : 'Ascending'}>
+          <Button kind="outline" variant="neutral" size="icon" class="h-6 w-6" onclick={toggleSortDirection}>
+            {#if activeSort.desc}
+              <ArrowDown class="h-3.5 w-3.5" />
+            {:else}
+              <ArrowUp class="h-3.5 w-3.5" />
+            {/if}
+          </Button>
+        </div>
         <div title={t('List View')}>
           <Button
             kind="outline"
@@ -248,66 +414,118 @@
       </div>
     </div>
 
-    <div class="flex-1 overflow-auto rounded-gb border border-border-2 bg-bg-2/70">
-      {#if appState.sortedItems.length === 0}
+    <div class="overflow-hidden rounded-gb border border-border-2 bg-bg-2/70">
+      {#if appState.fileItems.length === 0}
         <div class="flex min-h-[160px] items-center justify-center px-4 text-center text-xs text-text-2">
           No files added
         </div>
-      {:else if viewMode === 'list'}
-        <div class="divide-y divide-border-2/50">
-          {#each appState.sortedItems as item, i (item.absPath ?? i)}
-            <div class="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-bg-3/60">
-              <FileImage class="h-4 w-4 shrink-0 text-text-2" />
-              <div class="min-w-0 flex-1">
-                <div class="truncate text-xs font-medium text-text-1">{item.name}</div>
-                <div class="truncate text-[11px] text-text-2">{item.dir}</div>
-              </div>
-              <span class="shrink-0 rounded-full border border-border-2/70 bg-bg-1/70 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
-                {item.ext || '-'}
-              </span>
-              <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(item.size)}</span>
-            </div>
-          {/each}
-        </div>
       {:else}
-        <div class="py-1">
-          {#if treeModel.rootLabel}
-            <div class="border-b border-border-2/50 px-3 py-2 text-[11px] text-text-2">
-              {treeModel.rootLabel}
+        <div class="overflow-auto" style="max-height:min(46vh, 31rem);">
+          {#if viewMode === 'list'}
+            <table class="w-full border-collapse text-left">
+              <thead>
+                {#each fileTable.getHeaderGroups() as headerGroup (headerGroup.id)}
+                  <tr class="border-b border-border-2/70">
+                    {#each headerGroup.headers as header (header.id)}
+                      <th
+                        class="sticky top-0 z-[1] bg-[color-mix(in_oklch,var(--bg-2)_88%,transparent)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-text-2 backdrop-blur-xl"
+                        class:w-[46%]={header.column.id === 'name'}
+                        class:w-[76px]={header.column.id === 'ext'}
+                        class:w-[96px]={header.column.id === 'size'}
+                      >
+                        {#if !header.isPlaceholder}
+                          <button
+                            type="button"
+                            class="flex w-full items-center gap-1.5 text-left transition-colors hover:text-text-1"
+                            onclick={header.column.getToggleSortingHandler()}
+                          >
+                            <span class={header.column.id === 'size' ? 'text-right' : ''}>
+                              <FlexRender content={header.column.columnDef.header} context={header.getContext()} />
+                            </span>
+                            {#if sortIndicator(header.column.id) === 'asc'}
+                              <ArrowUp class="h-3.5 w-3.5 shrink-0" />
+                            {:else if sortIndicator(header.column.id) === 'desc'}
+                              <ArrowDown class="h-3.5 w-3.5 shrink-0" />
+                            {/if}
+                          </button>
+                        {/if}
+                      </th>
+                    {/each}
+                  </tr>
+                {/each}
+              </thead>
+              <tbody>
+                {#each fileTable.getRowModel().rows as row (row.original.absPath)}
+                  <tr class="border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55">
+                    <td class="px-3 py-2.5">
+                      <div class="flex min-w-0 items-center gap-3" title={row.original.absPath}>
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+                          <FileImage class="h-4 w-4 text-text-2" />
+                        </div>
+                        <div class="min-w-0">
+                          <div class="truncate text-xs font-medium text-text-1">{row.original.name}</div>
+                          <div class="truncate text-[11px] text-text-2">{row.original.ext ? `.${row.original.ext}` : 'file'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <span class="inline-flex max-w-full truncate rounded-full border border-border-2/70 bg-bg-1/75 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
+                        {row.original.ext || '-'}
+                      </span>
+                    </td>
+                    <td class="px-3 py-2.5 text-right text-[11px] tabular-nums text-text-2">
+                      {formatBytes(row.original.size)}
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="truncate text-[11px] text-text-2" title={row.original.dir}>{row.original.dir}</div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          {:else}
+            <div class="py-1">
+              {#if treeModel.rootLabel}
+                <div class="border-b border-border-2/50 px-3 py-2 text-[11px] text-text-2">
+                  {treeModel.rootLabel}
+                </div>
+              {/if}
+
+              {#each visibleTreeRows as row (row.node.id)}
+                {#if row.node.kind === 'folder'}
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-bg-3/60"
+                    style={`padding-left:${12 + row.depth * 16}px`}
+                    onclick={() => toggleFolder(row.node.id)}
+                  >
+                    <ChevronRight class={`h-3.5 w-3.5 shrink-0 text-text-2 transition-transform ${isExpanded(row.node.id) ? 'rotate-90' : ''}`} />
+                    <Folder class="h-4 w-4 shrink-0 text-text-2" />
+                    <span class="min-w-0 flex-1 truncate text-xs font-medium text-text-1">{row.node.name}</span>
+                    <span class="shrink-0 text-[10px] tabular-nums text-text-2">{row.node.fileCount}</span>
+                    <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
+                  </button>
+                {:else}
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
+                    style={`padding-left:${31 + row.depth * 16}px`}
+                  >
+                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border-2/70 bg-bg-1/70">
+                      <FileImage class="h-3.5 w-3.5 text-text-2" />
+                    </div>
+                    <div class="min-w-0 flex-1" title={row.node.path}>
+                      <div class="truncate text-xs text-text-1">{row.node.name}</div>
+                      <div class="truncate text-[11px] text-text-2">{row.node.ext ? `.${row.node.ext}` : 'file'}</div>
+                    </div>
+                    <span class="shrink-0 rounded-full border border-border-2/70 bg-bg-1/70 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
+                      {row.node.ext || '-'}
+                    </span>
+                    <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
+                  </div>
+                {/if}
+              {/each}
             </div>
           {/if}
-
-          {#each visibleTreeRows as row (row.node.id)}
-            {#if row.node.kind === 'folder'}
-              <button
-                type="button"
-                class="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-bg-3/60"
-                style={`padding-left:${12 + row.depth * 16}px`}
-                onclick={() => toggleFolder(row.node.id)}
-              >
-                <ChevronRight class={`h-3.5 w-3.5 shrink-0 text-text-2 transition-transform ${isExpanded(row.node.id) ? 'rotate-90' : ''}`} />
-                <Folder class="h-4 w-4 shrink-0 text-text-2" />
-                <span class="min-w-0 flex-1 truncate text-xs font-medium text-text-1">{row.node.name}</span>
-                <span class="shrink-0 text-[10px] tabular-nums text-text-2">{row.node.fileCount}</span>
-                <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
-              </button>
-            {:else}
-              <div
-                class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
-                style={`padding-left:${31 + row.depth * 16}px`}
-              >
-                <FileImage class="h-4 w-4 shrink-0 text-text-2" />
-                <div class="min-w-0 flex-1">
-                  <div class="truncate text-xs text-text-1">{row.node.name}</div>
-                  <div class="truncate text-[11px] text-text-2">{row.node.dir}</div>
-                </div>
-                <span class="shrink-0 rounded-full border border-border-2/70 bg-bg-1/70 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
-                  {row.node.ext || '-'}
-                </span>
-                <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
-              </div>
-            {/if}
-          {/each}
         </div>
       {/if}
     </div>
