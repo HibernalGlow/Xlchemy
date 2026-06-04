@@ -1,4 +1,5 @@
-export type LaneId = 'input' | 'output' | 'modify' | 'settings' | 'about';
+export type LaneId = string;
+export type BuiltinLaneId = 'input' | 'output' | 'modify' | 'settings' | 'about';
 export type CardId =
   | 'input-files'
   | 'input-filter'
@@ -34,6 +35,8 @@ export interface ProgressCardConfig {
   showFormat: boolean;
   showEncoder: boolean;
   showRawLines: boolean;
+  showCurrentFile: boolean;
+  showSizeChange: boolean;
 }
 
 export const DEFAULT_PROGRESS_CARD_CONFIG: ProgressCardConfig = {
@@ -43,14 +46,14 @@ export const DEFAULT_PROGRESS_CARD_CONFIG: ProgressCardConfig = {
   showFormat: true,
   showEncoder: true,
   showRawLines: true,
+  showCurrentFile: true,
+  showSizeChange: true,
 };
 
 export function cloneCardLayout(layout: CardLayout): CardLayout {
-  return {
-    input: [...layout.input],
-    output: [...layout.output],
-    modify: [...layout.modify],
-    settings: [...layout.settings],
-    about: [...layout.about],
-  };
+  const next: CardLayout = {};
+  for (const [laneId, cards] of Object.entries(layout)) {
+    next[laneId] = [...cards];
+  }
+  return next;
 }

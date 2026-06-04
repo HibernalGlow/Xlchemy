@@ -9,9 +9,12 @@
     onDragStart?: (e: DragEvent) => void;
     onDragEnd?: () => void;
     actions?: import('svelte').Snippet;
+    onRename?: () => void;
+    onDelete?: () => void;
   }
 
-  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions }: Props = $props();
+  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete }: Props = $props();
+  let menuOpen = $state(false);
 </script>
 
 <div class="lane-drag-handle">
@@ -38,8 +41,19 @@
     {#if actions}
       {@render actions()}
     {/if}
-    <button type="button" class="lane-drag-handle__menu" title="More actions">
-      <Ellipsis class="w-3.5 h-3.5" />
-    </button>
+    <div class="lane-menu-anchor">
+      <button type="button" class="lane-drag-handle__menu" title="More actions" onclick={() => (menuOpen = !menuOpen)}>
+        <Ellipsis class="w-3.5 h-3.5" />
+      </button>
+      {#if menuOpen}
+        <div class="lane-card-menu lane-card-menu--lane">
+          <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>Rename lane</button>
+          <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>{collapsed ? 'Expand lane' : 'Collapse lane'}</button>
+          {#if onDelete}
+            <button type="button" class="danger" onclick={() => { menuOpen = false; onDelete?.(); }}>Delete lane</button>
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 </div>

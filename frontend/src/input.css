@@ -734,6 +734,40 @@
   background: var(--bg-3);
 }
 
+
+.drawer--drop-before::before,
+.drawer--drop-after::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: var(--fill-pop-bg);
+  border-radius: 999px;
+  z-index: 5;
+}
+
+.drawer--drop-before::before {
+  top: 0;
+}
+
+.drawer--drop-after::after {
+  bottom: 0;
+}
+
+.lane--drag-over .stack-content:empty::before {
+  content: 'Drop card here';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px;
+  min-height: 84px;
+  border: 1px dashed color-mix(in oklch, var(--fill-pop-bg) 55%, var(--border-2));
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
 /* Card detail panel (side expansion – drops down within lane) */
 .drawer-detail {
   display: none;
@@ -971,7 +1005,36 @@
   cursor: grab;
 }
 
-.custom-scrollbar__thumb:hover,
-.custom-scrollbar__thumb--active {
+
+.drawer--drop-before::before,
+.drawer--drop-after::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
   background: var(--fill-pop-bg);
+  border-radius: 999px;
+  z-index: 5;
+}
+
+.drawer--drop-before::before {
+  top: 0;
+}
+
+.drawer--drop-after::after {
+  bottom: 0;
+}
+
+.lane--drag-over .stack-content:empty::before {
+  content: 'Drop card here';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px;
+  min-height: 84px;
+  border: 1px dashed color-mix(in oklch, var(--fill-pop-bg) 55%, var(--border-2));
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 12px;
 }

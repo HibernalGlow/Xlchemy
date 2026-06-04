@@ -3,6 +3,8 @@ export class CanvasState {
   isOverflowing = $state(false);
   visibleLanes = $state<string[]>([]);
   dragOverId = $state<string | null>(null);
+  dragTargetCardId = $state<string | null>(null);
+  dragInsertAfter = $state(false);
 
   updateOverflow() {
     const el = this.canvasEl;

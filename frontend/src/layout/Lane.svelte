@@ -11,10 +11,13 @@
     collapsed: boolean;
     onToggleCollapse: () => void;
     width: number;
+    fill?: boolean;
     dragOverId?: string | null;
+    onRename?: () => void;
+    onDelete?: () => void;
   }
 
-  let { id, title, children, collapsed, onToggleCollapse, width, dragOverId = null }: Props = $props();
+  let { id, title, children, collapsed, onToggleCollapse, width, fill = false, dragOverId = null, onRename, onDelete }: Props = $props();
   let isDragging = $state(false);
   let laneEl = $state<HTMLDivElement | null>(null);
 
@@ -40,12 +43,12 @@
     role="group"
     aria-label={title}
     bind:this={laneEl}
-    class={cn('lane', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
+    class={cn('lane', fill && 'lane--fill', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
     data-lane-id={id}
-    style={`width:${width}rem;min-width:14rem;max-width:30rem;`}
+    style={fill ? 'width:100%;min-width:0;flex:1;' : `width:${width}rem;min-width:14rem;max-width:30rem;`}
   >
     <div class="stack-view">
-      <LaneDragHandle title={title} {collapsed} onToggleCollapse={onToggleCollapse} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
+      <LaneDragHandle title={title} {collapsed} onToggleCollapse={onToggleCollapse} onDragStart={handleDragStart} onDragEnd={handleDragEnd} {onRename} {onDelete} />
       <div class="stack-content">
         {@render children?.()}
       </div>

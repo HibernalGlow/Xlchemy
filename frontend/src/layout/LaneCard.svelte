@@ -2,6 +2,7 @@
   import { cn } from '$lib/utils/cn';
   import { X, GripVertical, ChevronRight, Ellipsis } from '@lucide/svelte';
   import { clearDrag, setCardDrag } from '$lib/state/dragState';
+  import { canvasState } from '$lib/state/canvas.svelte';
 
   interface Props {
     id: string;
@@ -53,6 +54,9 @@
   let expanded = $state(false);
   let isDragging = $state(false);
   let didInit = false;
+  let menuOpen = $state(false);
+  let poppedOut = $state(false);
+  let menuRoot = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
     if (didInit) return;
@@ -69,14 +73,17 @@
     expanded = !expanded;
   }
 
+  function toggleMenu() {
+    menuOpen = !menuOpen;
+  }
+
+  function handlePopout() {
+    poppedOut = !poppedOut;
+    menuOpen = false;
+  }
+
   function handleCardDragStart(e: DragEvent) {
     if (!movable || !laneId) {
-      e.preventDefault();
-      return;
-    }
-    const target = e.target as HTMLElement;
-    const grip = target.closest?.('.card-grip');
-    if (!grip) {
       e.preventDefault();
       return;
     }
@@ -93,6 +100,19 @@
   }
 
   const showDetail = $derived(expandable && !!detail && expanded && !collapsed);
+  const isDropTarget = $derived(canvasState.dragTargetCardId === id);
+  const dropAfter = $derived(isDropTarget && canvasState.dragInsertAfter);
+
+  $effect(() => {
+    if (!menuOpen) return;
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (menuRoot && !menuRoot.contains(e.target as Node)) {
+        menuOpen = false;
+      }
+    };
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  });
 </script>
 
 <div
@@ -106,12 +126,11 @@
     showBorder && !collapsed && 'drawer--border',
     showDetail && 'drawer--expanded',
     isDragging && 'drawer--dragging',
+    isDropTarget && !dropAfter && 'drawer--drop-before',
+    isDropTarget && dropAfter && 'drawer--drop-after',
     className,
   )}
   data-card-id={movable ? id : undefined}
-  draggable={movable}
-  ondragstart={movable ? handleCardDragStart : undefined}
-  ondragend={movable ? handleCardDragEnd : undefined}
 >
   <div class="drawer-header">
     <div class="drawer-header__title">
@@ -120,19 +139,37 @@
       </button>
       <span class="drawer-header__text">{header}</span>
       {#if movable}
-        <span class="card-grip" title="Drag to another lane">
+        <button
+          type="button"
+          class="card-grip"
+          title="Drag to another lane"
+          draggable="true"
+          ondragstart={handleCardDragStart}
+          ondragend={handleCardDragEnd}
+        >
           <GripVertical class="w-3 h-3.5" />
-        </span>
+        </button>
       {/if}
     </div>
 
-    {#if actions}
-      <div class="drawer-header__actions">{@render actions()}</div>
-    {/if}
+    <div bind:this={menuRoot} class="drawer-header__actions">
+      {#if actions}
+        {@render actions()}
+      {/if}
 
-    <button type="button" class="lane-drag-handle__menu" title="More actions">
-      <Ellipsis class="w-3.5 h-3.5" />
-    </button>
+      <div class="card-menu">
+        <button type="button" class="lane-drag-handle__menu" title="More actions" onclick={toggleMenu}>
+          <Ellipsis class="w-3.5 h-3.5" />
+        </button>
+
+        {#if menuOpen}
+          <div class="card-menu__panel">
+            <button type="button" class="card-menu__item" onclick={handlePopout}>{poppedOut ? 'Close popout' : 'Pop out'}</button>
+            <button type="button" class="card-menu__item" onclick={() => { handleToggle(); menuOpen = false; }}>{collapsed ? 'Expand card' : 'Collapse card'}</button>
+          </div>
+        {/if}
+      </div>
+    </div>
 
     {#if expandable && !collapsed}
       <button
@@ -162,6 +199,29 @@
       </button>
       <div class="drawer-detail__inner">
         {@render detail()}
+      </div>
+    </div>
+  {/if}
+
+  {#if poppedOut}
+    <div class="card-popout">
+      <button type="button" class="card-popout__backdrop" aria-label="Close popout" onclick={() => (poppedOut = false)}></button>
+      <div class="card-popout__panel">
+        <div class="drawer-header">
+          <div class="drawer-header__title">
+            <span class="drawer-header__text">{header}</span>
+          </div>
+          <button type="button" class="drawer-detail__close" onclick={() => (poppedOut = false)} title="Close popout">
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div class="card-popout__body">
+          {#if detail}
+            {@render detail()}
+          {:else}
+            {@render children?.()}
+          {/if}
+        </div>
       </div>
     </div>
   {/if}

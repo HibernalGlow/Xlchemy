@@ -1,11 +1,11 @@
 <script lang="ts">
   import { canvasState } from '$lib/state/canvas.svelte';
-  import { clearDrag, getDragMode, getDragState } from '$lib/state/dragState';
+  import { clearDrag, getDragMode, getDragState, setCardDropTarget } from '$lib/state/dragState';
 
   interface Props {
     children?: import('svelte').Snippet;
     onReorderLanes?: (fromId: string, toId: string) => void;
-    onMoveCard?: (cardId: string, fromLaneId: string, toLaneId: string) => void;
+    onMoveCard?: (cardId: string, fromLaneId: string, toLaneId: string, targetCardId?: string | null) => void;
   }
 
   let { children, onReorderLanes, onMoveCard }: Props = $props();
@@ -17,12 +17,32 @@
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     const target = (e.target as HTMLElement).closest?.('[data-lane-id]') as HTMLElement | null;
     canvasState.dragOverId = target?.dataset?.laneId ?? null;
+
+    if (mode === 'card') {
+      const targetCard = (e.target as HTMLElement).closest?.('[data-card-id]') as HTMLElement | null;
+      if (targetCard) {
+        const rect = targetCard.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        const insertAfter = e.clientY > midpoint;
+        const targetCardId = targetCard.dataset?.cardId ?? null;
+        canvasState.dragTargetCardId = targetCardId;
+        canvasState.dragInsertAfter = insertAfter;
+        setCardDropTarget(targetCardId, insertAfter);
+      } else {
+        canvasState.dragTargetCardId = null;
+        canvasState.dragInsertAfter = false;
+        setCardDropTarget(null, false);
+      }
+    }
   }
 
   function handleDragLeave(e: DragEvent) {
     const related = e.relatedTarget as Node | null;
     if (related && (e.currentTarget as Node).contains(related)) return;
     canvasState.dragOverId = null;
+    canvasState.dragTargetCardId = null;
+    canvasState.dragInsertAfter = false;
+    setCardDropTarget(null, false);
   }
 
   function handleDrop(e: DragEvent) {
@@ -32,6 +52,8 @@
     const mode = getDragMode();
     const target = (e.target as HTMLElement).closest?.('[data-lane-id]') as HTMLElement | null;
     const toLaneId = target?.dataset?.laneId;
+    const targetCard = (e.target as HTMLElement).closest?.('[data-card-id]') as HTMLElement | null;
+    const targetCardId = targetCard?.dataset?.cardId ?? null;
 
     if (mode === 'lane' && onReorderLanes) {
       const { laneId: fromId } = getDragState();
@@ -39,14 +61,19 @@
         onReorderLanes(fromId, toLaneId);
       }
     } else if (mode === 'card' && onMoveCard) {
-      const { cardId, fromLaneId } = getDragState();
-      if (cardId && fromLaneId && toLaneId && fromLaneId !== toLaneId) {
-        onMoveCard(cardId, fromLaneId, toLaneId);
+      const { cardId, fromLaneId, targetCardId, insertAfter } = getDragState();
+      if (cardId && fromLaneId && toLaneId) {
+        const effectiveTarget = targetCardId ? `${targetCardId}${insertAfter ? '::after' : ''}` : null;
+        if (fromLaneId !== toLaneId || (effectiveTarget && !effectiveTarget.startsWith(cardId))) {
+          onMoveCard(cardId, fromLaneId, toLaneId, effectiveTarget);
+        }
       }
     }
 
     clearDrag();
     canvasState.dragOverId = null;
+    canvasState.dragTargetCardId = null;
+    canvasState.dragInsertAfter = false;
   }
 </script>
 

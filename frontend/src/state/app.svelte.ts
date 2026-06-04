@@ -14,6 +14,21 @@ import { applyThemeColors, getThemeMode, loadThemeName, setThemeMode, watchSyste
 const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
 export const DEFAULT_LANE_ORDER = ['input', 'output', 'modify', 'settings', 'about'];
 const DEFAULT_LANE_WIDTH = 18;
+const DEFAULT_LANE_LABELS: Record<string, string> = {
+  input: 'Input',
+  output: 'Output',
+  modify: 'Modify',
+  settings: 'Settings',
+  about: 'About',
+};
+
+function sanitizeLaneId(value: string): LaneId {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || `lane-${Date.now()}`;
+}
 
 function loadLaneOrder(): string[] {
   try {
@@ -48,18 +63,28 @@ function loadLaneWidth(): number {
   return DEFAULT_LANE_WIDTH;
 }
 
+function loadLaneLabels(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem('xlchemy-lane-labels');
+    if (!raw) return { ...DEFAULT_LANE_LABELS };
+    return { ...DEFAULT_LANE_LABELS, ...JSON.parse(raw) };
+  } catch {
+    return { ...DEFAULT_LANE_LABELS };
+  }
+}
+
 function loadCardLayout(): CardLayout {
   try {
     const raw = localStorage.getItem('xlchemy-card-layout');
     if (!raw) return cloneCardLayout(DEFAULT_CARD_LAYOUT);
     const parsed = JSON.parse(raw);
-    return {
-      input: Array.isArray(parsed?.input) ? parsed.input : [...DEFAULT_CARD_LAYOUT.input],
-      output: Array.isArray(parsed?.output) ? parsed.output : [...DEFAULT_CARD_LAYOUT.output],
-      modify: Array.isArray(parsed?.modify) ? parsed.modify : [...DEFAULT_CARD_LAYOUT.modify],
-      settings: Array.isArray(parsed?.settings) ? parsed.settings : [...DEFAULT_CARD_LAYOUT.settings],
-      about: Array.isArray(parsed?.about) ? parsed.about : [...DEFAULT_CARD_LAYOUT.about],
-    };
+    const next: CardLayout = cloneCardLayout(DEFAULT_CARD_LAYOUT);
+    if (parsed && typeof parsed === 'object') {
+      for (const [laneId, cards] of Object.entries(parsed)) {
+        next[laneId] = Array.isArray(cards) ? (cards as CardId[]).filter(Boolean) : [];
+      }
+    }
+    return next;
   } catch {
     return cloneCardLayout(DEFAULT_CARD_LAYOUT);
   }
@@ -95,6 +120,7 @@ export class AppState {
   laneOrder = $state<string[]>(loadLaneOrder());
   collapsedLanes = $state<Set<string>>(loadCollapsedLanes());
   laneWidth = $state<number>(loadLaneWidth());
+  laneLabels = $state<Record<string, string>>(loadLaneLabels());
   cardLayout = $state<CardLayout>(loadCardLayout());
   singleLaneMode = $state<boolean>(loadSingleLaneMode());
   activeLaneId = $state<LaneId>(loadActiveLaneId());
@@ -121,6 +147,74 @@ export class AppState {
   setLaneOrder(order: string[]) {
     this.laneOrder = order;
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(order));
+  }
+
+  laneTitle(laneId: LaneId): string {
+    return this.laneLabels[laneId] || DEFAULT_LANE_LABELS[laneId] || laneId;
+  }
+
+  createLane(name = 'New Lane') {
+    let base = sanitizeLaneId(name);
+    let id = base;
+    let i = 2;
+    while (this.laneOrder.includes(id)) id = `${base}-${i++}`;
+    this.laneOrder = [...this.laneOrder, id];
+    this.laneLabels = { ...this.laneLabels, [id]: name.trim() || 'New Lane' };
+    this.cardLayout = { ...this.cardLayout, [id]: [] };
+    localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
+    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
+    this.activeLaneId = id;
+  }
+
+  renameLane(laneId: LaneId, name: string) {
+    const nextName = name.trim();
+    if (!nextName) return;
+    this.laneLabels = { ...this.laneLabels, [laneId]: nextName };
+    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+  }
+
+  deleteLane(laneId: LaneId) {
+    if (DEFAULT_LANE_ORDER.includes(laneId)) return;
+    const cards = this.cardLayout[laneId] || [];
+    const nextLayout: CardLayout = { ...this.cardLayout };
+    delete nextLayout[laneId];
+    nextLayout.input = [...(nextLayout.input || []), ...cards];
+    const { [laneId]: _removed, ...nextLabels } = this.laneLabels;
+    this.cardLayout = nextLayout;
+    this.laneLabels = nextLabels;
+    this.laneOrder = this.laneOrder.filter((id) => id !== laneId);
+    if (this.activeLaneId === laneId) this.activeLaneId = 'input';
+    localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
+    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
+  }
+
+  exportLayoutSettings() {
+    return {
+      laneOrder: this.laneOrder,
+      laneLabels: this.laneLabels,
+      cardLayout: this.cardLayout,
+      singleLaneMode: this.singleLaneMode,
+      activeLaneId: this.activeLaneId,
+      progressCardConfig: this.progressCardConfig,
+    };
+  }
+
+  importLayoutSettings(layout: any) {
+    if (!layout || typeof layout !== 'object') return;
+    if (Array.isArray(layout.laneOrder)) this.laneOrder = layout.laneOrder;
+    if (layout.laneLabels && typeof layout.laneLabels === 'object') this.laneLabels = { ...DEFAULT_LANE_LABELS, ...layout.laneLabels };
+    if (layout.cardLayout && typeof layout.cardLayout === 'object') this.cardLayout = layout.cardLayout;
+    if (typeof layout.singleLaneMode === 'boolean') this.singleLaneMode = layout.singleLaneMode;
+    if (layout.activeLaneId) this.activeLaneId = layout.activeLaneId;
+    if (layout.progressCardConfig && typeof layout.progressCardConfig === 'object') this.progressCardConfig = { ...this.progressCardConfig, ...layout.progressCardConfig };
+    localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
+    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
+    localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
+    localStorage.setItem('xlchemy-single-lane-mode', String(this.singleLaneMode));
+    localStorage.setItem('xlchemy-active-lane-id', this.activeLaneId);
+    localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
   }
 
   toggleLaneCollapsed(id: string) {
@@ -150,13 +244,20 @@ export class AppState {
     return this.cardLayout[laneId] || [];
   }
 
-  moveCard(cardId: CardId, fromLaneId: LaneId, toLaneId: LaneId) {
-    if (fromLaneId === toLaneId) return;
+  moveCard(cardId: CardId, fromLaneId: LaneId, toLaneId: LaneId, targetCardId?: CardId | null) {
     const next = cloneCardLayout(this.cardLayout);
+
     next[fromLaneId] = next[fromLaneId].filter((id) => id !== cardId);
-    if (!next[toLaneId].includes(cardId)) {
-      next[toLaneId] = [...next[toLaneId], cardId];
+
+    const destination = next[toLaneId].filter((id) => id !== cardId);
+    if (targetCardId && destination.includes(targetCardId)) {
+      const targetIndex = destination.indexOf(targetCardId);
+      destination.splice(targetIndex, 0, cardId);
+    } else {
+      destination.push(cardId);
     }
+
+    next[toLaneId] = destination;
     this.cardLayout = next;
     localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
@@ -176,6 +277,18 @@ export class AppState {
   updateProgressCardConfig(key: keyof ProgressCardConfig, value: boolean) {
     this.progressCardConfig = { ...this.progressCardConfig, [key]: value };
     localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
+  }
+
+  progressCurrentFile() {
+    const line = this.progress.line1 || '';
+    const idx = line.indexOf(' : ');
+    return idx >= 0 ? line.slice(0, idx) : '';
+  }
+
+  progressSizeChange() {
+    const line = this.progress.line1 || '';
+    const idx = line.indexOf(' : ');
+    return idx >= 0 ? line.slice(idx + 3) : '';
   }
 
   progressSummary() {
@@ -275,7 +388,7 @@ export class AppState {
       const selected = await backend.selectImageFiles();
       if (selected.length === 0) return;
       const result = await backend.addFiles(selected);
-      this.addFileItems(JSON.parse(result));
+      this.addFileItems(result);
     } catch (e) {
       console.error('AddFiles error:', e);
     }
@@ -286,7 +399,7 @@ export class AppState {
       const selected = await backend.selectFolder();
       if (!selected) return;
       const result = await backend.scanDirectory(selected);
-      this.addFileItems(JSON.parse(result));
+      this.addFileItems(result);
     } catch (e) {
       console.error('AddFolder error:', e);
     }
@@ -303,7 +416,7 @@ export class AppState {
     }
     if (paths.length > 0) {
       const result = await backend.addFiles(paths);
-      this.addFileItems(JSON.parse(result));
+      this.addFileItems(result);
     }
   }
 
@@ -377,6 +490,7 @@ export class AppState {
       if (data.output) this.outputSettings = data.output;
       if (data.modify) this.modifySettings = data.modify;
       if (data.app) this.appSettings = data.app;
+      if (data.layout) this.importLayoutSettings(data.layout);
       this.importSettingsJson = '';
       this.showImportDialog = false;
     } catch (e) {
@@ -385,7 +499,7 @@ export class AppState {
   }
 
   handleExportSettings() {
-    const data = JSON.stringify({ output: this.outputSettings, modify: this.modifySettings, app: this.appSettings }, null, 2);
+    const data = JSON.stringify({ output: this.outputSettings, modify: this.modifySettings, app: this.appSettings, layout: this.exportLayoutSettings() }, null, 2);
     navigator.clipboard.writeText(data);
   }
 

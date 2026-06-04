@@ -12,6 +12,7 @@
     onCancel?: () => void;
     singleLaneMode?: boolean;
     onToggleSingleLaneMode?: () => void;
+    onCreateLane?: () => void;
   }
 
   let {
@@ -23,6 +24,7 @@
     onCancel,
     singleLaneMode = false,
     onToggleSingleLaneMode,
+    onCreateLane,
   }: Props = $props();
   const t = i18n.t;
 </script>
@@ -49,6 +51,7 @@
 
   <div class="chrome-header__right">
     <Button kind="outline" variant={singleLaneMode ? 'pop' : 'neutral'} size="sm" onclick={onToggleSingleLaneMode}>{singleLaneMode ? 'Single lane' : 'Multi lane'}</Button>
+    <Button kind="outline" variant="neutral" size="sm" onclick={onCreateLane}>+ Lane</Button>
     {#if isConverting}
       <Button kind="outline" variant="neutral" size="sm" onclick={onCancel}>{t('Cancel')}</Button>
     {:else}

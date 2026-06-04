@@ -22,13 +22,7 @@
   type LaneItem = { id: LaneId; title: string };
 
   function lanes(): LaneItem[] {
-    return [
-      { id: 'input', title: t('Input') },
-      { id: 'output', title: t('Output') },
-      { id: 'modify', title: t('Modify') },
-      { id: 'settings', title: t('Settings') },
-      { id: 'about', title: t('About') },
-    ];
+    return appState.laneOrder.map((id) => ({ id, title: appState.laneTitle(id) }));
   }
 
   function sortedLanes() {
@@ -101,6 +95,7 @@
     onCancel={() => appState.cancelConversion()}
     singleLaneMode={appState.singleLaneMode}
     onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
+    onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
   />
 
   <div class="chrome-body">
@@ -111,7 +106,7 @@
 
     <div class="chrome-content">
       <div class="chrome-workspace canvas-bg">
-        <LaneContainer onReorderLanes={handleReorderLanes} onMoveCard={(cardId, fromLaneId, toLaneId) => appState.moveCard(cardId as any, fromLaneId as any, toLaneId as any)}>
+        <LaneContainer onReorderLanes={handleReorderLanes} onMoveCard={(cardId, fromLaneId, toLaneId, targetCardId) => appState.moveCard(cardId as any, fromLaneId as any, toLaneId as any, targetCardId as any)}>
           {#each visibleLanes() as lane (lane.id)}
             <Lane
               id={lane.id}
@@ -120,6 +115,8 @@
               onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
               width={appState.singleLaneMode ? 28 : appState.laneWidth}
               dragOverId={canvasState.dragOverId}
+              onRename={() => appState.renameLane(lane.id, prompt('Lane name', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}
+              onDelete={['input', 'output', 'modify', 'settings', 'about'].includes(lane.id) ? undefined : () => appState.deleteLane(lane.id)}
             >
               <CardLaneRenderer laneId={lane.id} />
             </Lane>
@@ -141,8 +138,6 @@
           progress={appState.progress}
           fileCount={appState.fileItems.length}
           exceptionCount={appState.exceptions.length}
-          onConvert={() => appState.startConversion()}
-          onCancel={() => appState.cancelConversion()}
           onShowExceptions={() => (appState.showExceptions = true)}
           disabled={appState.isConverting}
         />
