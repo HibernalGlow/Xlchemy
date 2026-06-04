@@ -12,7 +12,7 @@
   interface Props { laneId: LaneId }
   let { laneId }: Props = $props();
   const ramOptimizerOptions = ['Dynamic', 'Static', 'Disabled'].map((value) => ({ value, label: $_(`settings.${value.toLowerCase()}`) }));
-  const processingOrderOptions = ['Original', 'Random', 'Sequential', 'Path Ascending', 'Path Descending', 'Size Ascending', 'Size Descending'].map((value) => ({ value, label: $_(`settings.${value.toLowerCase().replace(/ /g, '_')}`) }));
+
 </script>
 
 <LaneCard id="settings-advanced" laneId={laneId} movable header={$_('settings.advanced')}>
@@ -36,8 +36,6 @@
         <Input value={appState.appSettings.im_args || ''} placeholder={$_('settings.imagemagick_args')} oninput={(e) => appState.updateApp('im_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
       </div>
     {/if}
-
-    <Select value={appState.appSettings.processing_order || 'Original'} options={processingOrderOptions} onChange={(v) => appState.updateApp('processing_order', v)} />
 
     <div class="flex gap-2 flex-wrap pt-2 border-t border-border-2/50">
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}>{$_('theme.export')}</Button>
