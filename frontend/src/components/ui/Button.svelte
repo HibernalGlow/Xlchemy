@@ -12,6 +12,7 @@
     size?: ComponentSize;
     disabled?: boolean;
     class?: string;
+    title?: string;
     onclick?: (e: MouseEvent) => void;
     type?: 'button' | 'submit' | 'reset';
     children?: import('svelte').Snippet;
@@ -23,6 +24,7 @@
     size = 'default',
     disabled = false,
     class: className = '',
+    title = '',
     onclick,
     type = 'button',
     children,
@@ -100,6 +102,7 @@
   {disabled}
   {onclick}
   {type}
+  {title}
 >
   {@render children?.()}
 </button>

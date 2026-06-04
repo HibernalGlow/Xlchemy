@@ -51,11 +51,18 @@ func (a *AppService) GetTooltips() string {
 
 // GetSettings loads persisted settings.
 func (a *AppService) GetSettings() string {
+	if snapshot, err := a.config.LoadAppState(); err == nil && snapshot != nil {
+		b, _ := json.Marshal(snapshot)
+		return string(b)
+	}
+
 	output, modify, app := a.config.LoadSettings()
 	data := map[string]interface{}{
-		"output": output,
-		"modify": modify,
-		"app":    app,
+		"domain": map[string]interface{}{
+			"output": output,
+			"modify": modify,
+			"app":    app,
+		},
 	}
 	b, _ := json.Marshal(data)
 	return string(b)
@@ -63,15 +70,7 @@ func (a *AppService) GetSettings() string {
 
 // SaveSettings persists all settings.
 func (a *AppService) SaveSettings(settingsJSON string) error {
-	var data struct {
-		Output OutputSettings `json:"output"`
-		Modify ModifySettings `json:"modify"`
-		App    AppSettings    `json:"app"`
-	}
-	if err := json.Unmarshal([]byte(settingsJSON), &data); err != nil {
-		return err
-	}
-	return a.config.SaveSettings(data.Output, data.Modify, data.App)
+	return a.config.SaveAppState(json.RawMessage(settingsJSON))
 }
 
 // ListPresets returns all preset names.

@@ -1,4 +1,11 @@
-import type { OutputSettings, ModifySettings, AppSettings, AppStateSnapshot, ProgressCardConfig } from './models';
+import type {
+  OutputSettings,
+  ModifySettings,
+  AppSettings,
+  AppStateSnapshot,
+  ProgressCardConfig,
+  BackgroundSettings,
+} from './models';
 
 export const DEFAULT_OUTPUT_SETTINGS: OutputSettings = {
   format: 'JPEG XL',
@@ -93,6 +100,13 @@ export const DEFAULT_PROGRESS_CARD_CONFIG: ProgressCardConfig = {
   showSizeChange: true,
 };
 
+export const DEFAULT_BACKGROUND_SETTINGS: BackgroundSettings = {
+  mode: 'dot-grid',
+  imageUrl: '',
+  opacity: 40,
+  blur: 0,
+};
+
 export const DEFAULT_LANE_ORDER = ['input', 'output', 'modify', 'settings', 'about'];
 export const DEFAULT_LANE_WIDTH = 18;
 export const DEFAULT_LANE_LABELS: Record<string, string> = {
@@ -131,6 +145,9 @@ export function createDefaultSnapshot(): AppStateSnapshot {
       singleLaneMode: false,
       activeLaneId: 'input',
       progressCardConfig: { ...DEFAULT_PROGRESS_CARD_CONFIG },
+      collapsedLanes: [],
+      hiddenLanes: [],
+      hiddenCards: [],
     },
     presets: [],
     theme: {
@@ -138,6 +155,7 @@ export function createDefaultSnapshot(): AppStateSnapshot {
       mode: 'system',
       customThemes: [],
     },
+    background: { ...DEFAULT_BACKGROUND_SETTINGS },
     lang: 'en',
     executor: 'wails',
   };

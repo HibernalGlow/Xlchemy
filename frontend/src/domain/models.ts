@@ -95,6 +95,15 @@ export interface ConversionSpec {
   app: AppSettings;
 }
 
+export type BackgroundMode = 'dot-grid' | 'image' | 'none';
+
+export interface BackgroundSettings {
+  mode: BackgroundMode;
+  imageUrl: string;
+  opacity: number;
+  blur: number;
+}
+
 export interface AppStateSnapshot {
   domain: ConversionSpec;
   layout: {
@@ -105,6 +114,9 @@ export interface AppStateSnapshot {
     singleLaneMode: boolean;
     activeLaneId: string;
     progressCardConfig: ProgressCardConfig;
+    collapsedLanes: string[];
+    hiddenLanes: string[];
+    hiddenCards: string[];
   };
   presets: Preset[];
   theme: {
@@ -112,6 +124,7 @@ export interface AppStateSnapshot {
     mode: 'light' | 'dark' | 'system';
     customThemes: CustomThemeConfig[];
   };
+  background: BackgroundSettings;
   lang: string;
   executor: string;
 }

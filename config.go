@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -26,12 +27,46 @@ func (cs *ConfigStore) configPath(name string) string {
 	return filepath.Join(ConfigLocation, name+".json")
 }
 
+func (cs *ConfigStore) snapshotPath() string {
+	return filepath.Join(ConfigLocation, "app-state.json")
+}
+
 func (cs *ConfigStore) presetDir() string {
 	return filepath.Join(ConfigLocation, "presets")
 }
 
 func (cs *ConfigStore) presetPath(name string) string {
 	return filepath.Join(cs.presetDir(), name+".json")
+}
+
+func writeJSONAtomically(path string, payload []byte) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	tempFile, err := os.CreateTemp(dir, filepath.Base(path)+".tmp-*")
+	if err != nil {
+		return err
+	}
+
+	tempPath := tempFile.Name()
+	defer func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempPath)
+	}()
+
+	if _, err := tempFile.Write(payload); err != nil {
+		return err
+	}
+	if err := tempFile.Sync(); err != nil {
+		return err
+	}
+	if err := tempFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tempPath, path)
 }
 
 // LoadSettings loads saved settings or returns defaults.
@@ -56,6 +91,25 @@ func (cs *ConfigStore) LoadSettings() (OutputSettings, ModifySettings, AppSettin
 	return output, modify, app
 }
 
+func (cs *ConfigStore) LoadAppState() (map[string]interface{}, error) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	data, err := os.ReadFile(cs.snapshotPath())
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var snapshot map[string]interface{}
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		return nil, err
+	}
+	return snapshot, nil
+}
+
 // SaveSettings persists settings to disk.
 func (cs *ConfigStore) SaveSettings(output OutputSettings, modify ModifySettings, app AppSettings) error {
 	cs.mu.Lock()
@@ -74,10 +128,93 @@ func (cs *ConfigStore) SaveSettings(output OutputSettings, modify ModifySettings
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(cs.configPath(pair.name), b, 0644); err != nil {
+		if err := writeJSONAtomically(cs.configPath(pair.name), b); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (cs *ConfigStore) SaveAppState(snapshot json.RawMessage) error {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	cs.ensureDir()
+
+	var decoded map[string]interface{}
+	if err := json.Unmarshal(snapshot, &decoded); err != nil {
+		return err
+	}
+
+	pretty, err := json.MarshalIndent(decoded, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	if err := writeJSONAtomically(cs.snapshotPath(), pretty); err != nil {
+		return err
+	}
+
+	domain, _ := decoded["domain"].(map[string]interface{})
+	if domain == nil {
+		return nil
+	}
+
+	var output OutputSettings
+	if rawOutput, ok := domain["output"]; ok {
+		b, err := json.Marshal(rawOutput)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(b, &output); err != nil {
+			return err
+		}
+	} else {
+		output = DefaultOutputSettings()
+	}
+
+	var modify ModifySettings
+	if rawModify, ok := domain["modify"]; ok {
+		b, err := json.Marshal(rawModify)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(b, &modify); err != nil {
+			return err
+		}
+	} else {
+		modify = DefaultModifySettings()
+	}
+
+	var app AppSettings
+	if rawApp, ok := domain["app"]; ok {
+		b, err := json.Marshal(rawApp)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(b, &app); err != nil {
+			return err
+		}
+	} else {
+		app = DefaultAppSettings()
+	}
+
+	for _, pair := range []struct {
+		name string
+		data interface{}
+	}{
+		{"OutputTab", output},
+		{"ModifyTab", modify},
+		{"SettingsTab", app},
+	} {
+		b, err := json.MarshalIndent(pair.data, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := writeJSONAtomically(cs.configPath(pair.name), b); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -117,7 +254,7 @@ func (cs *ConfigStore) SavePreset(name string, preset Preset) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(cs.presetPath(name), b, 0644)
+	return writeJSONAtomically(cs.presetPath(name), b)
 }
 
 // LoadPreset loads a preset by name.
@@ -160,5 +297,5 @@ func (cs *ConfigStore) SetDefaultPreset(name string) error {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	cs.ensureDir()
-	return os.WriteFile(filepath.Join(cs.presetDir(), "_default"), []byte(name), 0644)
+	return writeJSONAtomically(filepath.Join(cs.presetDir(), "_default"), []byte(name))
 }

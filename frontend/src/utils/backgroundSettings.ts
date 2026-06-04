@@ -1,38 +1,19 @@
-/**
- * Background Settings — neoview-style background image support.
- * Replaces the default dot-grid with a configurable background image
- * that supports opacity and blur controls.
- */
-
-export type BackgroundMode = 'dot-grid' | 'image' | 'none';
-
-export interface BackgroundSettings {
-  mode: BackgroundMode;
-  imageUrl: string;
-  opacity: number;   // 0–100
-  blur: number;      // 0–30 px
-}
+import type { BackgroundMode, BackgroundSettings } from '$lib/domain';
+import { DEFAULT_BACKGROUND_SETTINGS } from '$lib/domain';
 
 const BG_KEY = 'xlchemy-bg';
 
-const DEFAULTS: BackgroundSettings = {
-  mode: 'dot-grid',
-  imageUrl: '',
-  opacity: 40,
-  blur: 0,
-};
-
-// --- Persistence ---
+export type { BackgroundMode, BackgroundSettings };
 
 export function loadBackgroundSettings(): BackgroundSettings {
   try {
     const raw = localStorage.getItem(BG_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { ...DEFAULTS, ...parsed };
+      return { ...DEFAULT_BACKGROUND_SETTINGS, ...parsed };
     }
   } catch {}
-  return { ...DEFAULTS };
+  return { ...DEFAULT_BACKGROUND_SETTINGS };
 }
 
 export function saveBackgroundSettings(settings: BackgroundSettings): void {
@@ -41,12 +22,6 @@ export function saveBackgroundSettings(settings: BackgroundSettings): void {
   } catch {}
 }
 
-// --- CSS Application ---
-
-/**
- * Apply background settings to the workspace element via CSS variables.
- * The `.canvas-bg` class reads these variables.
- */
 export function applyBackgroundCSS(settings: BackgroundSettings): void {
   const root = document.documentElement;
   root.style.setProperty('--bg-mode', settings.mode === 'image' ? '1' : '0');
@@ -60,7 +35,6 @@ export function applyBackgroundCSS(settings: BackgroundSettings): void {
   }
 }
 
-/** Load + apply on startup */
 export function initBackground(): BackgroundSettings {
   const settings = loadBackgroundSettings();
   applyBackgroundCSS(settings);

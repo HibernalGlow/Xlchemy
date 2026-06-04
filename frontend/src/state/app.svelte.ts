@@ -10,11 +10,9 @@ import {
   type LaneId,
   type ProgressCardConfig,
 } from '$lib/cards/definitions';
-import { applyThemeColors, getThemeMode, loadThemeName, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
+import { applyThemeColors, getCustomThemes, getThemeMode, loadThemeName, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
 import {
   type BackgroundSettings,
-  loadBackgroundSettings,
-  saveBackgroundSettings,
   applyBackgroundCSS,
 } from '$lib/utils/backgroundSettings';
 import {
@@ -30,14 +28,18 @@ import {
   normalizeModifySettings,
   normalizeAppSettings,
   createDefaultSnapshot,
+  DEFAULT_LANE_WIDTH,
 } from '$lib/domain';
 import {
   sortItems,
   mergeFileItems,
   buildExecutionPlan,
 } from '$lib/orchestrator';
+import { loadLegacyClientState, resolveImportPayload } from './persistence';
 
 const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
+const DEFAULT_SNAPSHOT = createDefaultSnapshot();
+const LEGACY_CLIENT_STATE = loadLegacyClientState();
 
 function fileUrlToPath(url: string): string | null {
   if (!url.startsWith('file://')) return null;
@@ -86,170 +88,18 @@ function sanitizeLaneId(value: string): LaneId {
     .replace(/^-+|-+$/g, '') || `lane-${Date.now()}`;
 }
 
-function loadLaneOrder(): string[] {
-  try {
-    const v = localStorage.getItem('xlchemy-lane-order');
-    if (v) {
-      const arr = JSON.parse(v);
-      if (Array.isArray(arr)) return arr;
-    }
-  } catch {}
-  return createDefaultSnapshot().layout.laneOrder;
-}
-
-function loadCollapsedLanes(): Set<string> {
-  try {
-    const v = localStorage.getItem('xlchemy-collapsed-lanes');
-    if (v) {
-      const arr = JSON.parse(v);
-      if (Array.isArray(arr)) return new Set(arr);
-    }
-  } catch {}
-  return new Set<string>();
-}
-
-function loadLaneWidths(): Record<string, number> {
-  try {
-    const raw = localStorage.getItem('xlchemy-lane-widths');
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function loadLaneLabels(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem('xlchemy-lane-labels');
-    if (!raw) return { ...createDefaultSnapshot().layout.laneLabels };
-    return { ...createDefaultSnapshot().layout.laneLabels, ...JSON.parse(raw) };
-  } catch {
-    return { ...createDefaultSnapshot().layout.laneLabels };
-  }
-}
-
-function loadCardLayout(): CardLayout {
-  try {
-    const raw = localStorage.getItem('xlchemy-card-layout');
-    if (!raw) return cloneCardLayout(DEFAULT_CARD_LAYOUT);
-    const parsed = JSON.parse(raw);
-    const next: CardLayout = cloneCardLayout(DEFAULT_CARD_LAYOUT);
-    if (parsed && typeof parsed === 'object') {
-      for (const [laneId, cards] of Object.entries(parsed)) {
-        next[laneId] = Array.isArray(cards) ? (cards as CardId[]).filter(Boolean) : [];
-      }
-    }
-    // Ensure new cards from DEFAULT_CARD_LAYOUT are present (migration)
-    for (const laneId of Object.keys(DEFAULT_CARD_LAYOUT)) {
-      const defaultCards = DEFAULT_CARD_LAYOUT[laneId];
-      const existing = next[laneId] || [];
-      for (const cardId of defaultCards) {
-        if (!existing.includes(cardId)) {
-          existing.push(cardId);
-        }
-      }
-      next[laneId] = existing;
-    }
-    return next;
-  } catch {
-    return cloneCardLayout(DEFAULT_CARD_LAYOUT);
-  }
-}
-
-function loadSingleLaneMode(): boolean {
-  try {
-    return localStorage.getItem('xlchemy-single-lane-mode') === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function loadActiveLaneId(): LaneId {
-  try {
-    const value = localStorage.getItem('xlchemy-active-lane-id') as LaneId | null;
-    if (value && createDefaultSnapshot().layout.laneOrder.includes(value)) return value;
-  } catch {}
-  return 'input';
-}
-
-function loadProgressCardConfig(): ProgressCardConfig {
-  try {
-    const raw = localStorage.getItem('xlchemy-progress-card-config');
-    if (!raw) return { ...DEFAULT_PROGRESS_CARD_CONFIG };
-    return { ...DEFAULT_PROGRESS_CARD_CONFIG, ...JSON.parse(raw) };
-  } catch {
-    return { ...DEFAULT_PROGRESS_CARD_CONFIG };
-  }
-}
-
-function loadHiddenLanes(): Set<string> {
-  try {
-    const v = localStorage.getItem('xlchemy-hidden-lanes');
-    if (v) {
-      const arr = JSON.parse(v);
-      if (Array.isArray(arr)) return new Set(arr);
-    }
-  } catch {}
-  return new Set<string>();
-}
-
-function loadHiddenCards(): Set<string> {
-  try {
-    const v = localStorage.getItem('xlchemy-hidden-cards');
-    if (v) {
-      const arr = JSON.parse(v);
-      if (Array.isArray(arr)) return new Set(arr);
-    }
-  } catch {}
-  return new Set<string>();
-}
-
-type ImportableSettingsPayload = {
-  output?: unknown;
-  modify?: unknown;
-  app?: unknown;
-  layout?: unknown;
-  domain?: {
-    output?: unknown;
-    modify?: unknown;
-    app?: unknown;
-  };
-};
-
-function resolveImportPayload(data: unknown): {
-  output?: unknown;
-  modify?: unknown;
-  app?: unknown;
-  layout?: unknown;
-} {
-  if (!data || typeof data !== 'object') {
-    return {};
-  }
-
-  const payload = data as ImportableSettingsPayload;
-  const domain = payload.domain && typeof payload.domain === 'object' ? payload.domain : undefined;
-
-  return {
-    output: domain?.output ?? payload.output,
-    modify: domain?.modify ?? payload.modify,
-    app: domain?.app ?? payload.app,
-    layout: payload.layout,
-  };
-}
-
 export class AppState {
   // Layout state
-  laneOrder = $state<string[]>(loadLaneOrder());
-  collapsedLanes = $state<Set<string>>(loadCollapsedLanes());
-  laneWidths = $state<Record<string, number>>(loadLaneWidths());
-  laneLabels = $state<Record<string, string>>(loadLaneLabels());
-  cardLayout = $state<CardLayout>(loadCardLayout());
-  singleLaneMode = $state<boolean>(loadSingleLaneMode());
-  activeLaneId = $state<LaneId>(loadActiveLaneId());
-  progressCardConfig = $state<ProgressCardConfig>(loadProgressCardConfig());
-  hiddenLanes = $state<Set<string>>(loadHiddenLanes());
-  hiddenCards = $state<Set<string>>(loadHiddenCards());
+  laneOrder = $state<string[]>([...DEFAULT_SNAPSHOT.layout.laneOrder]);
+  collapsedLanes = $state<Set<string>>(new Set(DEFAULT_SNAPSHOT.layout.collapsedLanes));
+  laneWidths = $state<Record<string, number>>({ ...DEFAULT_SNAPSHOT.layout.laneWidths });
+  laneLabels = $state<Record<string, string>>({ ...DEFAULT_SNAPSHOT.layout.laneLabels });
+  cardLayout = $state<CardLayout>(cloneCardLayout(DEFAULT_CARD_LAYOUT));
+  singleLaneMode = $state<boolean>(DEFAULT_SNAPSHOT.layout.singleLaneMode);
+  activeLaneId = $state<LaneId>(DEFAULT_SNAPSHOT.layout.activeLaneId as LaneId);
+  progressCardConfig = $state<ProgressCardConfig>({ ...DEFAULT_PROGRESS_CARD_CONFIG });
+  hiddenLanes = $state<Set<string>>(new Set(DEFAULT_SNAPSHOT.layout.hiddenLanes));
+  hiddenCards = $state<Set<string>>(new Set(DEFAULT_SNAPSHOT.layout.hiddenCards));
 
   // Domain state
   fileItems = $state<FileItem[]>([]);
@@ -278,8 +128,8 @@ export class AppState {
 
   showImportDialog = $state<boolean>(false);
   importSettingsJson = $state<string>('');
-  currentLang = $state<string>(getCurrentLanguage());
-  backgroundSettings = $state<BackgroundSettings>(loadBackgroundSettings());
+  currentLang = $state<string>(DEFAULT_SNAPSHOT.lang);
+  backgroundSettings = $state<BackgroundSettings>({ ...DEFAULT_SNAPSHOT.background });
   isInitialized = $state<boolean>(false);
 
   private executor: BackendExecutor = getExecutor();
@@ -303,11 +153,10 @@ export class AppState {
   // Layout actions
   setLaneOrder(order: string[]) {
     this.laneOrder = order;
-    localStorage.setItem('xlchemy-lane-order', JSON.stringify(order));
   }
 
   laneTitle(laneId: LaneId): string {
-    return this.laneLabels[laneId] || createDefaultSnapshot().layout.laneLabels[laneId] || laneId;
+    return this.laneLabels[laneId] || DEFAULT_SNAPSHOT.layout.laneLabels[laneId] || laneId;
   }
 
   createLane(name = 'New Lane') {
@@ -318,11 +167,7 @@ export class AppState {
     this.laneOrder = [...this.laneOrder, id];
     this.laneLabels = { ...this.laneLabels, [id]: name.trim() || 'New Lane' };
     this.cardLayout = { ...this.cardLayout, [id]: [] };
-    this.laneWidths = { ...this.laneWidths, [id]: createDefaultSnapshot().layout.laneWidths[id] || 18 };
-    localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
-    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
-    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
+    this.laneWidths = { ...this.laneWidths, [id]: DEFAULT_SNAPSHOT.layout.laneWidths[id] || DEFAULT_LANE_WIDTH };
     this.activeLaneId = id;
   }
 
@@ -330,7 +175,6 @@ export class AppState {
     const nextName = name.trim();
     if (!nextName) return;
     this.laneLabels = { ...this.laneLabels, [laneId]: nextName };
-    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
   }
 
   deleteLane(laneId: LaneId) {
@@ -347,10 +191,6 @@ export class AppState {
     this.laneWidths = nextWidths;
     this.laneOrder = this.laneOrder.filter((id) => id !== laneId);
     if (this.activeLaneId === laneId) this.activeLaneId = 'input';
-    localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
-    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
-    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
   }
 
   exportLayoutSettings() {
@@ -362,6 +202,7 @@ export class AppState {
       singleLaneMode: this.singleLaneMode,
       activeLaneId: this.activeLaneId,
       progressCardConfig: this.progressCardConfig,
+      collapsedLanes: Array.from(this.collapsedLanes),
       hiddenLanes: Array.from(this.hiddenLanes),
       hiddenCards: Array.from(this.hiddenCards),
     };
@@ -371,7 +212,7 @@ export class AppState {
     if (!layout || typeof layout !== 'object') return;
     if (Array.isArray(layout.laneOrder)) this.laneOrder = layout.laneOrder;
     if (layout.laneLabels && typeof layout.laneLabels === 'object') {
-      this.laneLabels = { ...createDefaultSnapshot().layout.laneLabels, ...layout.laneLabels };
+      this.laneLabels = { ...DEFAULT_SNAPSHOT.layout.laneLabels, ...layout.laneLabels };
     }
     if (layout.laneWidths && typeof layout.laneWidths === 'object') this.laneWidths = layout.laneWidths;
     if (layout.cardLayout && typeof layout.cardLayout === 'object') this.cardLayout = layout.cardLayout;
@@ -386,15 +227,9 @@ export class AppState {
     if (Array.isArray(layout.hiddenCards)) {
       this.hiddenCards = new Set(layout.hiddenCards);
     }
-    localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
-    localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
-    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(this.cardLayout));
-    localStorage.setItem('xlchemy-single-lane-mode', String(this.singleLaneMode));
-    localStorage.setItem('xlchemy-active-lane-id', this.activeLaneId);
-    localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
-    localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify(Array.from(this.hiddenLanes)));
-    localStorage.setItem('xlchemy-hidden-cards', JSON.stringify(Array.from(this.hiddenCards)));
+    if (Array.isArray(layout.collapsedLanes)) {
+      this.collapsedLanes = new Set(layout.collapsedLanes);
+    }
   }
 
   toggleLaneCollapsed(id: string) {
@@ -402,7 +237,6 @@ export class AppState {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     this.collapsedLanes = next;
-    localStorage.setItem('xlchemy-collapsed-lanes', JSON.stringify(Array.from(next)));
   }
 
   toggleLaneHidden(id: string) {
@@ -410,12 +244,10 @@ export class AppState {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     this.hiddenLanes = next;
-    localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify(Array.from(next)));
   }
 
   showAllLanes() {
     this.hiddenLanes = new Set<string>();
-    localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify([]));
   }
 
   toggleCardHidden(cardId: string) {
@@ -423,7 +255,6 @@ export class AppState {
     if (next.has(cardId)) next.delete(cardId);
     else next.add(cardId);
     this.hiddenCards = next;
-    localStorage.setItem('xlchemy-hidden-cards', JSON.stringify(Array.from(next)));
   }
 
   moveCardToLane(cardId: CardId, targetLaneId: string) {
@@ -436,7 +267,6 @@ export class AppState {
     if (!next[targetLaneId]) next[targetLaneId] = [];
     next[targetLaneId].push(cardId);
     this.cardLayout = next;
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
 
   reorderCardInLane(cardId: CardId, direction: 'up' | 'down') {
@@ -455,27 +285,23 @@ export class AppState {
       }
     }
     this.cardLayout = next;
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
 
   laneWidth(laneId: LaneId): number {
-    return this.laneWidths[laneId] || createDefaultSnapshot().layout.laneWidths[laneId] || 18;
+    return this.laneWidths[laneId] || DEFAULT_SNAPSHOT.layout.laneWidths[laneId] || DEFAULT_LANE_WIDTH;
   }
 
   setLaneWidth(laneId: LaneId, width: number) {
     const next = { ...this.laneWidths, [laneId]: width };
     this.laneWidths = next;
-    localStorage.setItem('xlchemy-lane-widths', JSON.stringify(next));
   }
 
   setSingleLaneMode(enabled: boolean) {
     this.singleLaneMode = enabled;
-    localStorage.setItem('xlchemy-single-lane-mode', String(enabled));
   }
 
   setActiveLaneId(laneId: LaneId) {
     this.activeLaneId = laneId;
-    localStorage.setItem('xlchemy-active-lane-id', laneId);
   }
 
   cardsForLane(laneId: LaneId): CardId[] {
@@ -496,7 +322,6 @@ export class AppState {
     }
     next[toLaneId] = destination;
     this.cardLayout = next;
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
 
   reorderCardWithinLane(laneId: LaneId, fromIndex: number, toIndex: number) {
@@ -508,12 +333,10 @@ export class AppState {
     list.splice(toIndex, 0, item);
     next[laneId] = list;
     this.cardLayout = next;
-    localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
 
   updateProgressCardConfig(key: keyof ProgressCardConfig, value: boolean) {
     this.progressCardConfig = { ...this.progressCardConfig, [key]: value };
-    localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
   }
 
   // Progress display helpers
@@ -681,7 +504,6 @@ export class AppState {
 
   updateBackground(partial: Partial<BackgroundSettings>) {
     this.backgroundSettings = { ...this.backgroundSettings, ...partial };
-    saveBackgroundSettings(this.backgroundSettings);
     applyBackgroundCSS(this.backgroundSettings);
   }
 
@@ -703,6 +525,21 @@ export class AppState {
       if (data.modify) this.modifySettings = normalizeModifySettings(data.modify);
       if (data.app) this.appSettings = normalizeAppSettings(data.app);
       if (data.layout) this.importLayoutSettings(data.layout);
+      if (data.background && typeof data.background === 'object') {
+        this.backgroundSettings = { ...DEFAULT_SNAPSHOT.background, ...data.background as Record<string, unknown> };
+        applyBackgroundCSS(this.backgroundSettings);
+      }
+      if (data.theme && typeof data.theme === 'object') {
+        const theme = data.theme as { name?: string; mode?: 'light' | 'dark' | 'system' };
+        const themeName = theme.name || this.appSettings.theme || DEFAULT_SNAPSHOT.theme.name;
+        const themeMode = theme.mode || getThemeMode();
+        this.appSettings = { ...this.appSettings, theme: themeName };
+        setThemeMode(themeMode);
+        applyThemeColors(themeMode, themeName);
+      }
+      if (typeof data.lang === 'string' && data.lang) {
+        this.changeLanguage(data.lang);
+      }
       this.importSettingsJson = '';
       this.showImportDialog = false;
       await this.saveCurrentSettings();
@@ -729,8 +566,9 @@ export class AppState {
       theme: {
         name: this.appSettings.theme || loadThemeName(),
         mode: getThemeMode(),
-        customThemes: [],
+        customThemes: getCustomThemes(),
       },
+      background: this.backgroundSettings,
       lang: this.currentLang,
       executor: this.executor.name,
     };
@@ -743,6 +581,8 @@ export class AppState {
       this.cpuCount = c.cpuCount || 4;
 
       const saved = await this.executor.loadAppState();
+      let shouldMigrateLegacyState = false;
+
       if (saved.domain?.output) {
         this.outputSettings = normalizeOutputSettings(saved.domain.output);
       }
@@ -753,13 +593,41 @@ export class AppState {
         this.appSettings = normalizeAppSettings(saved.domain.app);
       }
 
-      this.currentLang = getCurrentLanguage();
+      if (saved.layout && typeof saved.layout === 'object') {
+        this.importLayoutSettings(saved.layout);
+      } else if (LEGACY_CLIENT_STATE.hasLayoutState) {
+        this.importLayoutSettings(LEGACY_CLIENT_STATE.layout);
+        shouldMigrateLegacyState = true;
+      }
 
-      const themeName = this.appSettings.theme || loadThemeName();
-      applyThemeColors(getThemeMode(), themeName);
-
-      // Init background
+      if (saved.background && typeof saved.background === 'object') {
+        this.backgroundSettings = { ...DEFAULT_SNAPSHOT.background, ...saved.background };
+      } else if (LEGACY_CLIENT_STATE.hasBackgroundState) {
+        this.backgroundSettings = { ...DEFAULT_SNAPSHOT.background, ...LEGACY_CLIENT_STATE.background };
+        shouldMigrateLegacyState = true;
+      }
       applyBackgroundCSS(this.backgroundSettings);
+
+      const savedLang = typeof saved.lang === 'string' && saved.lang ? saved.lang : '';
+      if (savedLang) {
+        this.currentLang = savedLang;
+        setLanguage(savedLang);
+      } else {
+        this.currentLang = LEGACY_CLIENT_STATE.hasLangState ? LEGACY_CLIENT_STATE.lang : getCurrentLanguage();
+        if (LEGACY_CLIENT_STATE.hasLangState) {
+          shouldMigrateLegacyState = true;
+        }
+      }
+
+      const savedTheme = saved.theme && typeof saved.theme === 'object' ? saved.theme : undefined;
+      const themeName = savedTheme?.name || this.appSettings.theme || LEGACY_CLIENT_STATE.theme.name || loadThemeName();
+      const themeMode = savedTheme?.mode || LEGACY_CLIENT_STATE.theme.mode || getThemeMode();
+      if (!savedTheme && LEGACY_CLIENT_STATE.hasThemeState) {
+        shouldMigrateLegacyState = true;
+      }
+      this.appSettings = { ...this.appSettings, theme: themeName };
+      setThemeMode(themeMode);
+      applyThemeColors(themeMode, themeName);
 
       if (Array.isArray(this.appSettings.excluded_formats)) {
         this.excludedFormats = new Set(
@@ -770,6 +638,9 @@ export class AppState {
         this.appSettings = { ...this.appSettings, excluded_formats: Array.from(this.excludedFormats) };
       }
       this.isInitialized = true;
+      if (shouldMigrateLegacyState) {
+        await this.saveCurrentSettings();
+      }
     } catch (e) {
       console.error('Init error:', e);
     }
