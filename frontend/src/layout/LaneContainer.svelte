@@ -10,6 +10,28 @@
 
   let { children, onReorderLanes, onMoveCard }: Props = $props();
 
+  function findNearestCard(e: DragEvent, laneEl: HTMLElement): { cardId: string | null; insertAfter: boolean } {
+    const cards = laneEl.querySelectorAll<HTMLElement>('[data-card-id]');
+    if (cards.length === 0) return { cardId: null, insertAfter: false };
+
+    let nearest: HTMLElement | null = null;
+    let nearestDist = Infinity;
+    let insertAfter = false;
+
+    for (const card of cards) {
+      const rect = card.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const dist = Math.abs(e.clientY - midpoint);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = card;
+        insertAfter = e.clientY > midpoint;
+      }
+    }
+
+    return { cardId: nearest?.dataset?.cardId ?? null, insertAfter };
+  }
+
   function handleDragOver(e: DragEvent) {
     const mode = getDragMode();
     if (mode === 'none') return;
@@ -28,6 +50,11 @@
         canvasState.dragTargetCardId = targetCardId;
         canvasState.dragInsertAfter = insertAfter;
         setCardDropTarget(targetCardId, insertAfter);
+      } else if (target) {
+        const { cardId, insertAfter } = findNearestCard(e, target);
+        canvasState.dragTargetCardId = cardId;
+        canvasState.dragInsertAfter = insertAfter;
+        setCardDropTarget(cardId, insertAfter);
       } else {
         canvasState.dragTargetCardId = null;
         canvasState.dragInsertAfter = false;

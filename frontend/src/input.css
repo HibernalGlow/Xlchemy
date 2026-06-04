@@ -716,12 +716,12 @@
 
 /* Card move grip handle */
 .card-grip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
-  margin-left: 4px;
+  margin: 0 auto;
   border-radius: 3px;
   color: var(--text-2);
   cursor: grab;
@@ -1005,6 +1005,10 @@
   cursor: grab;
 }
 
+.custom-scrollbar__thumb:hover,
+.custom-scrollbar__thumb--active {
+  background: var(--fill-pop-bg);
+}
 
 .drawer--drop-before::before,
 .drawer--drop-after::after {
@@ -1037,4 +1041,87 @@
   border-radius: 10px;
   color: var(--text-2);
   font-size: 12px;
+}
+
+
+.lane-menu-anchor,
+.card-menu {
+  position: relative;
+}
+
+.lane-card-menu,
+.card-menu__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  background: var(--bg-1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.lane-card-menu button,
+.card-menu__item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.lane-card-menu button:hover,
+.card-menu__item:hover {
+  background: var(--bg-2);
+}
+
+.lane-card-menu .danger,
+.card-menu__item.danger {
+  color: oklch(0.72 0.17 25);
+}
+
+.card-popout,
+.lane-popout {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.card-popout__backdrop,
+.lane-popout__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.card-popout__panel,
+.lane-popout__panel {
+  position: absolute;
+  inset: 36px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-1);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+}
+
+.card-popout__body,
+.lane-popout__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
 }

@@ -11,9 +11,11 @@
     actions?: import('svelte').Snippet;
     onRename?: () => void;
     onDelete?: () => void;
+    onPopout?: () => void;
+    poppedOut?: boolean;
   }
 
-  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete }: Props = $props();
+  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onPopout, poppedOut = false }: Props = $props();
   let menuOpen = $state(false);
 </script>
 
@@ -47,6 +49,7 @@
       </button>
       {#if menuOpen}
         <div class="lane-card-menu lane-card-menu--lane">
+          <button type="button" onclick={() => { menuOpen = false; onPopout?.(); }}>{poppedOut ? 'Close pop out' : 'Pop out lane'}</button>
           <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>Rename lane</button>
           <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>{collapsed ? 'Expand lane' : 'Collapse lane'}</button>
           {#if onDelete}

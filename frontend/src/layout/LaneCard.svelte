@@ -132,24 +132,24 @@
   )}
   data-card-id={movable ? id : undefined}
 >
+  {#if movable}
+    <button
+      type="button"
+      class="card-grip"
+      title="Drag to another lane"
+      draggable="true"
+      ondragstart={handleCardDragStart}
+      ondragend={handleCardDragEnd}
+    >
+      <GripVertical class="w-3.5 h-3 rotate-90" />
+    </button>
+  {/if}
   <div class="drawer-header">
     <div class="drawer-header__title">
       <button type="button" class={cn('drawer-chevron', !collapsed && 'drawer-chevron--expanded')} onclick={handleToggle}>
         <ChevronRight class="w-3.5 h-3.5" />
       </button>
       <span class="drawer-header__text">{header}</span>
-      {#if movable}
-        <button
-          type="button"
-          class="card-grip"
-          title="Drag to another lane"
-          draggable="true"
-          ondragstart={handleCardDragStart}
-          ondragend={handleCardDragEnd}
-        >
-          <GripVertical class="w-3 h-3.5" />
-        </button>
-      {/if}
     </div>
 
     <div bind:this={menuRoot} class="drawer-header__actions">

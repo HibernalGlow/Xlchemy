@@ -250,9 +250,11 @@ export class AppState {
     next[fromLaneId] = next[fromLaneId].filter((id) => id !== cardId);
 
     const destination = next[toLaneId].filter((id) => id !== cardId);
-    if (targetCardId && destination.includes(targetCardId)) {
-      const targetIndex = destination.indexOf(targetCardId);
-      destination.splice(targetIndex, 0, cardId);
+    const insertAfter = targetCardId?.endsWith('::after') ?? false;
+    const rawTargetId = (targetCardId?.replace(/::after$/, '') ?? null) as CardId | null;
+    if (rawTargetId && destination.includes(rawTargetId)) {
+      const targetIndex = destination.indexOf(rawTargetId);
+      destination.splice(targetIndex + (insertAfter ? 1 : 0), 0, cardId);
     } else {
       destination.push(cardId);
     }

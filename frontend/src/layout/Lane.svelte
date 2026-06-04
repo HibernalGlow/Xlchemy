@@ -20,6 +20,7 @@
   let { id, title, children, collapsed, onToggleCollapse, width, fill = false, dragOverId = null, onRename, onDelete }: Props = $props();
   let isDragging = $state(false);
   let laneEl = $state<HTMLDivElement | null>(null);
+  let poppedOut = $state(false);
 
   function handleDragStart(e: DragEvent) {
     setLaneDrag(id);
@@ -48,10 +49,42 @@
     style={fill ? 'width:100%;min-width:0;flex:1;' : `width:${width}rem;min-width:14rem;max-width:30rem;`}
   >
     <div class="stack-view">
-      <LaneDragHandle title={title} {collapsed} onToggleCollapse={onToggleCollapse} onDragStart={handleDragStart} onDragEnd={handleDragEnd} {onRename} {onDelete} />
+      <LaneDragHandle
+        title={title}
+        {collapsed}
+        onToggleCollapse={onToggleCollapse}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        {onRename}
+        {onDelete}
+        onPopout={() => (poppedOut = true)}
+        poppedOut={poppedOut}
+      />
       <div class="stack-content">
         {@render children?.()}
       </div>
     </div>
   </div>
+
+  {#if poppedOut}
+    <div class="lane-popout">
+      <button type="button" class="lane-popout__backdrop" aria-label="Close lane popout" onclick={() => (poppedOut = false)}></button>
+      <div class="lane-popout__panel">
+        <div class="stack-view">
+          <LaneDragHandle
+            title={title}
+            {collapsed}
+            onToggleCollapse={onToggleCollapse}
+            {onRename}
+            {onDelete}
+            onPopout={() => (poppedOut = false)}
+            poppedOut={poppedOut}
+          />
+          <div class="lane-popout__body">
+            {@render children?.()}
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
 {/if}
