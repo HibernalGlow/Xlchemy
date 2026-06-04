@@ -127,6 +127,17 @@ function loadProgressCardConfig(): ProgressCardConfig {
   }
 }
 
+function loadHiddenLanes(): Set<string> {
+  try {
+    const v = localStorage.getItem('xlchemy-hidden-lanes');
+    if (v) {
+      const arr = JSON.parse(v);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set<string>();
+}
+
 export class AppState {
   // Layout state
   laneOrder = $state<string[]>(loadLaneOrder());
@@ -137,6 +148,7 @@ export class AppState {
   singleLaneMode = $state<boolean>(loadSingleLaneMode());
   activeLaneId = $state<LaneId>(loadActiveLaneId());
   progressCardConfig = $state<ProgressCardConfig>(loadProgressCardConfig());
+  hiddenLanes = $state<Set<string>>(loadHiddenLanes());
 
   // Domain state
   fileItems = $state<FileItem[]>([]);
@@ -247,6 +259,7 @@ export class AppState {
       singleLaneMode: this.singleLaneMode,
       activeLaneId: this.activeLaneId,
       progressCardConfig: this.progressCardConfig,
+      hiddenLanes: Array.from(this.hiddenLanes),
     };
   }
 
@@ -263,6 +276,9 @@ export class AppState {
     if (layout.progressCardConfig && typeof layout.progressCardConfig === 'object') {
       this.progressCardConfig = { ...this.progressCardConfig, ...layout.progressCardConfig };
     }
+    if (Array.isArray(layout.hiddenLanes)) {
+      this.hiddenLanes = new Set(layout.hiddenLanes);
+    }
     localStorage.setItem('xlchemy-lane-order', JSON.stringify(this.laneOrder));
     localStorage.setItem('xlchemy-lane-labels', JSON.stringify(this.laneLabels));
     localStorage.setItem('xlchemy-lane-widths', JSON.stringify(this.laneWidths));
@@ -270,6 +286,7 @@ export class AppState {
     localStorage.setItem('xlchemy-single-lane-mode', String(this.singleLaneMode));
     localStorage.setItem('xlchemy-active-lane-id', this.activeLaneId);
     localStorage.setItem('xlchemy-progress-card-config', JSON.stringify(this.progressCardConfig));
+    localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify(Array.from(this.hiddenLanes)));
   }
 
   toggleLaneCollapsed(id: string) {
@@ -278,6 +295,19 @@ export class AppState {
     else next.add(id);
     this.collapsedLanes = next;
     localStorage.setItem('xlchemy-collapsed-lanes', JSON.stringify(Array.from(next)));
+  }
+
+  toggleLaneHidden(id: string) {
+    const next = new Set(this.hiddenLanes);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this.hiddenLanes = next;
+    localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify(Array.from(next)));
+  }
+
+  showAllLanes() {
+    this.hiddenLanes = new Set<string>();
+    localStorage.setItem('xlchemy-hidden-lanes', JSON.stringify([]));
   }
 
   laneWidth(laneId: LaneId): number {

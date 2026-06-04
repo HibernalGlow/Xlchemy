@@ -60,9 +60,10 @@
   }
 
   function visibleLanes() {
-    return appState.singleLaneMode
+    const lanes = appState.singleLaneMode
       ? sortedLanes().filter((lane) => lane.id === appState.activeLaneId)
       : sortedLanes();
+    return lanes.filter((lane) => !appState.hiddenLanes.has(lane.id));
   }
 
   onMount(() => {
@@ -101,6 +102,8 @@
     singleLaneMode={appState.singleLaneMode}
     onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
     onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
+    hiddenLaneCount={appState.hiddenLanes.size}
+    onShowAllLanes={() => appState.showAllLanes()}
   />
 
   <div class="chrome-body">
@@ -124,6 +127,7 @@
               dragOverId={canvasState.dragOverId}
               onRename={() => appState.renameLane(lane.id, prompt('Lane name', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}
               onDelete={['input', 'output', 'modify', 'settings', 'about'].includes(lane.id) ? undefined : () => appState.deleteLane(lane.id)}
+              onHide={() => appState.toggleLaneHidden(lane.id)}
             >
               <CardLaneRenderer laneId={lane.id} />
             </Lane>
