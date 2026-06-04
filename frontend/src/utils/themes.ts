@@ -359,7 +359,6 @@ export function deleteCustomTheme(name: string): void {
 function applyColorVariant(colors: ThemeColorsVariant): void {
   const root = document.documentElement;
 
-  // Sidebar fallback mapping: if sidebar vars not defined, use base vars
   const sidebarFallbacks: Record<string, string> = {
     'sidebar-background': 'background',
     'sidebar-foreground': 'foreground',
@@ -371,22 +370,36 @@ function applyColorVariant(colors: ThemeColorsVariant): void {
     'sidebar-ring': 'ring',
   };
 
+  const semanticMappings: Record<string, string[]> = {
+    background: ['--bg-2'],
+    card: ['--bg-1'],
+    foreground: ['--text-1'],
+    'muted-foreground': ['--text-2'],
+    border: ['--border-2'],
+    primary: ['--fill-pop-bg'],
+    'sidebar-background': ['--bg-3'],
+  };
+
   for (const [key, value] of Object.entries(colors)) {
     if (typeof value === 'string') {
       root.style.setProperty(`--${key}`, value);
 
-      // Special handling: 'sidebar' key maps to sidebar-background
       if (key === 'sidebar') {
         root.style.setProperty('--sidebar-background', value);
       }
 
-      // Apply fallbacks for sidebar vars
+      for (const mappedVar of semanticMappings[key] || []) {
+        root.style.setProperty(mappedVar, value);
+      }
+
       for (const [sKey, bKey] of Object.entries(sidebarFallbacks)) {
         if (key === bKey) {
-          // Only apply fallback if sidebar var not explicitly defined
           const hasExplicit = colors[sKey] || (sKey === 'sidebar-background' && colors['sidebar']);
           if (!hasExplicit) {
             root.style.setProperty(`--${sKey}`, value);
+            for (const mappedVar of semanticMappings[sKey] || []) {
+              root.style.setProperty(mappedVar, value);
+            }
           }
         }
       }

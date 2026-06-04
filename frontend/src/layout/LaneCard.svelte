@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cn } from '$lib/utils/cn';
-  import { X, GripVertical, ChevronRight } from '@lucide/svelte';
+  import { X, GripVertical, ChevronRight, Ellipsis } from '@lucide/svelte';
   import { clearDrag, setCardDrag } from '$lib/state/dragState';
 
   interface Props {
@@ -129,6 +129,10 @@
     {#if actions}
       <div class="drawer-header__actions">{@render actions()}</div>
     {/if}
+
+    <button type="button" class="lane-drag-handle__menu" title="More actions">
+      <Ellipsis class="w-3.5 h-3.5" />
+    </button>
 
     {#if expandable && !collapsed}
       <button

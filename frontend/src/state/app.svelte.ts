@@ -4,7 +4,7 @@ import { applyThemeColors, getThemeMode, loadThemeName, setThemeMode, watchSyste
 
 const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
 export const DEFAULT_LANE_ORDER = ['input', 'output', 'modify', 'settings', 'about'];
-const DEFAULT_LANE_WIDTH = 22;
+const DEFAULT_LANE_WIDTH = 18;
 
 function loadLaneOrder(): string[] {
   try {

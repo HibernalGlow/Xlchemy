@@ -3,6 +3,7 @@
   import ExceptionsDialog from '$lib/dialogs/ExceptionsDialog.svelte';
   import ImportSettingsDialog from '$lib/dialogs/ImportSettingsDialog.svelte';
   import BottomBar from '$lib/layout/BottomBar.svelte';
+  import ChromeSidebar from '$lib/layout/ChromeSidebar.svelte';
   import CustomScrollbar from '$lib/layout/CustomScrollbar.svelte';
   import HeaderBar from '$lib/layout/HeaderBar.svelte';
   import Lane from '$lib/layout/Lane.svelte';
@@ -84,41 +85,48 @@
   });
 </script>
 
-<div role="application" class="flex h-screen flex-col canvas-bg text-text-1 select-none" data-file-drop-target ondragover={preventDefault} ondrop={appState.handleDrop}>
-  <HeaderBar
-    version={appState.constants.version}
-    laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: canvasState.visibleLanes.includes(lane.id) }))}
-    onLaneSelect={(laneId) => canvasState.scrollToLane(laneId)}
-  />
+<div role="application" class="app-shell text-text-1 select-none" data-file-drop-target ondragover={preventDefault} ondrop={appState.handleDrop}>
+  <HeaderBar version={appState.constants.version} fileCount={appState.fileItems.length} currentTheme={appState.appSettings.theme || 'Miku'} />
 
-  <LaneContainer onReorderLanes={handleReorderLanes}>
-    {#each sortedLanes() as lane (lane.id)}
-      {@const LaneComponent = lane.component}
-      <Lane
-        id={lane.id}
-        title={lane.title}
-        collapsed={appState.collapsedLanes.has(lane.id)}
-        onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
-        width={appState.laneWidth}
-        dragOverId={canvasState.dragOverId}
-      >
-        <LaneComponent />
-      </Lane>
-    {/each}
-  </LaneContainer>
+  <div class="chrome-body">
+    <ChromeSidebar
+      laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: canvasState.visibleLanes.includes(lane.id) }))}
+      onLaneSelect={(laneId) => canvasState.scrollToLane(laneId)}
+    />
 
-  <CustomScrollbar viewport={canvasState.canvasEl} />
+    <div class="chrome-content">
+      <div class="chrome-workspace canvas-bg">
+        <LaneContainer onReorderLanes={handleReorderLanes}>
+          {#each sortedLanes() as lane (lane.id)}
+            {@const LaneComponent = lane.component}
+            <Lane
+              id={lane.id}
+              title={lane.title}
+              collapsed={appState.collapsedLanes.has(lane.id)}
+              onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
+              width={appState.laneWidth}
+              dragOverId={canvasState.dragOverId}
+            >
+              <LaneComponent />
+            </Lane>
+          {/each}
+        </LaneContainer>
 
-  <BottomBar
-    isConverting={appState.isConverting}
-    progress={appState.progress}
-    fileCount={appState.fileItems.length}
-    exceptionCount={appState.exceptions.length}
-    onConvert={() => appState.startConversion()}
-    onCancel={() => appState.cancelConversion()}
-    onShowExceptions={() => (appState.showExceptions = true)}
-    disabled={appState.isConverting}
-  />
+        <CustomScrollbar viewport={canvasState.canvasEl} />
+
+        <BottomBar
+          isConverting={appState.isConverting}
+          progress={appState.progress}
+          fileCount={appState.fileItems.length}
+          exceptionCount={appState.exceptions.length}
+          onConvert={() => appState.startConversion()}
+          onCancel={() => appState.cancelConversion()}
+          onShowExceptions={() => (appState.showExceptions = true)}
+          disabled={appState.isConverting}
+        />
+      </div>
+    </div>
+  </div>
 
   <ExceptionsDialog bind:open={appState.showExceptions} />
   <ImportSettingsDialog bind:open={appState.showImportDialog} />

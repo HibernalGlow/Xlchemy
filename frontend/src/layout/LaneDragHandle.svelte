@@ -1,18 +1,20 @@
 <script lang="ts">
-  import { GripVertical } from '@lucide/svelte';
+  import { Ellipsis, GripVertical } from '@lucide/svelte';
   import { cn } from '$lib/utils/cn';
 
   interface Props {
     title: string;
     collapsed: boolean;
     onToggleCollapse: () => void;
+    onDragStart?: (e: DragEvent) => void;
+    onDragEnd?: () => void;
     actions?: import('svelte').Snippet;
   }
 
-  let { title, collapsed, onToggleCollapse, actions }: Props = $props();
+  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions }: Props = $props();
 </script>
 
-<div class="lane-drag-handle" draggable="false">
+<div class="lane-drag-handle">
   <button
     type="button"
     class={cn('lane-drag-handle__collapse', collapsed && 'lane-drag-handle__collapse--folded')}
@@ -25,13 +27,19 @@
     </svg>
   </button>
 
-  <div class="lane-drag-handle__grip">
-    <GripVertical class="w-[10px] h-[14px]" />
+  <div role="button" aria-label={`Drag ${title}`} tabindex="0" class="lane-drag-handle__center" draggable="true" ondragstart={onDragStart} ondragend={onDragEnd}>
+    <div class="lane-drag-handle__grip" data-drag-handle>
+      <GripVertical class="w-[10px] h-[14px]" />
+    </div>
+    <span class="lane-drag-handle__title">{title}</span>
   </div>
 
-  <span class="lane-drag-handle__title">{title}</span>
-
-  {#if actions}
-    <div class="lane-drag-handle__actions">{@render actions()}</div>
-  {/if}
+  <div class="lane-drag-handle__actions">
+    {#if actions}
+      {@render actions()}
+    {/if}
+    <button type="button" class="lane-drag-handle__menu" title="More actions">
+      <Ellipsis class="w-3.5 h-3.5" />
+    </button>
+  </div>
 </div>

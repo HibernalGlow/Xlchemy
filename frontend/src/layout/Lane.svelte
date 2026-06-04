@@ -19,14 +19,6 @@
   let laneEl = $state<HTMLDivElement | null>(null);
 
   function handleDragStart(e: DragEvent) {
-    const target = e.target as HTMLElement;
-    const cardEl = target.closest?.('[data-card-id]');
-    if (cardEl) return;
-    const handle = target.closest?.('.lane-drag-handle');
-    if (!handle) {
-      e.preventDefault();
-      return;
-    }
     setLaneDrag(id);
     e.dataTransfer?.setData('text/x-lane-id', id);
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
@@ -50,13 +42,10 @@
     bind:this={laneEl}
     class={cn('lane', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
     data-lane-id={id}
-    style={`width:${width}rem;min-width:16rem;max-width:40rem;`}
-    draggable="true"
-    ondragstart={handleDragStart}
-    ondragend={handleDragEnd}
+    style={`width:${width}rem;min-width:14rem;max-width:30rem;`}
   >
     <div class="stack-view">
-      <LaneDragHandle title={title} {collapsed} onToggleCollapse={onToggleCollapse} />
+      <LaneDragHandle title={title} {collapsed} onToggleCollapse={onToggleCollapse} onDragStart={handleDragStart} onDragEnd={handleDragEnd} />
       <div class="stack-content">
         {@render children?.()}
       </div>
