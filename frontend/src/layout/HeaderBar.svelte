@@ -41,13 +41,7 @@
     <div class="chrome-header__status text-xs text-text-2">{fileCount} {t('file(s)')}</div>
   </div>
 
-  <div class="chrome-header__center">
-    <button type="button" class="chrome-selector-btn">
-      <span class="chrome-selector-btn__content">
-        <span class="text-12 text-bold">Xlchemy workspace</span>
-      </span>
-    </button>
-  </div>
+  <div class="chrome-header__center"></div>
 
   <div class="chrome-header__right">
     <Button kind="outline" variant={singleLaneMode ? 'pop' : 'neutral'} size="sm" onclick={onToggleSingleLaneMode}>{singleLaneMode ? 'Single lane' : 'Multi lane'}</Button>

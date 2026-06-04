@@ -734,20 +734,21 @@
   opacity: 0.5;
 }
 
-/* Card move grip handle */
+/* Card move grip handle — inline with header */
 .card-grip {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
-  margin: 0 auto;
   border-radius: 3px;
   color: var(--text-2);
   cursor: grab;
   flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.15s ease, color 0.1s ease, background 0.1s ease;
+  margin-right: 2px;
+  margin-left: -4px;
 }
 
 .drawer:hover .card-grip {
