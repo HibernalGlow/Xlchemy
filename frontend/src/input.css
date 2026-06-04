@@ -329,7 +329,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px;
+    padding: 8px 12px;
     overflow: visible;
     gap: 12px;
     background: color-mix(in oklch, var(--bg-2) 88%, transparent);
@@ -376,7 +376,7 @@
 
   .chrome-header__brand-name {
     font-family: "But Head", Inter, sans-serif;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1;
     color: var(--text-1);
   }
@@ -385,9 +385,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 10px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
     background: linear-gradient(
       180deg,
       color-mix(in oklch, var(--fill-pop-bg) 92%, white 8%),

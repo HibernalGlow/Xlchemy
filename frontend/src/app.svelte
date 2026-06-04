@@ -81,13 +81,12 @@
   });
 
   $effect(() => {
+    if (!appState.isInitialized) return;
     const out = appState.outputSettings;
     const mod = appState.modifySettings;
     const app = appState.appSettings;
     if (Object.keys(out).length > 0 || Object.keys(mod).length > 0 || Object.keys(app).length > 0) {
-      const snapshot = appState.buildSnapshot();
-      const executor = getExecutor();
-      executor.saveAppState(snapshot).catch((e: any) => console.error('saveAppState error:', e));
+      appState.saveCurrentSettings().catch((e: any) => console.error('saveAppState error:', e));
     }
   });
 </script>
@@ -95,7 +94,6 @@
 <div role="application" class="app-shell text-text-1 select-none" data-file-drop-target ondragover={preventDefault} ondrop={appState.handleDrop}>
   <HeaderBar
     version={appState.constants.version}
-    fileCount={appState.fileItems.length}
     currentTheme={appState.appSettings.theme || 'Miku'}
     backgroundSettings={appState.backgroundSettings}
     isConverting={appState.isConverting}

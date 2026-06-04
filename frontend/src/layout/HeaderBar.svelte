@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Badge from '$lib/components/ui/Badge.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
   import { Palette, ChevronDown } from '@lucide/svelte';
@@ -8,7 +7,6 @@
 
   interface Props {
     version?: string;
-    fileCount?: number;
     currentTheme?: string;
     backgroundSettings?: BackgroundSettings;
     isConverting?: boolean;
@@ -24,7 +22,6 @@
 
   let {
     version = '',
-    fileCount = 0,
     currentTheme = 'Miku',
     backgroundSettings,
     isConverting = false,
@@ -64,11 +61,7 @@
       <div class="chrome-header__brand-copy">
         <div class="chrome-header__brand-row">
           <span class="chrome-header__brand-name">Xlchemy</span>
-          {#if version}
-            <Badge variant="secondary" class="chrome-header__version">v{version}</Badge>
-          {/if}
         </div>
-        <div class="chrome-header__status text-xs text-text-2">{fileCount} {$_('input.files_count')}</div>
       </div>
     </div>
   </div>

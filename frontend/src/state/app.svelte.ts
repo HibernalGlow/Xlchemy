@@ -205,6 +205,39 @@ function loadHiddenCards(): Set<string> {
   return new Set<string>();
 }
 
+type ImportableSettingsPayload = {
+  output?: unknown;
+  modify?: unknown;
+  app?: unknown;
+  layout?: unknown;
+  domain?: {
+    output?: unknown;
+    modify?: unknown;
+    app?: unknown;
+  };
+};
+
+function resolveImportPayload(data: unknown): {
+  output?: unknown;
+  modify?: unknown;
+  app?: unknown;
+  layout?: unknown;
+} {
+  if (!data || typeof data !== 'object') {
+    return {};
+  }
+
+  const payload = data as ImportableSettingsPayload;
+  const domain = payload.domain && typeof payload.domain === 'object' ? payload.domain : undefined;
+
+  return {
+    output: domain?.output ?? payload.output,
+    modify: domain?.modify ?? payload.modify,
+    app: domain?.app ?? payload.app,
+    layout: payload.layout,
+  };
+}
+
 export class AppState {
   // Layout state
   laneOrder = $state<string[]>(loadLaneOrder());
@@ -247,6 +280,7 @@ export class AppState {
   importSettingsJson = $state<string>('');
   currentLang = $state<string>(getCurrentLanguage());
   backgroundSettings = $state<BackgroundSettings>(loadBackgroundSettings());
+  isInitialized = $state<boolean>(false);
 
   private executor: BackendExecutor = getExecutor();
 
@@ -656,15 +690,22 @@ export class AppState {
     this.currentLang = lang;
   }
 
-  handleImportSettings() {
+  async saveCurrentSettings() {
+    if (!this.isInitialized) return;
+    await this.executor.saveAppState(this.buildSnapshot());
+  }
+
+  async handleImportSettings() {
     try {
-      const data = JSON.parse(this.importSettingsJson);
+      const parsed = JSON.parse(this.importSettingsJson);
+      const data = resolveImportPayload(parsed);
       if (data.output) this.outputSettings = normalizeOutputSettings(data.output);
       if (data.modify) this.modifySettings = normalizeModifySettings(data.modify);
       if (data.app) this.appSettings = normalizeAppSettings(data.app);
       if (data.layout) this.importLayoutSettings(data.layout);
       this.importSettingsJson = '';
       this.showImportDialog = false;
+      await this.saveCurrentSettings();
     } catch (e) {
       console.error('Import failed:', e);
     }
@@ -728,6 +769,7 @@ export class AppState {
         this.excludedFormats = new Set(DEFAULT_EXCLUDED_FORMATS);
         this.appSettings = { ...this.appSettings, excluded_formats: Array.from(this.excludedFormats) };
       }
+      this.isInitialized = true;
     } catch (e) {
       console.error('Init error:', e);
     }
