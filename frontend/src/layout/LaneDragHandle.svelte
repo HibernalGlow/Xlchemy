@@ -32,14 +32,14 @@
     </svg>
   </button>
 
-  <div role="button" aria-label={`Drag ${title}`} tabindex="0" class="lane-drag-handle__center" draggable="true" ondragstart={onDragStart} ondragend={onDragEnd}>
-    <div class="lane-drag-handle__grip" data-drag-handle>
-      <GripVertical class="w-[10px] h-[14px]" />
-    </div>
+  <div class="lane-drag-handle__center">
     <span class="lane-drag-handle__title">{title}</span>
   </div>
 
   <div class="lane-drag-handle__actions">
+    <div role="button" aria-label={`Drag ${title}`} tabindex="0" class="lane-drag-handle__grip" draggable="true" ondragstart={onDragStart} ondragend={onDragEnd} data-drag-handle>
+      <GripVertical class="w-[10px] h-[14px]" />
+    </div>
     {#if actions}
       {@render actions()}
     {/if}

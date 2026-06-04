@@ -601,7 +601,7 @@
   justify-content: center;
   flex: 1;
   gap: 8px;
-  cursor: grab;
+  min-width: 0;
 }
 
 .lane-drag-handle__collapse {
@@ -649,12 +649,12 @@
   align-items: center;
   justify-content: center;
   width: 18px;
-  height: 10px;
+  height: 18px;
   padding: 2px;
   border-radius: 3px;
   background-color: var(--bg-2);
   color: var(--text-2);
-  pointer-events: none;
+  cursor: grab;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -678,7 +678,6 @@
   align-items: center;
   flex-shrink: 0;
   gap: 4px;
-  width: 24px;
   justify-content: flex-end;
 }
 
@@ -852,7 +851,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  height: 42px;
+  height: 32px;
   padding: 0 10px 0 12px;
   gap: 8px;
   border-bottom: 1px solid var(--border-2);
