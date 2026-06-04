@@ -277,15 +277,354 @@ func (a *AppService) RunConversionPlan(planJSON string, threadCount int) error {
 }
 
 // buildLegacyPlan constructs an ExecutionPlan from legacy settings for backward compatibility.
+// Mirrors frontend conversionOrchestrator.ts logic.
 func buildLegacyPlan(items []FileItem, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths) ExecutionPlan {
-	// This is a shim: the frontend now generates plans directly.
-	// We construct a minimal plan that preserves old behavior.
+	policies := ResultPolicy{
+		KeepIfLarger:     settings.KeepIfLarger,
+		CopyIfLarger:     settings.CopyIfLarger,
+		DeleteOriginal:   output.DeleteOriginal,
+		DeleteOriginalMode: output.DeleteOriginalMode,
+		KeepTimestamps:   modify.Misc.KeepTimestamps,
+		IfFileExists:     output.IfFileExists,
+	}
+
+	threads := runtime.NumCPU()
+
+	var tasks []ExecutionTask
+	for _, item := range items {
+		outputDir := item.Dir
+		if output.CustomOutputDir && output.CustomOutputDirPath != "" {
+			if output.KeepDirStruct {
+				outputDir = filepath.Join(output.CustomOutputDirPath, item.Dir)
+			} else {
+				outputDir = output.CustomOutputDirPath
+			}
+		}
+		outputExt := GetExtension(output.Format)
+		if output.Format == "Lossless JPEG Transcoding" {
+			outputExt = "jxl"
+		}
+		finalOutput := filepath.Join(outputDir, item.Name+"."+outputExt)
+
+		// Step 1: Downscale
+		currentInput := item.AbsPath
+		if modify.Downscaling.Enabled {
+			dsTask := buildDownscaleTask(item, modify, toolchain, threads)
+			if dsTask != nil {
+				tasks = append(tasks, *dsTask)
+				currentInput = dsTask.OutputPath
+			}
+		}
+
+		// Step 2: Encode
+		encTask := buildEncodeTask(item, currentInput, finalOutput, output, modify, settings, toolchain, threads)
+		tasks = append(tasks, encTask)
+
+		// Step 3: Metadata
+		if strings.HasPrefix(modify.Misc.KeepMetadata, "ExifTool") {
+			metaTask := buildMetadataTask(item, finalOutput, modify, settings, toolchain)
+			if metaTask != nil {
+				tasks = append(tasks, *metaTask)
+			}
+		}
+	}
+
 	return ExecutionPlan{
 		RunID:     "legacy",
 		Items:     items,
-		Tasks:     []ExecutionTask{}, // Tasks would be built here if needed
-		Policies:  ResultPolicy{},
+		Tasks:     tasks,
+		Policies:  policies,
 		Toolchain: toolchain,
+	}
+}
+
+func buildDownscaleTask(item FileItem, modify ModifySettings, toolchain ToolchainPaths, threads int) *ExecutionTask {
+	ds := modify.Downscaling
+	if !ds.Enabled {
+		return nil
+	}
+
+	args := make([]string, 0, 4)
+	if ds.Resample != "Default" {
+		args = append(args, "-filter", ds.Resample)
+	}
+
+	switch ds.Mode {
+	case "Resolution":
+		if ds.Width > 0 && ds.Height > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%dx%d>", ds.Width, ds.Height))
+		} else if ds.Width > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%dx>", ds.Width))
+		} else if ds.Height > 0 {
+			args = append(args, "-resize", fmt.Sprintf("x%d>", ds.Height))
+		}
+	case "Percent":
+		args = append(args, "-resize", fmt.Sprintf("%.0f%%", ds.Percent))
+	case "Shortest Side":
+		if ds.ShortestSide > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%dx%d^>", ds.ShortestSide, ds.ShortestSide))
+		}
+	case "Longest Side":
+		if ds.LongestSide > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%dx%d>", ds.LongestSide, ds.LongestSide))
+		}
+	case "Megapixels":
+		mpx := int(ds.Megapixels * 1000000)
+		if mpx > 0 {
+			args = append(args, "-resize", fmt.Sprintf("%d@>", mpx))
+		}
+	case "File Size":
+		if ds.FileSize > 0 {
+			args = append(args, "-resize", "50%")
+		}
+	default:
+		return nil
+	}
+
+	outputPath := item.AbsPath + ".downscaled_legacy"
+	return &ExecutionTask{
+		ID:         fmt.Sprintf("ds-%s", item.AbsPath),
+		InputPath:  item.AbsPath,
+		OutputPath: outputPath,
+		Command:    toolchain.ImageMagickPath,
+		Args:       append(args, item.AbsPath, outputPath),
+		StepType:   "downscale",
+	}
+}
+
+func buildEncodeTask(item FileItem, inputPath, outputPath string, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	switch output.Format {
+	case "JPEG XL":
+		return buildJXLTask(item, inputPath, outputPath, output, modify, settings, toolchain, threads)
+	case "AVIF":
+		return buildAVIFTask(item, inputPath, outputPath, output, modify, settings, toolchain, threads)
+	case "JPEG":
+		return buildJPEGTask(item, inputPath, outputPath, output, modify, settings, toolchain, threads)
+	case "WebP":
+		return buildWebPTask(item, inputPath, outputPath, output, modify, settings, toolchain, threads)
+	case "PNG":
+		return buildPNGTask(item, inputPath, outputPath, output, modify, settings, toolchain, threads)
+	case "Lossless JPEG Transcoding":
+		return buildLosslessJXLTask(item, inputPath, outputPath, output, settings, toolchain, threads)
+	case "JPEG Reconstruction":
+		return buildJPEGReconstructionTask(item, inputPath, outputPath, settings, toolchain, threads)
+	default:
+		panic(fmt.Sprintf("Unknown format: %s", output.Format))
+	}
+}
+
+func buildJXLTask(item FileItem, inputPath, outputPath string, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	args := make([]string, 0, 10)
+	if output.Lossless {
+		args = append(args, "-q", "100")
+		if settings.JXLAutolosslessJPEG && IsJPEGAlias(item.Ext) {
+			args = append(args, "--lossless_jpeg=1")
+		} else {
+			args = append(args, "--lossless_jpeg=0")
+		}
+	} else {
+		args = append(args, "-q", fmt.Sprintf("%d", output.Quality))
+		args = append(args, "--lossless_jpeg=0")
+	}
+	args = append(args, "-e", fmt.Sprintf("%d", output.Effort))
+	args = append(args, "--num_threads", fmt.Sprintf("%d", threads))
+	if !output.Lossless && settings.JXLLossyModular {
+		args = append(args, "--modular=1")
+	}
+	args = append(args, getMetadataArgs(toolchain.CJXLPath, modify.Misc.KeepMetadata, output.Lossless && IsJPEGAlias(item.Ext))...)
+	if settings.EnableCustomArgs && settings.CJXLArgs != "" {
+		args = append(args, strings.Fields(settings.CJXLArgs)...)
+	}
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    toolchain.CJXLPath,
+		Args:       append(args, inputPath, outputPath),
+		StepType:   "encode",
+	}
+}
+
+func buildAVIFTask(item FileItem, inputPath, outputPath string, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	if settings.AvifEncoder == "slimg" {
+		return ExecutionTask{
+			ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+			InputPath:  inputPath,
+			OutputPath: outputPath,
+			Command:    "slimg",
+			Args:       []string{inputPath, outputPath, "-q", fmt.Sprintf("%d", output.Quality)},
+			StepType:   "encode",
+		}
+	}
+	args := []string{
+		"-q", fmt.Sprintf("%d", output.Quality),
+		"-s", fmt.Sprintf("%d", output.Effort),
+		"-j", fmt.Sprintf("%d", threads),
+	}
+	if settings.AvifBitDepth != "Auto" {
+		args = append(args, "--bitdepth", settings.AvifBitDepth)
+	}
+	switch settings.AvifEncoder {
+	case "AOM AV1":
+		args = append(args, "-c", "aom")
+		if output.AOMAV1ChromaSub != "Default" {
+			args = append(args, "-y", strings.ReplaceAll(output.AOMAV1ChromaSub, ":", ""))
+		}
+		if settings.AvifAOMIQTune {
+			args = append(args, "-a", "tune=iq")
+		}
+	case "SVT-AV1-PSY":
+		args = append(args, "-c", "svt", "-y", "420", "-a", "tune=4")
+	}
+	args = append(args, getMetadataArgs(toolchain.AvifEncPath, modify.Misc.KeepMetadata, false)...)
+	if settings.EnableCustomArgs && settings.AvifEncArgs != "" {
+		args = append(args, strings.Fields(settings.AvifEncArgs)...)
+	}
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    toolchain.AvifEncPath,
+		Args:       append(args, inputPath, outputPath),
+		StepType:   "encode",
+	}
+}
+
+func buildJPEGTask(item FileItem, inputPath, outputPath string, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	isJPEGLI := settings.JPGEncoder == "JPEGLI"
+	args := make([]string, 0, 6)
+	if isJPEGLI {
+		args = append(args, "-q", fmt.Sprintf("%d", output.Quality))
+		if settings.DisableProgressiveJPEGLI {
+			args = append(args, "-p", "0")
+		}
+		if output.JPEGLIChromaSub != "Default" {
+			args = append(args, "--chroma_subsampling", strings.ReplaceAll(output.JPEGLIChromaSub, ":", ""))
+		}
+	} else {
+		args = append(args, "-quality", fmt.Sprintf("%d", output.Quality))
+		if output.JPGChromaSub != "Default" {
+			args = append(args, "-sampling-factor", output.JPGChromaSub)
+		}
+	}
+	args = append(args, getMetadataArgs(toolchain.CJPEGLIPath, modify.Misc.KeepMetadata, false)...)
+	if settings.EnableCustomArgs {
+		if isJPEGLI && settings.CJPEGLIArgs != "" {
+			args = append(args, strings.Fields(settings.CJPEGLIArgs)...)
+		} else if !isJPEGLI && settings.IMArgs != "" {
+			args = append(args, strings.Fields(settings.IMArgs)...)
+		}
+	}
+	cmd := toolchain.CJPEGLIPath
+	if !isJPEGLI {
+		cmd = toolchain.ImageMagickPath
+	}
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    cmd,
+		Args:       append(args, inputPath, outputPath),
+		StepType:   "encode",
+	}
+}
+
+func buildWebPTask(item FileItem, inputPath, outputPath string, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	args := make([]string, 0, 6)
+	if output.Lossless {
+		args = append(args, "-define", "webp:lossless=true")
+	} else {
+		args = append(args, "-quality", fmt.Sprintf("%d", output.Quality))
+	}
+	threadLevel := 0
+	if threads > 1 {
+		threadLevel = 1
+	}
+	args = append(args, "-define", fmt.Sprintf("webp:thread-level=%d", threadLevel))
+	args = append(args, "-define", fmt.Sprintf("webp:method=%d", output.Effort))
+	args = append(args, getMetadataArgs(toolchain.ImageMagickPath, modify.Misc.KeepMetadata, false)...)
+	if settings.EnableCustomArgs && settings.IMArgs != "" {
+		args = append(args, strings.Fields(settings.IMArgs)...)
+	}
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    toolchain.ImageMagickPath,
+		Args:       append(args, inputPath, outputPath),
+		StepType:   "encode",
+	}
+}
+
+func buildPNGTask(item FileItem, inputPath, outputPath string, output OutputSettings, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	decoder := GetDecoder(item.Ext)
+	if decoder == "" {
+		decoder = toolchain.ImageMagickPath
+	}
+	args := make([]string, 0, 4)
+	if decoder == toolchain.AvifDecPath {
+		args = append(args, "-j", fmt.Sprintf("%d", threads))
+	} else if decoder == toolchain.DJXLPath {
+		args = append(args, "--num_threads", fmt.Sprintf("%d", threads))
+	}
+	args = append(args, getMetadataArgs(decoder, modify.Misc.KeepMetadata, false)...)
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    decoder,
+		Args:       append(args, inputPath, outputPath),
+		StepType:   "encode",
+	}
+}
+
+func buildLosslessJXLTask(item FileItem, inputPath, outputPath string, output OutputSettings, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    toolchain.CJXLPath,
+		Args:       []string{"-e", fmt.Sprintf("%d", output.Effort), "--num_threads", fmt.Sprintf("%d", threads), inputPath, outputPath},
+		StepType:   "encode",
+	}
+}
+
+func buildJPEGReconstructionTask(item FileItem, inputPath, outputPath string, settings AppSettings, toolchain ToolchainPaths, threads int) ExecutionTask {
+	return ExecutionTask{
+		ID:         fmt.Sprintf("enc-%s", item.AbsPath),
+		InputPath:  inputPath,
+		OutputPath: outputPath,
+		Command:    toolchain.DJXLPath,
+		Args:       []string{"--num_threads", fmt.Sprintf("%d", threads), "--jpeg_reconstruction", inputPath, outputPath},
+		StepType:   "encode",
+	}
+}
+
+func buildMetadataTask(item FileItem, outputPath string, modify ModifySettings, settings AppSettings, toolchain ToolchainPaths) *ExecutionTask {
+	mode := modify.Misc.KeepMetadata
+	if !strings.HasPrefix(mode, "ExifTool") {
+		return nil
+	}
+	argsStr, ok := settings.ExifToolArgs[mode]
+	if !ok || argsStr == "" {
+		return nil
+	}
+	args := strings.Fields(argsStr)
+	for i, arg := range args {
+		switch arg {
+		case `"$src"`, "$src":
+			args[i] = item.AbsPath
+		case `"$dst"`, "$dst":
+			args[i] = outputPath
+		}
+	}
+	return &ExecutionTask{
+		ID:         fmt.Sprintf("meta-%s", item.AbsPath),
+		InputPath:  item.AbsPath,
+		OutputPath: outputPath,
+		Command:    toolchain.ExifToolPath,
+		Args:       args,
+		StepType:   "metadata",
 	}
 }
 

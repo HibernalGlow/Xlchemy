@@ -18,6 +18,7 @@
     expandable?: boolean;
     laneId?: string;
     movable?: boolean;
+    scrollable?: boolean;
   }
 
   let {
@@ -34,6 +35,7 @@
     expandable = false,
     laneId,
     movable = false,
+    scrollable = false,
   }: Props = $props();
 
   function loadCollapsed(id: string): boolean {
@@ -185,7 +187,7 @@
   </div>
 
   {#if !collapsed}
-    <div class="drawer-scroll">
+    <div class={cn('drawer-scroll', !scrollable && 'drawer-scroll--auto')}>
       <div class="drawer__content">
         {@render children?.()}
       </div>

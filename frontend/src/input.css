@@ -1143,10 +1143,42 @@
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
 }
 
-.card-popout__body,
-.lane-popout__body {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 12px;
+
+.drawer-scroll--auto {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.bottom-lane-nav {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--bg-1) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.bottom-lane-nav__button {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.bottom-lane-nav__button:hover {
+  color: var(--text-1);
+  background: var(--bg-2);
+}
+
+.bottom-lane-nav__button.active {
+  color: var(--bg-2);
+  background: var(--fill-pop-bg);
 }

@@ -10,7 +10,7 @@
   const t = i18n.t;
 </script>
 
-<LaneCard id="input-files" laneId={laneId} movable header={`${t('Input')} (${appState.fileItems.length})`} grow>
+<LaneCard id="input-files" laneId={laneId} movable header={`${t('Input')} (${appState.fileItems.length})`} grow scrollable>
   <div class="flex flex-col gap-3 h-full">
     <div class="flex gap-1.5 flex-wrap">
       <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{t('Add Files')}</Button>

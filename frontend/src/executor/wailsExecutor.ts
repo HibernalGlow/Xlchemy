@@ -60,23 +60,10 @@ export class WailsExecutor implements BackendExecutor {
   }
 
   async runConversionPlan(plan: ExecutionPlan): Promise<void> {
-    // For now, still use the old StartConversion API as a bridge
-    // TODO: replace with runConversionPlan Go endpoint
-    const { items, tasks, policies } = plan;
-    // Derive settings from first task for backward compat
-    const output = deriveOutputSettings(tasks);
-    const modify = deriveModifySettings(tasks);
-    const app = deriveAppSettings(tasks, policies);
-    const threadCount = deriveThreadCount(tasks);
-
-    return callGo(
-      'StartConversion',
-      JSON.stringify(items),
-      JSON.stringify(output),
-      JSON.stringify(modify),
-      JSON.stringify(app),
-      threadCount
-    );
+    const planJSON = JSON.stringify(plan);
+    // Derive thread count from first encode task or default to 4
+    const threadCount = deriveThreadCount(plan.tasks);
+    return callGo('RunConversionPlan', planJSON, threadCount);
   }
 
   async cancelRun(_runId: string): Promise<void> {
@@ -187,17 +174,16 @@ export class WailsExecutor implements BackendExecutor {
   }
 }
 
-// Temporary bridge helpers to derive old-style settings from ExecutionPlan
-function deriveOutputSettings(_tasks: ExecutionPlan['tasks']): any {
-  // TODO: remove once Go backend accepts ExecutionPlan directly
-  return {};
-}
-function deriveModifySettings(_tasks: ExecutionPlan['tasks']): any {
-  return {};
-}
-function deriveAppSettings(_tasks: ExecutionPlan['tasks'], _policies: ExecutionPlan['policies']): any {
-  return {};
-}
-function deriveThreadCount(_tasks: ExecutionPlan['tasks']): number {
+function deriveThreadCount(tasks: ExecutionPlan['tasks']): number {
+  for (const task of tasks) {
+    if (task.stepType === 'encode') {
+      for (let i = 0; i < task.args.length; i++) {
+        if (task.args[i] === '--num_threads' || task.args[i] === '-j' || task.args[i] === '--threads') {
+          const val = parseInt(task.args[i + 1], 10);
+          if (!isNaN(val) && val > 0) return val;
+        }
+      }
+    }
+  }
   return 4;
 }

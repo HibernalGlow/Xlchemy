@@ -237,7 +237,7 @@ func filterTasksForItem(tasks []ExecutionTask, itemPath string) []ExecutionTask 
 }
 
 func resolveCommandPath(cmd string, toolchain ToolchainPaths) string {
-	// If it's already an absolute path or found in PATH, use it
+	// If it's already an absolute path, use it directly
 	if filepath.IsAbs(cmd) {
 		return cmd
 	}
