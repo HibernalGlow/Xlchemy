@@ -3,7 +3,6 @@
   import CardLaneRenderer from '$lib/cards/CardLaneRenderer.svelte';
   import ExceptionsDialog from '$lib/dialogs/ExceptionsDialog.svelte';
   import ImportSettingsDialog from '$lib/dialogs/ImportSettingsDialog.svelte';
-  import BottomBar from '$lib/layout/BottomBar.svelte';
   import ChromeSidebar from '$lib/layout/ChromeSidebar.svelte';
   import CustomScrollbar from '$lib/layout/CustomScrollbar.svelte';
   import FloatingLaneSwitcher from '$lib/layout/FloatingLaneSwitcher.svelte';
@@ -133,14 +132,7 @@
 
         <CustomScrollbar viewport={canvasState.canvasEl} />
 
-        <BottomBar
-          isConverting={appState.isConverting}
-          progress={appState.progress}
-          fileCount={appState.fileItems.length}
-          exceptionCount={appState.exceptions.length}
-          onShowExceptions={() => (appState.showExceptions = true)}
-          disabled={appState.isConverting}
-        />
+
       </div>
     </div>
   </div>
