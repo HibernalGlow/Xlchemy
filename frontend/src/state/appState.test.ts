@@ -3,6 +3,7 @@ import type { AppStateSnapshot, AppConstants, DomainEvent, ExecutionPlan, FileIt
 import type { BackendExecutor } from '$lib/executor';
 
 const storage = new Map<string, string>();
+const styleMap = new Map<string, string>();
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: {
@@ -16,6 +17,39 @@ Object.defineProperty(globalThis, 'localStorage', {
     clear: () => {
       storage.clear();
     },
+  },
+  configurable: true,
+});
+
+Object.defineProperty(globalThis, 'document', {
+  value: {
+    documentElement: {
+      style: {
+        setProperty: (key: string, value: string) => {
+          styleMap.set(key, value);
+        },
+        removeProperty: (key: string) => {
+          styleMap.delete(key);
+        },
+      },
+      dataset: {},
+      classList: {
+        add: vi.fn(),
+        remove: vi.fn(),
+        toggle: vi.fn(),
+      },
+    },
+  },
+  configurable: true,
+});
+
+Object.defineProperty(globalThis, 'window', {
+  value: {
+    matchMedia: vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
   },
   configurable: true,
 });

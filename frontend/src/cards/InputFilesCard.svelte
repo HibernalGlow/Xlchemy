@@ -8,6 +8,11 @@
     FolderTree,
     Trash2,
     Rows3,
+    FolderPlus,
+    FilePlus,
+    Eraser,
+    Eye,
+    EyeOff,
   } from '@lucide/svelte';
   import {
     getCoreRowModel,
@@ -503,28 +508,26 @@
 
 <LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`}>
   <div class="flex min-h-0 min-w-0 flex-col gap-3">
-    <div class="flex flex-wrap gap-1.5">
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{$_('input.add_files')}</Button>
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{$_('input.add_folder')}</Button>
-      <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{$_('input.clear')}</Button>
-      <Button kind="ghost" variant="neutral" size="sm" onclick={removeSelected} disabled={selectedCount === 0}>
-        <Trash2 class="h-3.5 w-3.5" />
-        Delete
+    <div class="flex flex-wrap items-center gap-1">
+      <Button kind="outline" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.add_files')} onclick={() => appState.handleAddFiles()}>
+        <FilePlus class="h-3.5 w-3.5" />
       </Button>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={showOriginalPreview}
-        class="inline-flex h-8 items-center gap-2 rounded-full border border-border-2/70 bg-bg-1/75 px-2.5 text-[11px] text-text-2 transition-colors hover:border-border-2 hover:text-text-1"
-        onclick={() => (showOriginalPreview = !showOriginalPreview)}
-      >
-        <span class="whitespace-nowrap">Preview</span>
-        <span class={`relative h-4 w-7 rounded-full transition-colors ${showOriginalPreview ? 'bg-fill-pop' : 'bg-bg-3'}`}>
-          <span
-            class={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform ${showOriginalPreview ? 'translate-x-3.5' : 'translate-x-0.5'}`}
-          ></span>
-        </span>
-      </button>
+      <Button kind="outline" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.add_folder')} onclick={() => appState.handleAddFolder()}>
+        <FolderPlus class="h-3.5 w-3.5" />
+      </Button>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.clear')} onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>
+        <Eraser class="h-3.5 w-3.5" />
+      </Button>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title="Delete selected" onclick={removeSelected} disabled={selectedCount === 0}>
+        <Trash2 class="h-3.5 w-3.5" />
+      </Button>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={showOriginalPreview ? 'Hide preview' : 'Show preview'} onclick={() => (showOriginalPreview = !showOriginalPreview)}>
+        {#if showOriginalPreview}
+          <Eye class="h-3.5 w-3.5" />
+        {:else}
+          <EyeOff class="h-3.5 w-3.5" />
+        {/if}
+      </Button>
 
       <div class="ml-auto flex items-center gap-1">
         <Select class="w-28" value={activeSort.field} options={sortOptions()} onChange={setSortField} />

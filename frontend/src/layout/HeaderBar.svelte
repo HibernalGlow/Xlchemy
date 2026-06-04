@@ -1,5 +1,6 @@
 <script lang="ts">
   import Button from '$lib/components/ui/Button.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
   import { Palette, ChevronDown } from '@lucide/svelte';
   import { _ } from 'svelte-i18n';
@@ -61,6 +62,9 @@
       <div class="chrome-header__brand-copy">
         <div class="chrome-header__brand-row">
           <span class="chrome-header__brand-name">Xlchemy</span>
+          {#if version}
+            <Badge variant="secondary" class="chrome-header__version">v{version}</Badge>
+          {/if}
         </div>
       </div>
     </div>
