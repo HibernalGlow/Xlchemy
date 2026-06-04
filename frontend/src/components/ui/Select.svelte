@@ -30,8 +30,19 @@
   let rootEl = $state<HTMLDivElement | null>(null);
   let panelEl = $state<HTMLDivElement | null>(null);
   let panelStyle = $state('');
+  let hoveredValue = $state<string | null>(null);
 
   const selectedLabel = $derived(options.find((o) => o.value === value)?.label || '');
+
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+
+    return {
+      destroy() {
+        node.remove();
+      },
+    };
+  }
 
   function buildPanelStyle() {
     if (!rootEl) return '';
@@ -67,6 +78,7 @@
     if (disabled) return;
     if (open) {
       open = false;
+      hoveredValue = null;
       return;
     }
 
@@ -79,11 +91,13 @@
     value = v;
     onChange?.(v);
     open = false;
+    hoveredValue = null;
   }
 
   function handleClickOutside(e: MouseEvent) {
     if (rootEl && !rootEl.contains(e.target as Node) && panelEl && !panelEl.contains(e.target as Node)) {
       open = false;
+      hoveredValue = null;
     }
   }
 
@@ -125,19 +139,23 @@
   {#if open}
     <div
       bind:this={panelEl}
+      use:portal
       class="overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl"
       style={panelStyle}
+      onmouseleave={() => (hoveredValue = null)}
     >
       <div class="p-1">
         {#each options as option}
           <button
             type="button"
             onclick={() => handleSelect(option.value)}
+            onmouseenter={() => (hoveredValue = option.value)}
+            onfocus={() => (hoveredValue = option.value)}
             class={cn(
               'relative flex h-7 w-full cursor-default select-none items-center rounded-[4px] pr-8 pl-2 text-xs text-text-1 outline-none',
               'transition-colors duration-50',
-              'hover:bg-[color-mix(in_oklch,var(--bg-3)_66%,white_34%)] hover:text-text-1',
-              option.value === value && 'bg-[color-mix(in_oklch,var(--fill-pop-bg)_14%,transparent)]',
+              hoveredValue === option.value && 'bg-secondary text-secondary-foreground',
+              hoveredValue !== option.value && option.value === value && 'bg-[color-mix(in_oklch,var(--fill-pop-bg)_14%,transparent)]',
             )}
           >
             <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">

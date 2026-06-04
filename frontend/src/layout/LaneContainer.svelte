@@ -73,10 +73,12 @@
   }
 
   function handleDrop(e: DragEvent) {
+    const mode = getDragMode();
+    if (mode === 'none') return;
+
     e.preventDefault();
     e.stopPropagation();
 
-    const mode = getDragMode();
     const target = (e.target as HTMLElement).closest?.('[data-lane-id]') as HTMLElement | null;
     const toLaneId = target?.dataset?.laneId;
     const targetCard = (e.target as HTMLElement).closest?.('[data-card-id]') as HTMLElement | null;

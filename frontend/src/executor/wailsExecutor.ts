@@ -173,7 +173,13 @@ export class WailsExecutor implements BackendExecutor {
     unsubs.push(
       Events.On('files-dropped', (wailsEvent: any) => {
         const data = wailsEvent?.data || wailsEvent;
-        const files = Array.isArray(data?.files) ? data.files : [];
+        const files = Array.isArray(data?.files)
+          ? data.files
+          : Array.isArray(data?.paths)
+            ? data.paths
+            : Array.isArray(data)
+              ? data
+              : [];
         if (files.length > 0) {
           handler({ type: 'files_dropped', paths: files });
         }

@@ -39,6 +39,45 @@ import {
 
 const DEFAULT_EXCLUDED_FORMATS = ['avif', 'jxl', 'webp', 'gif'];
 
+function fileUrlToPath(url: string): string | null {
+  if (!url.startsWith('file://')) return null;
+
+  try {
+    const parsed = new URL(url);
+    let pathname = decodeURIComponent(parsed.pathname);
+
+    if (/^\/[a-zA-Z]:/.test(pathname)) {
+      pathname = pathname.slice(1);
+    }
+
+    return pathname.replace(/\//g, '\\');
+  } catch {
+    return null;
+  }
+}
+
+function extractDropPaths(e: DragEvent): string[] {
+  const paths = new Set<string>();
+  const files = e.dataTransfer?.files;
+
+  if (files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i] as File & { path?: string };
+      if (file.path) paths.add(file.path);
+    }
+  }
+
+  const uriList = e.dataTransfer?.getData('text/uri-list') || '';
+  for (const line of uriList.split(/\r?\n/)) {
+    const entry = line.trim();
+    if (!entry || entry.startsWith('#')) continue;
+    const path = fileUrlToPath(entry);
+    if (path) paths.add(path);
+  }
+
+  return [...paths];
+}
+
 function sanitizeLaneId(value: string): LaneId {
   return value
     .trim()
@@ -518,13 +557,7 @@ export class AppState {
     e.preventDefault();
     // Wails file drops are handled via framework events (subscribeFileDrops).
     // This handler remains as a fallback for HTML5 drag-and-drop in non-Wails environments.
-    const files = e.dataTransfer?.files;
-    if (!files) return;
-    const paths: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i] as any;
-      if (file.path) paths.push(file.path);
-    }
+    const paths = extractDropPaths(e);
     if (paths.length > 0) {
       const result = await this.executor.statFiles(paths);
       this.addFileItems(result);

@@ -324,11 +324,13 @@
   }
 
   .chrome-header {
+    position: relative;
+    z-index: var(--z-dropdown);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px;
-    overflow: hidden;
+    overflow: visible;
     gap: 12px;
     background: color-mix(in oklch, var(--bg-2) 88%, transparent);
     backdrop-filter: blur(16px);
@@ -584,14 +586,12 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-  background: color-mix(in oklch, var(--bg-1) 84%, transparent);
-  border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
-  border-radius: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   overflow: hidden;
-  backdrop-filter: blur(14px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 12px 28px rgba(15, 23, 42, 0.05);
+  backdrop-filter: none;
+  box-shadow: none;
   transition: box-shadow 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
 }
 
@@ -653,6 +653,8 @@
 .stack-content {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  padding: 6px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -664,11 +666,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 28px;
-  margin: 0 -3px;
+  height: 32px;
+  margin: 0 6px;
+  padding: 0 6px;
   color: var(--text-2);
   flex-shrink: 0;
   gap: 4px;
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
 }
 
 .lane-drag-handle__center {
@@ -782,10 +788,13 @@
   width: 100%;
   flex-shrink: 0;
   overflow: hidden;
+  border-radius: 8px;
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
 }
 
 .drawer--border {
-  border-bottom: 1px solid var(--border-2);
+  /* border now handled by base .drawer */
 }
 
 .drawer--grow {
@@ -801,7 +810,6 @@
 
 .drawer--collapsed {
   max-height: none;
-  margin-bottom: -1px;
 }
 
 .drawer--expanded {
@@ -930,8 +938,8 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
-  padding: 0 10px 0 12px;
+  height: 28px;
+  padding: 0 8px 0 10px;
   gap: 8px;
   border-bottom: 1px solid color-mix(in oklch, var(--border-2) 68%, transparent);
   background-color: color-mix(in oklch, var(--bg-1) 64%, transparent);
@@ -990,6 +998,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding: 8px;
 }
 
 .drawer__content {
@@ -999,7 +1008,9 @@
   position: relative;
   flex-grow: 1;
   flex-direction: column;
-  padding: 12px;
+  padding: 10px;
+  background: color-mix(in oklch, var(--bg-2) 50%, transparent);
+  border-radius: 6px;
 }
 
 /* ─── Folded Lane (CollapsedLane) ─── */
