@@ -226,13 +226,19 @@ export interface RunCanceledEvent {
   runId: string;
 }
 
+export interface FilesDroppedEvent {
+  type: 'files_dropped';
+  paths: string[];
+}
+
 export type DomainEvent =
   | RunStartedEvent
   | TaskProgressEvent
   | TaskSucceededEvent
   | TaskFailedEvent
   | RunFinishedEvent
-  | RunCanceledEvent;
+  | RunCanceledEvent
+  | FilesDroppedEvent;
 
 export interface AppConstants {
   version: string;

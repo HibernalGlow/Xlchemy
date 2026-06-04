@@ -68,10 +68,12 @@
   onMount(() => {
     appState.init();
     const cleanupConversion = initConversionEvents();
+    const cleanupFileDrops = appState.subscribeFileDrops();
     canvasState.setupEffects();
     const cleanupTheme = appState.watchTheme();
     return () => {
       cleanupConversion?.();
+      cleanupFileDrops?.();
       cleanupTheme?.();
     };
   });

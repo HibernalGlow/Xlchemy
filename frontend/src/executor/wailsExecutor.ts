@@ -170,6 +170,16 @@ export class WailsExecutor implements BackendExecutor {
       })
     );
 
+    unsubs.push(
+      Events.On('files-dropped', (wailsEvent: any) => {
+        const data = wailsEvent?.data || wailsEvent;
+        const files = Array.isArray(data?.files) ? data.files : [];
+        if (files.length > 0) {
+          handler({ type: 'files_dropped', paths: files });
+        }
+      })
+    );
+
     return () => unsubs.forEach((fn) => fn());
   }
 }

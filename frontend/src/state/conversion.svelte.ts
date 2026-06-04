@@ -43,6 +43,10 @@ export function initConversionEvents() {
       case 'run_canceled':
         appState.isConverting = false;
         break;
+
+      case 'files_dropped':
+        // Handled by appState file drop listener
+        break;
     }
   });
 

@@ -19,6 +19,7 @@ import {
   type AppStateSnapshot,
   type AppConstants,
   type ToolchainSelection,
+  type DomainEvent,
   normalizeOutputSettings,
   normalizeModifySettings,
   normalizeAppSettings,
@@ -410,6 +411,8 @@ export class AppState {
 
   async handleDrop(e: DragEvent) {
     e.preventDefault();
+    // Wails file drops are handled via framework events (subscribeFileDrops).
+    // This handler remains as a fallback for HTML5 drag-and-drop in non-Wails environments.
     const files = e.dataTransfer?.files;
     if (!files) return;
     const paths: string[] = [];
@@ -588,6 +591,24 @@ export class AppState {
       const themeName = this.appSettings.theme || loadThemeName();
       applyThemeColors(getThemeMode(), themeName);
     });
+  }
+
+  subscribeFileDrops() {
+    return this.executor.subscribeEvents((event: DomainEvent) => {
+      if (event.type === 'files_dropped') {
+        this.handleDroppedPaths(event.paths);
+      }
+    });
+  }
+
+  private async handleDroppedPaths(paths: string[]) {
+    if (!paths || paths.length === 0) return;
+    try {
+      const result = await this.executor.statFiles(paths);
+      this.addFileItems(result);
+    } catch (e) {
+      console.error('Handle dropped files error:', e);
+    }
   }
 }
 
