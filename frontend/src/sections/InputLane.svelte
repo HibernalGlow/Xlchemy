@@ -3,39 +3,37 @@
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
-
-  const t = i18n.t;
+  import { _ } from 'svelte-i18n';
 
   function orderOptions() {
     return [
-      { value: 'Original', label: t('Original') },
-      { value: 'Path Ascending', label: t('Path Ascending') },
-      { value: 'Path Descending', label: t('Path Descending') },
-      { value: 'Size Ascending', label: t('Size Ascending') },
-      { value: 'Size Descending', label: t('Size Descending') },
-      { value: 'Random', label: t('Random') },
-      { value: 'Sequential', label: t('Sequential') },
+      { value: 'Original', label: $_('settings.original') },
+      { value: 'Path Ascending', label: $_('settings.path_ascending') },
+      { value: 'Path Descending', label: $_('settings.path_descending') },
+      { value: 'Size Ascending', label: $_('settings.size_ascending') },
+      { value: 'Size Descending', label: $_('settings.size_descending') },
+      { value: 'Random', label: $_('settings.random') },
+      { value: 'Sequential', label: $_('settings.sequential') },
     ];
   }
 </script>
 
 <div class="flex flex-col gap-2 h-full">
-  <LaneCard id="input-files" header={`${t('Input')} (${appState.fileItems.length})`} grow>
+  <LaneCard id="input-files" header={`${$_('nav.input')} (${appState.fileItems.length})`} grow>
     <div class="flex flex-col gap-3 h-full">
       <div class="flex gap-1.5 flex-wrap">
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{t('Add Files')}</Button>
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{t('Add Folder')}</Button>
-        <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{t('Clear')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{$_('input.add_files')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{$_('input.add_folder')}</Button>
+        <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{$_('input.clear')}</Button>
       </div>
 
       <div class="flex-1 overflow-auto rounded-gb border border-border-2 bg-bg-2">
         <table class="w-full text-xs">
           <thead>
             <tr class="border-b border-border-2">
-              <th class="text-left p-1.5 font-medium text-text-2 w-2/5">{t('Name')}</th>
-              <th class="text-left p-1.5 font-medium text-text-2 w-[15%]">{t('Ext')}</th>
-              <th class="text-left p-1.5 font-medium text-text-2">{t('Location')}</th>
+              <th class="text-left p-1.5 font-medium text-text-2 w-2/5">{$_('input.name')}</th>
+              <th class="text-left p-1.5 font-medium text-text-2 w-[15%]">{$_('input.ext')}</th>
+              <th class="text-left p-1.5 font-medium text-text-2">{$_('input.location')}</th>
             </tr>
           </thead>
           <tbody>
@@ -58,7 +56,7 @@
     </div>
   </LaneCard>
 
-  <LaneCard id="input-filter" header={t('Filter')}>
+  <LaneCard id="input-filter" header={$_('input.filter')}>
     <div class="flex flex-col gap-3">
       <div class="flex gap-1 items-center flex-wrap">
         {#each appState.allowedInputList as ext}

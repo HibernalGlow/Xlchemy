@@ -3,18 +3,21 @@
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
 
   interface Props { laneId: LaneId }
   let { laneId }: Props = $props();
-  const t = i18n.t;
-  const replaceOptions = ['Replace', 'Skip', 'Rename'].map((value) => ({ value, label: t(value) }));
+  const replaceOptions = [
+    { value: 'Replace', label: $_('output.replace') },
+    { value: 'Skip', label: $_('output.skip') },
+    { value: 'Rename', label: $_('output.rename') },
+  ];
 </script>
 
-<LaneCard id="output-conversion" laneId={laneId} movable header={t('Conversion')}>
+<LaneCard id="output-conversion" laneId={laneId} movable header={$_('output.conversion')}>
   <div class="flex flex-col gap-3">
-    <NumberInput label={t('Threads:')} value={appState.outputSettings.threads || appState.cpuCount} onChange={(v) => appState.updateOutput('threads', v)} min={1} max={appState.cpuCount} />
+    <NumberInput label={$_('output.threads')} value={appState.outputSettings.threads || appState.cpuCount} onChange={(v) => appState.updateOutput('threads', v)} min={1} max={appState.cpuCount} />
     <Select value={appState.outputSettings.if_file_exists || 'Replace'} options={replaceOptions} onChange={(v) => appState.updateOutput('if_file_exists', v)} />
   </div>
 </LaneCard>

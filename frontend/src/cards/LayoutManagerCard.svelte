@@ -2,31 +2,30 @@
   import { Eye, EyeOff, ArrowUp, ArrowDown, GripVertical } from '@lucide/svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import { ALL_CARD_IDS, DEFAULT_CARD_LAYOUT, type CardId, type LaneId } from '$lib/cards/definitions';
   import type { LaneId as LaneIdType } from '$lib/cards/definitions';
 
   interface Props { laneId: LaneId }
   let { laneId }: Props = $props();
-  const t = i18n.t;
 
   const CARD_LABELS: Record<string, string> = {
-    'input-files': 'Input Files',
-    'input-filter': 'Input Filter',
-    'progress-status': 'Progress',
-    'output-format': 'Output Format',
-    'output-conversion': 'Output Conversion',
-    'output-save': 'Output Save',
-    'modify-downscaling': 'Downscaling',
-    'modify-misc': 'Misc',
-    'settings-appearance': 'Appearance',
-    'settings-general': 'General',
-    'settings-conversion': 'Conversion',
-    'settings-exiftool': 'ExifTool',
-    'settings-advanced': 'Advanced',
-    'settings-frontend': 'Frontend',
-    'layout-manager': 'Layout Manager',
-    'about-info': 'About',
+    'input-files': $_('input.add_files'),
+    'input-filter': $_('input.filter'),
+    'progress-status': $_('dialog.converting'),
+    'output-format': $_('output.format'),
+    'output-conversion': $_('output.conversion'),
+    'output-save': $_('output.save_to'),
+    'modify-downscaling': $_('modify.downscaling'),
+    'modify-misc': $_('modify.misc'),
+    'settings-appearance': $_('settings.appearance'),
+    'settings-general': $_('settings.general'),
+    'settings-conversion': $_('settings.conversion'),
+    'settings-exiftool': $_('settings.exiftool'),
+    'settings-advanced': $_('settings.advanced'),
+    'settings-frontend': $_('settings.frontend'),
+    'layout-manager': $_('layout.layout_manager'),
+    'about-info': $_('nav.about'),
   };
 
   function allLanes(): { id: string; title: string }[] {
@@ -37,7 +36,7 @@
     return appState.cardLayout[laneId] || [];
   }
 
-  function cardLane(cardId: string): string {
+  function cardLane(cardId: CardId): string {
     for (const laneId of Object.keys(appState.cardLayout)) {
       if (appState.cardLayout[laneId].includes(cardId)) return laneId;
     }
@@ -60,31 +59,31 @@
     appState.toggleLaneHidden(laneId);
   }
 
-  function moveCardToLane(cardId: string, targetLaneId: string) {
+  function moveCardToLane(cardId: CardId, targetLaneId: string) {
     appState.moveCardToLane(cardId, targetLaneId);
   }
 
-  function moveCardUp(cardId: string) {
+  function moveCardUp(cardId: CardId) {
     appState.reorderCardInLane(cardId, 'up');
   }
 
-  function moveCardDown(cardId: string) {
+  function moveCardDown(cardId: CardId) {
     appState.reorderCardInLane(cardId, 'down');
   }
 </script>
 
-<LaneCard id="layout-manager" laneId={laneId} movable header={t('Layout Manager')}>
+<LaneCard id="layout-manager" laneId={laneId} movable header={$_('layout.layout_manager')}>
   <div class="flex flex-col gap-3 text-[11px]">
     <!-- Lanes Section -->
     <div class="flex flex-col gap-1.5">
-      <div class="text-[10px] uppercase tracking-wider text-text-2 font-semibold">{t('Lanes')}</div>
+      <div class="text-[10px] uppercase tracking-wider text-text-2 font-semibold">{$_('layout.lanes')}</div>
       {#each allLanes() as lane}
         <div class="flex items-center justify-between gap-2 px-1.5 py-1 rounded bg-surface-2/50">
           <span class="text-text-1 font-medium">{lane.title}</span>
           <button
             type="button"
             class="p-1 rounded hover:bg-surface-3 transition-colors"
-            title={isLaneHidden(lane.id) ? t('Show lane') : t('Hide lane')}
+            title={isLaneHidden(lane.id) ? $_('layout.show_lane') : $_('layout.hide_lane')}
             onclick={() => toggleLaneVisibility(lane.id)}
           >
             {#if isLaneHidden(lane.id)}
@@ -101,14 +100,14 @@
           class="text-[10px] text-center py-1 text-accent hover:underline"
           onclick={() => appState.showAllLanes()}
         >
-          {t('Show all hidden lanes')} ({appState.hiddenLanes.size})
+          {$_('layout.show_all_hidden_lanes')} ({appState.hiddenLanes.size})
         </button>
       {/if}
     </div>
 
     <!-- Cards Section -->
     <div class="flex flex-col gap-1.5">
-      <div class="text-[10px] uppercase tracking-wider text-text-2 font-semibold">{t('Cards')}</div>
+      <div class="text-[10px] uppercase tracking-wider text-text-2 font-semibold">{$_('layout.cards')}</div>
       {#each ALL_CARD_IDS as cardId}
         {@const currentLane = cardLane(cardId)}
         {@const hidden = isCardHidden(cardId)}
@@ -132,7 +131,7 @@
             <button
               type="button"
               class="p-0.5 rounded hover:bg-surface-3 transition-colors"
-              title={t('Move up')}
+              title={$_('layout.move_up')}
               onclick={() => moveCardUp(cardId)}
             >
               <ArrowUp class="w-3 h-3 text-text-2" />
@@ -140,7 +139,7 @@
             <button
               type="button"
               class="p-0.5 rounded hover:bg-surface-3 transition-colors"
-              title={t('Move down')}
+              title={$_('layout.move_down')}
               onclick={() => moveCardDown(cardId)}
             >
               <ArrowDown class="w-3 h-3 text-text-2" />
@@ -151,7 +150,7 @@
           <button
             type="button"
             class="p-1 rounded hover:bg-surface-3 transition-colors"
-            title={hidden ? t('Show card') : t('Hide card')}
+            title={hidden ? $_('layout.show_card') : $_('layout.hide_card')}
             onclick={() => toggleCardVisibility(cardId)}
           >
             {#if hidden}

@@ -2,27 +2,26 @@
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
 
   interface Props { laneId: LaneId }
   let { laneId }: Props = $props();
-  const t = i18n.t;
 
   function orderOptions() {
     return [
-      { value: 'Original', label: t('Original') },
-      { value: 'Path Ascending', label: t('Path Ascending') },
-      { value: 'Path Descending', label: t('Path Descending') },
-      { value: 'Size Ascending', label: t('Size Ascending') },
-      { value: 'Size Descending', label: t('Size Descending') },
-      { value: 'Random', label: t('Random') },
-      { value: 'Sequential', label: t('Sequential') },
+      { value: 'Original', label: $_('settings.original') },
+      { value: 'Path Ascending', label: $_('settings.path_ascending') },
+      { value: 'Path Descending', label: $_('settings.path_descending') },
+      { value: 'Size Ascending', label: $_('settings.size_ascending') },
+      { value: 'Size Descending', label: $_('settings.size_descending') },
+      { value: 'Random', label: $_('settings.random') },
+      { value: 'Sequential', label: $_('settings.sequential') },
     ];
   }
 </script>
 
-<LaneCard id="input-filter" laneId={laneId} movable header={t('Filter')}>
+<LaneCard id="input-filter" laneId={laneId} movable header={$_('input.filter')}>
   <div class="flex flex-col gap-3">
     <div class="flex gap-1 items-center flex-wrap">
       {#each appState.allowedInputList as ext}

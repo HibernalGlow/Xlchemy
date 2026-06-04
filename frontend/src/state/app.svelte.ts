@@ -12,6 +12,12 @@ import {
 } from '$lib/cards/definitions';
 import { applyThemeColors, getThemeMode, loadThemeName, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
 import {
+  type BackgroundSettings,
+  loadBackgroundSettings,
+  saveBackgroundSettings,
+  applyBackgroundCSS,
+} from '$lib/utils/backgroundSettings';
+import {
   type FileItem,
   type OutputSettings,
   type ModifySettings,
@@ -201,6 +207,7 @@ export class AppState {
   showImportDialog = $state<boolean>(false);
   importSettingsJson = $state<string>('');
   currentLang = $state<string>(getCurrentLanguage());
+  backgroundSettings = $state<BackgroundSettings>(loadBackgroundSettings());
 
   private executor: BackendExecutor = getExecutor();
 
@@ -346,7 +353,7 @@ export class AppState {
     localStorage.setItem('xlchemy-hidden-cards', JSON.stringify(Array.from(next)));
   }
 
-  moveCardToLane(cardId: string, targetLaneId: string) {
+  moveCardToLane(cardId: CardId, targetLaneId: string) {
     const next: CardLayout = cloneCardLayout(this.cardLayout);
     // Remove from all lanes
     for (const laneId of Object.keys(next)) {
@@ -359,7 +366,7 @@ export class AppState {
     localStorage.setItem('xlchemy-card-layout', JSON.stringify(next));
   }
 
-  reorderCardInLane(cardId: string, direction: 'up' | 'down') {
+  reorderCardInLane(cardId: CardId, direction: 'up' | 'down') {
     const next: CardLayout = cloneCardLayout(this.cardLayout);
     for (const laneId of Object.keys(next)) {
       const idx = next[laneId].indexOf(cardId);
@@ -605,6 +612,12 @@ export class AppState {
     applyThemeColors(mode, this.appSettings.theme || loadThemeName());
   }
 
+  updateBackground(partial: Partial<BackgroundSettings>) {
+    this.backgroundSettings = { ...this.backgroundSettings, ...partial };
+    saveBackgroundSettings(this.backgroundSettings);
+    applyBackgroundCSS(this.backgroundSettings);
+  }
+
   changeLanguage(lang: string) {
     setLanguage(lang);
     this.currentLang = lang;
@@ -670,6 +683,9 @@ export class AppState {
 
       const themeName = this.appSettings.theme || loadThemeName();
       applyThemeColors(getThemeMode(), themeName);
+
+      // Init background
+      applyBackgroundCSS(this.backgroundSettings);
 
       if (Array.isArray(this.appSettings.excluded_formats)) {
         this.excludedFormats = new Set(

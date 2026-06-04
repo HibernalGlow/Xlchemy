@@ -17,6 +17,12 @@
 <LaneCard id="settings-appearance" laneId={laneId} movable header="Appearance">
   <div class="flex flex-col gap-3">
     <Select value={appState.currentLang} options={languageOptions} onChange={(v) => appState.changeLanguage(v)} />
-    <ThemePanel currentThemeName={appState.appSettings.theme || 'Miku'} onThemeChange={(name) => appState.changeTheme(name)} onThemeModeChange={(mode) => appState.changeThemeMode(mode)} />
+    <ThemePanel
+      currentThemeName={appState.appSettings.theme || 'Miku'}
+      backgroundSettings={appState.backgroundSettings}
+      onThemeChange={(name) => appState.changeTheme(name)}
+      onThemeModeChange={(mode) => appState.changeThemeMode(mode)}
+      onBackgroundChange={(partial) => appState.updateBackground(partial)}
+    />
   </div>
 </LaneCard>

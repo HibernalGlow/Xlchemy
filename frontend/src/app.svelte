@@ -11,14 +11,14 @@
   import HeaderBar from '$lib/layout/HeaderBar.svelte';
   import Lane from '$lib/layout/Lane.svelte';
   import LaneContainer from '$lib/layout/LaneContainer.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
   import { appState } from '$lib/state/app.svelte';
   import { canvasState } from '$lib/state/canvas.svelte';
   import { initConversionEvents } from '$lib/state/conversion.svelte';
   import { getExecutor } from '$lib/executor';
   import type { LaneId } from '$lib/cards/definitions';
 
-  const t = i18n.t;
+  import { _ } from 'svelte-i18n';
+  import { initI18n } from './i18n';
 
   type LaneItem = { id: LaneId; title: string };
 
@@ -67,6 +67,7 @@
   }
 
   onMount(() => {
+    initI18n();
     appState.init();
     const cleanupConversion = initConversionEvents();
     const cleanupFileDrops = appState.subscribeFileDrops();
@@ -96,12 +97,16 @@
     version={appState.constants.version}
     fileCount={appState.fileItems.length}
     currentTheme={appState.appSettings.theme || 'Miku'}
+    backgroundSettings={appState.backgroundSettings}
     isConverting={appState.isConverting}
     onConvert={() => appState.startConversion()}
     onCancel={() => appState.cancelConversion()}
     singleLaneMode={appState.singleLaneMode}
     onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
     onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
+    onThemeChange={(name) => appState.changeTheme(name)}
+    onThemeModeChange={(mode) => appState.changeThemeMode(mode)}
+    onBackgroundChange={(partial) => appState.updateBackground(partial)}
   />
 
   <div class="chrome-body">
@@ -112,6 +117,14 @@
 
     <div class="chrome-content">
       <div class="chrome-workspace canvas-bg">
+        {#if appState.backgroundSettings.mode === 'image' && appState.backgroundSettings.imageUrl}
+          <div
+            class="canvas-bg-image"
+            style:background-image="url({appState.backgroundSettings.imageUrl})"
+            style:opacity={appState.backgroundSettings.opacity / 100}
+            style:filter="blur({appState.backgroundSettings.blur}px)"
+          ></div>
+        {/if}
         <LaneContainer onReorderLanes={handleReorderLanes} onMoveCard={(cardId, fromLaneId, toLaneId, targetCardId) => appState.moveCard(cardId as any, fromLaneId as any, toLaneId as any, targetCardId as any)}>
           {#each visibleLanes() as lane (lane.id)}
             <Lane

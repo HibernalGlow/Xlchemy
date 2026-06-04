@@ -3,7 +3,7 @@
   import Progress from '$lib/components/ui/Progress.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
 
   interface Props {
@@ -11,14 +11,13 @@
   }
 
   let { laneId }: Props = $props();
-  const t = i18n.t;
   const percent = $derived(appState.progress.total > 0 ? Math.round((appState.progress.completed / appState.progress.total) * 100) : 0);
 </script>
 
-<LaneCard id="progress-status" laneId={laneId} movable header={t('Converting...')}>
+<LaneCard id="progress-status" laneId={laneId} movable header={$_('dialog.converting')}>
   <div class="flex flex-col gap-3">
     <Progress value={percent} />
-    <div class="text-xs text-text-2">{appState.progressSummary() || t('Converting...')}</div>
+    <div class="text-xs text-text-2">{appState.progressSummary() || $_('dialog.converting')}</div>
 
     {#if appState.progressCardConfig.showRawLines}
       <div class="flex flex-col gap-1 rounded-gb border border-border-2 bg-bg-2 p-2 text-[11px] text-text-2">

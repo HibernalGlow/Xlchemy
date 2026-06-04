@@ -6,10 +6,8 @@
   import Textarea from '$lib/components/ui/Textarea.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
-
-  const t = i18n.t;
 
   const languageOptions = [
     { value: 'en', label: 'English' },
@@ -17,45 +15,51 @@
   ];
   const jpgEncoderOptions = ['JPEGLI', 'libjpeg'].map((value) => ({ value, label: value }));
   const avifEncoderOptions = ['AOM AV1', 'SVT-AV1-PSY', 'slimg'].map((value) => ({ value, label: value }));
-  const avifBitDepthOptions = ['Auto', '12', '10', '8'].map((value) => ({ value, label: value === 'Auto' ? t('Auto') : value }));
-  const ramOptimizerOptions = ['Dynamic', 'Static', 'Disabled'].map((value) => ({ value, label: t(value) }));
-  const processingOrderOptions = ['Original', 'Random', 'Sequential', 'Path Ascending', 'Path Descending', 'Size Ascending', 'Size Descending'].map((value) => ({ value, label: t(value) }));
+  const avifBitDepthOptions = ['Auto', '12', '10', '8'].map((value) => ({ value, label: value === 'Auto' ? $_('common.auto') : value }));
+  const ramOptimizerOptions = ['Dynamic', 'Static', 'Disabled'].map((value) => ({ value, label: $_(`settings.${value.toLowerCase()}`) }));
+  const processingOrderOptions = ['Original', 'Random', 'Sequential', 'Path Ascending', 'Path Descending', 'Size Ascending', 'Size Descending'].map((value) => ({ value, label: $_(`settings.${value.toLowerCase().replace(/ /g, '_')}`) }));
 </script>
 
 <div class="flex flex-col gap-2">
-  <LaneCard id="settings-appearance" header={t('Appearance')}>
+  <LaneCard id="settings-appearance" header={$_('settings.appearance')}>
     <div class="flex flex-col gap-3">
       <Select value={appState.currentLang} options={languageOptions} onChange={(v) => appState.changeLanguage(v)} />
-      <ThemePanel currentThemeName={appState.appSettings.theme || 'Miku'} onThemeChange={(name) => appState.changeTheme(name)} onThemeModeChange={(mode) => appState.changeThemeMode(mode)} />
+      <ThemePanel
+        currentThemeName={appState.appSettings.theme || 'Miku'}
+        backgroundSettings={appState.backgroundSettings}
+        onThemeChange={(name) => appState.changeTheme(name)}
+        onThemeModeChange={(mode) => appState.changeThemeMode(mode)}
+        onBackgroundChange={(partial) => appState.updateBackground(partial)}
+      />
     </div>
   </LaneCard>
 
-  <LaneCard id="settings-general" header={t('General')}>
+  <LaneCard id="settings-general" header={$_('settings.general')}>
     <div class="flex flex-col gap-2">
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.disable_downscaling_startup} onCheckedChange={(v) => appState.updateApp('disable_downscaling_startup', v)} />
-        {t('Disable downscaling on startup')}
+        {$_('settings.disable_downscaling_startup')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.disable_delete_startup} onCheckedChange={(v) => appState.updateApp('disable_delete_startup', v)} />
-        {t('Disable delete original on startup')}
+        {$_('settings.disable_delete_startup')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.sorting_disabled} onCheckedChange={(v) => appState.updateApp('sorting_disabled', v)} />
-        {t('Disable sorting')}
+        {$_('settings.disable_sorting')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.enable_quality_precision_snapping} onCheckedChange={(v) => appState.updateApp('enable_quality_precision_snapping', v)} />
-        {t('Quality precision snapping')}
+        {$_('settings.quality_precision_snapping')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.play_sound_on_finish} onCheckedChange={(v) => appState.updateApp('play_sound_on_finish', v)} />
-        {t('Play sound on finish')}
+        {$_('settings.play_sound')}
       </label>
 
       {#if appState.appSettings.play_sound_on_finish}
         <div class="flex items-center gap-2 ml-5">
-          <span class="text-[11px] text-text-2">{t('Volume:')}</span>
+          <span class="text-[11px] text-text-2">{$_('settings.volume')}</span>
           <input
             type="range"
             min="0"
@@ -70,7 +74,7 @@
     </div>
   </LaneCard>
 
-  <LaneCard id="settings-conversion" header={t('Conversion Settings')}>
+  <LaneCard id="settings-conversion" header={$_('settings.conversion')}>
     <div class="flex flex-col gap-3">
       <Select value={appState.appSettings.jpg_encoder || 'JPEGLI'} options={jpgEncoderOptions} onChange={(v) => appState.updateApp('jpg_encoder', v)} />
       <Select value={appState.appSettings.avif_encoder || 'AOM AV1'} options={avifEncoderOptions} onChange={(v) => appState.updateApp('avif_encoder', v)} />
@@ -78,53 +82,53 @@
 
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.disable_progressive_jpegli} onCheckedChange={(v) => appState.updateApp('disable_progressive_jpegli', v)} />
-        {t('Disable progressive JPEGLI')}
+        {$_('settings.disable_progressive_jpegli')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.avif_aom_iq_tune} onCheckedChange={(v) => appState.updateApp('avif_aom_iq_tune', v)} />
-        {t('AOM IQ Tune')}
+        {$_('settings.aom_iq_tune')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.keep_if_larger} onCheckedChange={(v) => appState.updateApp('keep_if_larger', v)} />
-        {t('Keep original if result is larger')}
+        {$_('settings.keep_original_larger')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.copy_if_larger} onCheckedChange={(v) => appState.updateApp('copy_if_larger', v)} />
-        {t('Copy original if result is larger')}
+        {$_('settings.copy_original_larger')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.jxl_lossy_modular} onCheckedChange={(v) => appState.updateApp('jxl_lossy_modular', v)} />
-        {t('JXL lossy modular')}
+        {$_('settings.jxl_lossy_modular')}
       </label>
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.jxl_auto_lossless_jpeg} onCheckedChange={(v) => appState.updateApp('jxl_auto_lossless_jpeg', v)} />
-        {t('Auto lossless JPEG transcode for JXL')}
+        {$_('settings.auto_lossless_jpeg')}
       </label>
     </div>
   </LaneCard>
 
-  <LaneCard id="settings-exiftool" header={t('ExifTool')}>
+  <LaneCard id="settings-exiftool" header={$_('settings.exiftool')}>
     <div class="flex flex-col gap-2">
       <div class="flex flex-col gap-1">
-        <span class="text-[11px] text-text-2">{t('Wipe command:')}</span>
+        <span class="text-[11px] text-text-2">{$_('settings.wipe_command')}</span>
         <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Wipe'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Wipe': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
       </div>
       <div class="flex flex-col gap-1">
-        <span class="text-[11px] text-text-2">{t('Preserve command:')}</span>
+        <span class="text-[11px] text-text-2">{$_('settings.preserve_command')}</span>
         <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Preserve'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Preserve': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
       </div>
       <div class="flex flex-col gap-1">
-        <span class="text-[11px] text-text-2">{t('Unsafe Wipe command:')}</span>
+        <span class="text-[11px] text-text-2">{$_('settings.unsafe_wipe_command')}</span>
         <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Unsafe Wipe'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Unsafe Wipe': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
       </div>
       <div class="flex flex-col gap-1">
-        <span class="text-[11px] text-text-2">{t('Custom command:')}</span>
+        <span class="text-[11px] text-text-2">{$_('settings.custom_command')}</span>
         <Textarea value={appState.appSettings.exiftool_args?.['ExifTool - Custom'] || ''} onchange={(e) => appState.updateApp('exiftool_args', { ...(appState.appSettings.exiftool_args || {}), 'ExifTool - Custom': (e.currentTarget as HTMLTextAreaElement).value })} class="min-h-[40px] text-xs font-mono" />
       </div>
     </div>
   </LaneCard>
 
-  <LaneCard id="settings-advanced" header={t('Advanced')}>
+  <LaneCard id="settings-advanced" header={$_('settings.advanced')}>
     <div class="flex flex-col gap-3">
       <Select value={appState.appSettings.ram_optimizer || 'Disabled'} options={ramOptimizerOptions} onChange={(v) => appState.updateApp('ram_optimizer', v)} />
 
@@ -134,23 +138,23 @@
 
       <label class="flex items-center gap-2 text-[11px] text-text-1">
         <Checkbox checked={!!appState.appSettings.enable_custom_args} onCheckedChange={(v) => appState.updateApp('enable_custom_args', v)} />
-        {t('Extra encoder args')}
+        {$_('settings.extra_encoder_args')}
       </label>
 
       {#if appState.appSettings.enable_custom_args}
         <div class="flex flex-col gap-2">
-          <Input value={appState.appSettings.cjxl_args || ''} placeholder={t('cjxl args:')} oninput={(e) => appState.updateApp('cjxl_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
-          <Input value={appState.appSettings.avifenc_args || ''} placeholder={t('avifenc args:')} oninput={(e) => appState.updateApp('avifenc_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
-          <Input value={appState.appSettings.cjpegli_args || ''} placeholder={t('cjpegli args:')} oninput={(e) => appState.updateApp('cjpegli_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
-          <Input value={appState.appSettings.im_args || ''} placeholder={t('ImageMagick args:')} oninput={(e) => appState.updateApp('im_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+          <Input value={appState.appSettings.cjxl_args || ''} placeholder={$_('settings.cjxl_args')} oninput={(e) => appState.updateApp('cjxl_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+          <Input value={appState.appSettings.avifenc_args || ''} placeholder={$_('settings.avifenc_args')} oninput={(e) => appState.updateApp('avifenc_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+          <Input value={appState.appSettings.cjpegli_args || ''} placeholder={$_('settings.cjpegli_args')} oninput={(e) => appState.updateApp('cjpegli_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+          <Input value={appState.appSettings.im_args || ''} placeholder={$_('settings.imagemagick_args')} oninput={(e) => appState.updateApp('im_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
         </div>
       {/if}
 
       <Select value={appState.appSettings.processing_order || 'Original'} options={processingOrderOptions} onChange={(v) => appState.updateApp('processing_order', v)} />
 
       <div class="flex gap-2 flex-wrap pt-2 border-t border-border-2/50">
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}>{t('Export')}</Button>
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => (appState.showImportDialog = true)}>{t('Import')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}>{$_('theme.export')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => (appState.showImportDialog = true)}>{$_('theme.import')}</Button>
       </div>
     </div>
   </LaneCard>

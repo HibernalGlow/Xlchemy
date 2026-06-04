@@ -1,7 +1,7 @@
 <script lang="ts">
   import Badge from '$lib/components/ui/Badge.svelte';
   import Progress from '$lib/components/ui/Progress.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import { cn } from '$lib/utils/cn';
 
   interface Props {
@@ -22,7 +22,6 @@
     disabled = false,
   }: Props = $props();
 
-  const t = i18n.t;
   const progressPercent = $derived(progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0);
 </script>
 
@@ -39,14 +38,14 @@
         {/if}
       </div>
     {:else}
-      <Badge variant="secondary">{fileCount} {t('file(s)')}</Badge>
+      <Badge variant="secondary">{fileCount} {$_('input.files_count')}</Badge>
     {/if}
   </div>
 
   <div class="flex items-center gap-2 shrink-0">
     {#if exceptionCount > 0}
       <button type="button" class="text-xs text-[var(--fill-pop-bg)] hover:underline" onclick={onShowExceptions}>
-        {exceptionCount} {t('Exceptions')}
+        {exceptionCount} {$_('dialog.exceptions')}
       </button>
     {/if}
   </div>

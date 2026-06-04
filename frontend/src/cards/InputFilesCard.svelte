@@ -21,7 +21,7 @@
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
   import type { FileItem } from '$lib/domain';
 
@@ -57,7 +57,6 @@
   };
 
   let { laneId }: Props = $props();
-  const t = i18n.t;
 
   function isSortField(value: string): value is SortField {
     return VALID_SORT_FIELDS.includes(value as SortField);
@@ -288,10 +287,10 @@
 
   function sortOptions() {
     return [
-      { value: 'name', label: t('Name') },
-      { value: 'ext', label: t('Ext') },
-      { value: 'size', label: t('File Size') },
-      { value: 'dir', label: t('Location') },
+      { value: 'name', label: $_('input.name') },
+      { value: 'ext', label: $_('input.ext') },
+      { value: 'size', label: $_('modify.file_size') },
+      { value: 'dir', label: $_('input.location') },
     ];
   }
 
@@ -308,25 +307,25 @@
       {
         id: 'name',
         accessorFn: (item) => item.name,
-        header: t('Name'),
+        header: $_('input.name'),
         sortingFn: sortByField('name'),
       },
       {
         id: 'ext',
         accessorFn: (item) => item.ext || '',
-        header: t('Ext'),
+        header: $_('input.ext'),
         sortingFn: sortByField('ext'),
       },
       {
         id: 'size',
         accessorFn: (item) => item.size,
-        header: t('File Size'),
+        header: $_('modify.file_size'),
         sortingFn: sortByField('size'),
       },
       {
         id: 'dir',
         accessorFn: (item) => item.dir || '',
-        header: t('Location'),
+        header: $_('input.location'),
         sortingFn: sortByField('dir'),
       },
     ];
@@ -371,12 +370,12 @@
   });
 </script>
 
-<LaneCard id="input-files" laneId={laneId} movable header={`${t('Input')} (${appState.fileItems.length})`}>
+<LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`}>
   <div class="flex min-h-0 min-w-0 flex-col gap-3">
     <div class="flex flex-wrap gap-1.5">
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{t('Add Files')}</Button>
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{t('Add Folder')}</Button>
-      <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{t('Clear')}</Button>
+      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{$_('input.add_files')}</Button>
+      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{$_('input.add_folder')}</Button>
+      <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{$_('input.clear')}</Button>
 
       <div class="ml-auto flex items-center gap-1">
         <Select class="w-28" value={activeSort.field} options={sortOptions()} onChange={setSortField} />
@@ -389,7 +388,7 @@
             {/if}
           </Button>
         </div>
-        <div title={t('List View')}>
+        <div title={$_('input.list_view')}>
           <Button
             kind="outline"
             variant={viewMode === 'list' ? 'pop' : 'neutral'}
@@ -400,7 +399,7 @@
             <Rows3 class="h-3.5 w-3.5" />
           </Button>
         </div>
-        <div title={t('Tree View')}>
+        <div title={$_('input.tree_view')}>
           <Button
             kind="outline"
             variant={viewMode === 'tree' ? 'pop' : 'neutral'}

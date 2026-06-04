@@ -6,17 +6,16 @@
   import Textarea from '$lib/components/ui/Textarea.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
 
   interface Props { laneId: LaneId }
   let { laneId }: Props = $props();
-  const t = i18n.t;
-  const ramOptimizerOptions = ['Dynamic', 'Static', 'Disabled'].map((value) => ({ value, label: t(value) }));
-  const processingOrderOptions = ['Original', 'Random', 'Sequential', 'Path Ascending', 'Path Descending', 'Size Ascending', 'Size Descending'].map((value) => ({ value, label: t(value) }));
+  const ramOptimizerOptions = ['Dynamic', 'Static', 'Disabled'].map((value) => ({ value, label: $_(`settings.${value.toLowerCase()}`) }));
+  const processingOrderOptions = ['Original', 'Random', 'Sequential', 'Path Ascending', 'Path Descending', 'Size Ascending', 'Size Descending'].map((value) => ({ value, label: $_(`settings.${value.toLowerCase().replace(/ /g, '_')}`) }));
 </script>
 
-<LaneCard id="settings-advanced" laneId={laneId} movable header={t('Advanced')}>
+<LaneCard id="settings-advanced" laneId={laneId} movable header={$_('settings.advanced')}>
   <div class="flex flex-col gap-3">
     <Select value={appState.appSettings.ram_optimizer || 'Disabled'} options={ramOptimizerOptions} onChange={(v) => appState.updateApp('ram_optimizer', v)} />
 
@@ -26,23 +25,23 @@
 
     <label class="flex items-center gap-2 text-[11px] text-text-1">
       <Checkbox checked={!!appState.appSettings.enable_custom_args} onCheckedChange={(v) => appState.updateApp('enable_custom_args', v)} />
-      {t('Extra encoder args')}
+      {$_('settings.extra_encoder_args')}
     </label>
 
     {#if appState.appSettings.enable_custom_args}
       <div class="flex flex-col gap-2">
-        <Input value={appState.appSettings.cjxl_args || ''} placeholder={t('cjxl args:')} oninput={(e) => appState.updateApp('cjxl_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
-        <Input value={appState.appSettings.avifenc_args || ''} placeholder={t('avifenc args:')} oninput={(e) => appState.updateApp('avifenc_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
-        <Input value={appState.appSettings.cjpegli_args || ''} placeholder={t('cjpegli args:')} oninput={(e) => appState.updateApp('cjpegli_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
-        <Input value={appState.appSettings.im_args || ''} placeholder={t('ImageMagick args:')} oninput={(e) => appState.updateApp('im_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+        <Input value={appState.appSettings.cjxl_args || ''} placeholder={$_('settings.cjxl_args')} oninput={(e) => appState.updateApp('cjxl_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+        <Input value={appState.appSettings.avifenc_args || ''} placeholder={$_('settings.avifenc_args')} oninput={(e) => appState.updateApp('avifenc_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+        <Input value={appState.appSettings.cjpegli_args || ''} placeholder={$_('settings.cjpegli_args')} oninput={(e) => appState.updateApp('cjpegli_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
+        <Input value={appState.appSettings.im_args || ''} placeholder={$_('settings.imagemagick_args')} oninput={(e) => appState.updateApp('im_args', (e.currentTarget as HTMLInputElement).value)} class="h-7 text-xs font-mono" />
       </div>
     {/if}
 
     <Select value={appState.appSettings.processing_order || 'Original'} options={processingOrderOptions} onChange={(v) => appState.updateApp('processing_order', v)} />
 
     <div class="flex gap-2 flex-wrap pt-2 border-t border-border-2/50">
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}>{t('Export')}</Button>
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => (appState.showImportDialog = true)}>{t('Import')}</Button>
+      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}>{$_('theme.export')}</Button>
+      <Button kind="outline" variant="neutral" size="sm" onclick={() => (appState.showImportDialog = true)}>{$_('theme.import')}</Button>
     </div>
   </div>
 </LaneCard>

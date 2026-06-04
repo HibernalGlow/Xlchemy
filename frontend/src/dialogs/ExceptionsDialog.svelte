@@ -2,7 +2,7 @@
   import Dialog from '$lib/components/ui/Dialog.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { appState } from '$lib/state/app.svelte';
-  import { i18n } from '$lib/i18n/t.svelte';
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     open?: boolean;
@@ -10,18 +10,17 @@
   }
 
   let { open = $bindable(false), onOpenChange }: Props = $props();
-  const t = i18n.t;
 </script>
 
 <Dialog bind:open onOpenChange={(v) => { open = v; onOpenChange?.(v); }}>
   <div class="flex flex-col gap-3 p-4">
-    <h2 class="text-sm font-semibold text-text-1">{t('Exceptions')} ({appState.exceptions.length})</h2>
+    <h2 class="text-sm font-semibold text-text-1">{$_('dialog.exceptions')} ({appState.exceptions.length})</h2>
     <div class="overflow-auto max-h-[300px] rounded-md border border-border-2">
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-ntrl-30">
-            <th class="text-left p-2 font-semibold">{t('ID')}</th>
-            <th class="text-left p-2 font-semibold">{t('Message')}</th>
+            <th class="text-left p-2 font-semibold">{$_('dialog.id')}</th>
+            <th class="text-left p-2 font-semibold">{$_('dialog.message')}</th>
           </tr>
         </thead>
         <tbody>
@@ -35,7 +34,7 @@
       </table>
     </div>
     <div class="flex justify-end">
-      <Button kind="outline" variant="neutral" onclick={() => appState.clearExceptions()}>{t('Close')}</Button>
+      <Button kind="outline" variant="neutral" onclick={() => appState.clearExceptions()}>{$_('dialog.close')}</Button>
     </div>
   </div>
 </Dialog>
