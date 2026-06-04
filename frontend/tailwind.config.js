@@ -2,7 +2,7 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['index.html', './src/**/*.{tsx,ts}'],
+  content: ['index.html', './src/**/*.{svelte,ts,js}'],
   darkMode: ['class'],
   theme: {
     extend: {
@@ -49,7 +49,6 @@ export default {
         'pop-800': 'var(--pop-800)',
         'pop-900': 'var(--pop-900)',
 
-        /* shadcn compatibility (mapped to GitButler tokens) */
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',
