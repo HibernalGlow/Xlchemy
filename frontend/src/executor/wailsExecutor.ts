@@ -1,4 +1,3 @@
-import { Dialogs, Events, Call } from '@wailsio/runtime';
 import type {
   BackendExecutor,
   Unsubscribe,
@@ -13,8 +12,15 @@ import type {
 
 const PKG = 'main.AppService';
 
-function callGo(method: string, ...args: any[]): Promise<any> {
-  return Call.ByName(`${PKG}.${method}`, ...args);
+type WailsRuntime = typeof import('@wailsio/runtime');
+
+async function loadRuntime(): Promise<WailsRuntime> {
+  return await import('@wailsio/runtime');
+}
+
+async function callGo(method: string, ...args: any[]): Promise<any> {
+  const runtime = await loadRuntime();
+  return runtime.Call.ByName(`${PKG}.${method}`, ...args);
 }
 
 function imageFilePattern(): string {
@@ -30,7 +36,8 @@ export class WailsExecutor implements BackendExecutor {
   }
 
   async pickFiles(): Promise<string[]> {
-    const selected = await Dialogs.OpenFile({
+    const runtime = await loadRuntime();
+    const selected = await runtime.Dialogs.OpenFile({
       CanChooseFiles: true,
       AllowsMultipleSelection: true,
       Title: 'Select image files',
@@ -41,7 +48,8 @@ export class WailsExecutor implements BackendExecutor {
   }
 
   async pickDirectory(): Promise<string | null> {
-    const selected = await Dialogs.OpenFile({
+    const runtime = await loadRuntime();
+    const selected = await runtime.Dialogs.OpenFile({
       CanChooseDirectories: true,
       CanChooseFiles: false,
       Title: 'Select folder',
@@ -110,71 +118,81 @@ export class WailsExecutor implements BackendExecutor {
 
   subscribeEvents(handler: (event: DomainEvent) => void): Unsubscribe {
     const unsubs: (() => void)[] = [];
+    let active = true;
 
-    unsubs.push(
-      Events.On('conversion:started', () => {
-        handler({ type: 'run_started', runId: 'current', totalTasks: 0 });
-      })
-    );
+    void loadRuntime().then((runtime) => {
+      if (!active) return;
 
-    unsubs.push(
-      Events.On('conversion:progress', (wailsEvent: any) => {
-        const data = wailsEvent?.data || wailsEvent;
-        handler({
-          type: 'task_progress',
-          runId: 'current',
-          taskId: '',
-          completed: data.completed || 0,
-          total: data.total || 0,
-          line1: data.line1 || '',
-          line2: data.line2 || '',
-        });
-      })
-    );
+      unsubs.push(
+        runtime.Events.On('conversion:started', () => {
+          handler({ type: 'run_started', runId: 'current', totalTasks: 0 });
+        })
+      );
 
-    unsubs.push(
-      Events.On('conversion:exception', (wailsEvent: any) => {
-        const data = wailsEvent?.data || wailsEvent;
-        handler({
-          type: 'task_failed',
-          runId: 'current',
-          taskId: '',
-          inputPath: data.path || '',
-          errorId: data.id || 'C0',
-          errorMsg: data.msg || 'Unknown error',
-        });
-      })
-    );
+      unsubs.push(
+        runtime.Events.On('conversion:progress', (wailsEvent: any) => {
+          const data = wailsEvent?.data || wailsEvent;
+          handler({
+            type: 'task_progress',
+            runId: 'current',
+            taskId: '',
+            completed: data.completed || 0,
+            total: data.total || 0,
+            line1: data.line1 || '',
+            line2: data.line2 || '',
+          });
+        })
+      );
 
-    unsubs.push(
-      Events.On('conversion:finished', () => {
-        handler({ type: 'run_finished', runId: 'current', completedCount: 0, failedCount: 0 });
-      })
-    );
+      unsubs.push(
+        runtime.Events.On('conversion:exception', (wailsEvent: any) => {
+          const data = wailsEvent?.data || wailsEvent;
+          handler({
+            type: 'task_failed',
+            runId: 'current',
+            taskId: '',
+            inputPath: data.path || '',
+            errorId: data.id || 'C0',
+            errorMsg: data.msg || 'Unknown error',
+          });
+        })
+      );
 
-    unsubs.push(
-      Events.On('conversion:canceled', () => {
-        handler({ type: 'run_canceled', runId: 'current' });
-      })
-    );
+      unsubs.push(
+        runtime.Events.On('conversion:finished', () => {
+          handler({ type: 'run_finished', runId: 'current', completedCount: 0, failedCount: 0 });
+        })
+      );
 
-    unsubs.push(
-      Events.On('files-dropped', (wailsEvent: any) => {
-        const data = wailsEvent?.data || wailsEvent;
-        const files = Array.isArray(data?.files)
-          ? data.files
-          : Array.isArray(data?.paths)
-            ? data.paths
-            : Array.isArray(data)
-              ? data
-              : [];
-        if (files.length > 0) {
-          handler({ type: 'files_dropped', paths: files });
-        }
-      })
-    );
+      unsubs.push(
+        runtime.Events.On('conversion:canceled', () => {
+          handler({ type: 'run_canceled', runId: 'current' });
+        })
+      );
 
-    return () => unsubs.forEach((fn) => fn());
+      unsubs.push(
+        runtime.Events.On('files-dropped', (wailsEvent: any) => {
+          const data = wailsEvent?.data || wailsEvent;
+          const files = Array.isArray(data?.files)
+            ? data.files
+            : Array.isArray(data?.paths)
+              ? data.paths
+              : Array.isArray(data)
+                ? data
+                : [];
+          if (files.length > 0) {
+            handler({ type: 'files_dropped', paths: files });
+          }
+        })
+      );
+    }).catch((error) => {
+      console.error('Failed to load Wails runtime:', error);
+    });
+
+    return () => {
+      active = false;
+      unsubs.forEach((fn) => fn());
+    };
   }
 }
 

@@ -1,6 +1,7 @@
 import type {
   AppSettings,
   ExecutionPlan,
+  ExecutionSpec,
   ExecutionTask,
   FileItem,
   ModifySettings,
@@ -184,6 +185,21 @@ export function buildExecutionPlan(
     ifFileExists: output.if_file_exists,
   };
 
+  const spec: ExecutionSpec = {
+    output: { ...output },
+    modify: {
+      downscaling: { ...modify.downscaling },
+      misc: { ...modify.misc },
+    },
+    app: {
+      ...app,
+      excluded_formats: Array.isArray(app.excluded_formats)
+        ? [...app.excluded_formats]
+        : [],
+      exiftool_args: { ...app.exiftool_args },
+    },
+  };
+
   for (const item of items) {
     tasks.push(...buildItemPlan(item, output, modify, app, toolchain, runId).tasks);
   }
@@ -195,6 +211,7 @@ export function buildExecutionPlan(
       tasks,
       policies,
       toolchain,
+      spec,
     },
     validation: { valid: true },
   };

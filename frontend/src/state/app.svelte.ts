@@ -1,6 +1,5 @@
 import { getCurrentLanguage, setLanguage } from '$lib/i18n';
-import { getExecutor } from '$lib/executor';
-import type { BackendExecutor } from '$lib/executor';
+import { getExecutor, getExecutorName } from '$lib/executor';
 import {
   cloneCardLayout,
   DEFAULT_CARD_LAYOUT,
@@ -64,8 +63,12 @@ function extractDropPaths(e: DragEvent): string[] {
 
   if (files) {
     for (let i = 0; i < files.length; i++) {
-      const file = files[i] as File & { path?: string };
+      const file = files[i] as File & {
+        path?: string;
+        pywebviewFullPath?: string;
+      };
       if (file.path) paths.add(file.path);
+      if (file.pywebviewFullPath) paths.add(file.pywebviewFullPath);
     }
   }
 
@@ -132,7 +135,6 @@ export class AppState {
   backgroundSettings = $state<BackgroundSettings>({ ...DEFAULT_SNAPSHOT.background });
   isInitialized = $state<boolean>(false);
 
-  private executor: BackendExecutor = getExecutor();
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Computed
@@ -408,9 +410,9 @@ export class AppState {
 
   async handleAddFiles() {
     try {
-      const selected = await this.executor.pickFiles();
+      const selected = await getExecutor().pickFiles();
       if (selected.length === 0) return;
-      const result = await this.executor.statFiles(selected);
+      const result = await getExecutor().statFiles(selected);
       this.addFileItems(result);
     } catch (e) {
       console.error('AddFiles error:', e);
@@ -419,9 +421,9 @@ export class AppState {
 
   async handleAddFolder() {
     try {
-      const selected = await this.executor.pickDirectory();
+      const selected = await getExecutor().pickDirectory();
       if (!selected) return;
-      const result = await this.executor.scanDirectory(selected);
+      const result = await getExecutor().scanDirectory(selected);
       this.addFileItems(result);
     } catch (e) {
       console.error('AddFolder error:', e);
@@ -434,7 +436,7 @@ export class AppState {
     // This handler remains as a fallback for HTML5 drag-and-drop in non-Wails environments.
     const paths = extractDropPaths(e);
     if (paths.length > 0) {
-      const result = await this.executor.statFiles(paths);
+      const result = await getExecutor().statFiles(paths);
       this.addFileItems(result);
     }
   }
@@ -457,9 +459,14 @@ export class AppState {
       oxipngPath: 'oxipng',
     };
 
+    const normalizedOutput = {
+      ...this.outputSettings,
+      threads: this.outputSettings.threads || this.cpuCount || 4,
+    };
+
     const { plan, validation } = buildExecutionPlan(
       this.sortedItems,
-      this.outputSettings,
+      normalizedOutput,
       this.modifySettings,
       this.appSettings,
       toolchain
@@ -475,7 +482,7 @@ export class AppState {
     this.exceptions = [];
 
     try {
-      await this.executor.runConversionPlan(plan);
+      await getExecutor().runConversionPlan(plan);
     } catch (e) {
       console.error('Conversion error:', e);
       this.isConverting = false;
@@ -483,7 +490,7 @@ export class AppState {
   }
 
   async cancelConversion() {
-    await this.executor.cancelRun('current');
+    await getExecutor().cancelRun('current');
   }
 
   clearExceptions() {
@@ -543,7 +550,7 @@ export class AppState {
       this.saveTimer = null;
     }
     if (!this.isInitialized) return;
-    await this.executor.saveAppState(this.buildSnapshot());
+    await getExecutor().saveAppState(this.buildSnapshot());
   }
 
   async handleImportSettings() {
@@ -599,17 +606,17 @@ export class AppState {
       },
       background: this.backgroundSettings,
       lang: this.currentLang,
-      executor: this.executor.name,
+      executor: getExecutorName(),
     };
   }
 
   async init() {
     try {
-      const c = await this.executor.getConstants();
+      const c = await getExecutor().getConstants();
       this.constants = c;
       this.cpuCount = c.cpuCount || 4;
 
-      const saved = await this.executor.loadAppState();
+      const saved = await getExecutor().loadAppState();
       let shouldMigrateLegacyState = false;
 
       if (saved.domain?.output) {
@@ -688,7 +695,7 @@ export class AppState {
   }
 
   subscribeFileDrops() {
-    return this.executor.subscribeEvents((event: DomainEvent) => {
+    return getExecutor().subscribeEvents((event: DomainEvent) => {
       if (event.type === 'files_dropped') {
         this.handleDroppedPaths(event.paths);
       }
@@ -698,7 +705,7 @@ export class AppState {
   private async handleDroppedPaths(paths: string[]) {
     if (!paths || paths.length === 0) return;
     try {
-      const result = await this.executor.statFiles(paths);
+      const result = await getExecutor().statFiles(paths);
       this.addFileItems(result);
     } catch (e) {
       console.error('Handle dropped files error:', e);

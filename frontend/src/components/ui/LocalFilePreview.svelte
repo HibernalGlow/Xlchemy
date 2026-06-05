@@ -22,8 +22,23 @@
 
   let failed = $state(false);
 
+  function isPywebviewHost(): boolean {
+    return typeof window !== 'undefined' && !!window.pywebview?.api;
+  }
+
+  function toFileUrl(filePath: string): string {
+    const normalized = filePath.replace(/\\/g, '/');
+    const withLeadingSlash = /^[a-zA-Z]:\//.test(normalized)
+      ? `/${normalized}`
+      : normalized;
+    return `file://${encodeURI(withLeadingSlash)}`;
+  }
+
   function toPreviewUrl(filePath: string): string {
     if (!filePath) return '';
+    if (isPywebviewHost()) {
+      return toFileUrl(filePath);
+    }
     const query = new URLSearchParams({ path: filePath });
     return `/local-preview?${query.toString()}`;
   }

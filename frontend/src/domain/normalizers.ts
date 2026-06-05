@@ -104,6 +104,7 @@ export function normalizeFileItem(raw: any): FileItem {
     ext: String(raw.ext || '').toLowerCase(),
     dir: String(raw.dir || ''),
     size: Number(raw.size || 0),
+    anchorPath: raw.anchorPath || raw.anchor_path ? String(raw.anchorPath || raw.anchor_path) : undefined,
   };
 }
 

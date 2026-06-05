@@ -6,6 +6,7 @@ export interface FileItem {
   ext: string;
   dir: string;
   size: number;
+  anchorPath?: string;
 }
 
 export interface OutputSettings {
@@ -95,6 +96,12 @@ export interface ConversionSpec {
   app: AppSettings;
 }
 
+export interface ExecutionSpec {
+  output: OutputSettings;
+  modify: ModifySettings;
+  app: AppSettings;
+}
+
 export type BackgroundMode = 'dot-grid' | 'image' | 'none';
 
 export interface BackgroundSettings {
@@ -170,6 +177,7 @@ export interface ExecutionPlan {
   tasks: ExecutionTask[];
   policies: ResultPolicy;
   toolchain: ToolchainSelection;
+  spec?: ExecutionSpec;
 }
 
 export interface ResultPolicy {
