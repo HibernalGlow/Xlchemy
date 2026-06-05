@@ -16,7 +16,7 @@
 
   let activeTab = $state<'theme' | 'background'>('theme');
   let bgImageUrlInput = $state('');
-  let fileInputRef: HTMLInputElement | null = null;
+  let fileInputRef = $state<HTMLInputElement | null>(null);
 
   $effect(() => {
     bgImageUrlInput = backgroundSettings.imageUrl;

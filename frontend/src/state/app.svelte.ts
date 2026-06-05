@@ -10,7 +10,7 @@ import {
   type LaneId,
   type ProgressCardConfig,
 } from '$lib/cards/definitions';
-import { applyThemeColors, getCustomThemes, getThemeMode, loadThemeName, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
+import { applyThemeColors, getCustomThemes, getThemeMode, loadThemeName, setCustomThemes, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
 import {
   type BackgroundSettings,
   applyBackgroundCSS,
@@ -133,6 +133,7 @@ export class AppState {
   isInitialized = $state<boolean>(false);
 
   private executor: BackendExecutor = getExecutor();
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Computed
   get sortedItems(): FileItem[] {
@@ -153,6 +154,7 @@ export class AppState {
   // Layout actions
   setLaneOrder(order: string[]) {
     this.laneOrder = order;
+    this.queueSettingsSave();
   }
 
   laneTitle(laneId: LaneId): string {
@@ -169,12 +171,14 @@ export class AppState {
     this.cardLayout = { ...this.cardLayout, [id]: [] };
     this.laneWidths = { ...this.laneWidths, [id]: DEFAULT_SNAPSHOT.layout.laneWidths[id] || DEFAULT_LANE_WIDTH };
     this.activeLaneId = id;
+    this.queueSettingsSave();
   }
 
   renameLane(laneId: LaneId, name: string) {
     const nextName = name.trim();
     if (!nextName) return;
     this.laneLabels = { ...this.laneLabels, [laneId]: nextName };
+    this.queueSettingsSave();
   }
 
   deleteLane(laneId: LaneId) {
@@ -191,6 +195,7 @@ export class AppState {
     this.laneWidths = nextWidths;
     this.laneOrder = this.laneOrder.filter((id) => id !== laneId);
     if (this.activeLaneId === laneId) this.activeLaneId = 'input';
+    this.queueSettingsSave();
   }
 
   exportLayoutSettings() {
@@ -237,6 +242,7 @@ export class AppState {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     this.collapsedLanes = next;
+    this.queueSettingsSave();
   }
 
   toggleLaneHidden(id: string) {
@@ -244,10 +250,12 @@ export class AppState {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     this.hiddenLanes = next;
+    this.queueSettingsSave();
   }
 
   showAllLanes() {
     this.hiddenLanes = new Set<string>();
+    this.queueSettingsSave();
   }
 
   toggleCardHidden(cardId: string) {
@@ -255,6 +263,7 @@ export class AppState {
     if (next.has(cardId)) next.delete(cardId);
     else next.add(cardId);
     this.hiddenCards = next;
+    this.queueSettingsSave();
   }
 
   moveCardToLane(cardId: CardId, targetLaneId: string) {
@@ -267,6 +276,7 @@ export class AppState {
     if (!next[targetLaneId]) next[targetLaneId] = [];
     next[targetLaneId].push(cardId);
     this.cardLayout = next;
+    this.queueSettingsSave();
   }
 
   reorderCardInLane(cardId: CardId, direction: 'up' | 'down') {
@@ -285,6 +295,7 @@ export class AppState {
       }
     }
     this.cardLayout = next;
+    this.queueSettingsSave();
   }
 
   laneWidth(laneId: LaneId): number {
@@ -294,14 +305,17 @@ export class AppState {
   setLaneWidth(laneId: LaneId, width: number) {
     const next = { ...this.laneWidths, [laneId]: width };
     this.laneWidths = next;
+    this.queueSettingsSave();
   }
 
   setSingleLaneMode(enabled: boolean) {
     this.singleLaneMode = enabled;
+    this.queueSettingsSave();
   }
 
   setActiveLaneId(laneId: LaneId) {
     this.activeLaneId = laneId;
+    this.queueSettingsSave();
   }
 
   cardsForLane(laneId: LaneId): CardId[] {
@@ -322,6 +336,7 @@ export class AppState {
     }
     next[toLaneId] = destination;
     this.cardLayout = next;
+    this.queueSettingsSave();
   }
 
   reorderCardWithinLane(laneId: LaneId, fromIndex: number, toIndex: number) {
@@ -333,10 +348,12 @@ export class AppState {
     list.splice(toIndex, 0, item);
     next[laneId] = list;
     this.cardLayout = next;
+    this.queueSettingsSave();
   }
 
   updateProgressCardConfig(key: keyof ProgressCardConfig, value: boolean) {
     this.progressCardConfig = { ...this.progressCardConfig, [key]: value };
+    this.queueSettingsSave();
   }
 
   // Progress display helpers
@@ -386,6 +403,7 @@ export class AppState {
     else next.add(ext);
     this.excludedFormats = next;
     this.appSettings = { ...this.appSettings, excluded_formats: Array.from(next) };
+    this.queueSettingsSave();
   }
 
   async handleAddFiles() {
@@ -475,6 +493,7 @@ export class AppState {
 
   updateOutput(key: string, value: any) {
     this.outputSettings = { ...this.outputSettings, [key]: value };
+    this.queueSettingsSave();
   }
 
   updateModify(path: string[], value: any) {
@@ -486,33 +505,43 @@ export class AppState {
     }
     obj[path[path.length - 1]] = value;
     this.modifySettings = next;
+    this.queueSettingsSave();
   }
 
   updateApp(key: string, value: any) {
     this.appSettings = { ...this.appSettings, [key]: value };
+    this.queueSettingsSave();
   }
 
   changeTheme(name: string) {
     this.appSettings = { ...this.appSettings, theme: name };
     applyThemeColors(getThemeMode(), name);
+    this.queueSettingsSave();
   }
 
   changeThemeMode(mode: 'light' | 'dark' | 'system') {
     setThemeMode(mode);
     applyThemeColors(mode, this.appSettings.theme || loadThemeName());
+    this.queueSettingsSave();
   }
 
   updateBackground(partial: Partial<BackgroundSettings>) {
     this.backgroundSettings = { ...this.backgroundSettings, ...partial };
     applyBackgroundCSS(this.backgroundSettings);
+    this.queueSettingsSave();
   }
 
   changeLanguage(lang: string) {
     setLanguage(lang);
     this.currentLang = lang;
+    this.queueSettingsSave();
   }
 
   async saveCurrentSettings() {
+    if (this.saveTimer !== null) {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+    }
     if (!this.isInitialized) return;
     await this.executor.saveAppState(this.buildSnapshot());
   }
@@ -620,6 +649,11 @@ export class AppState {
       }
 
       const savedTheme = saved.theme && typeof saved.theme === 'object' ? saved.theme : undefined;
+      if (Array.isArray(savedTheme?.customThemes)) {
+        setCustomThemes(savedTheme.customThemes);
+      } else if (LEGACY_CLIENT_STATE.hasThemeState) {
+        setCustomThemes(LEGACY_CLIENT_STATE.theme.customThemes);
+      }
       const themeName = savedTheme?.name || this.appSettings.theme || LEGACY_CLIENT_STATE.theme.name || loadThemeName();
       const themeMode = savedTheme?.mode || LEGACY_CLIENT_STATE.theme.mode || getThemeMode();
       if (!savedTheme && LEGACY_CLIENT_STATE.hasThemeState) {
@@ -669,6 +703,16 @@ export class AppState {
     } catch (e) {
       console.error('Handle dropped files error:', e);
     }
+  }
+
+  private queueSettingsSave() {
+    if (!this.isInitialized) return;
+    if (this.saveTimer !== null) {
+      clearTimeout(this.saveTimer);
+    }
+    this.saveTimer = setTimeout(() => {
+      this.saveCurrentSettings().catch((e) => console.error('saveAppState error:', e));
+    }, 150);
   }
 }
 

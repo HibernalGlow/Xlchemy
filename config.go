@@ -9,6 +9,30 @@ import (
 	"sync"
 )
 
+func normalizeSnapshotPayload(decoded map[string]interface{}) map[string]interface{} {
+	domain, _ := decoded["domain"].(map[string]interface{})
+	if domain != nil {
+		return decoded
+	}
+
+	normalized := map[string]interface{}{
+		"domain": map[string]interface{}{
+			"output": decoded["output"],
+			"modify": decoded["modify"],
+			"app":    decoded["app"],
+		},
+	}
+
+	for key, value := range decoded {
+		if key == "output" || key == "modify" || key == "app" {
+			continue
+		}
+		normalized[key] = value
+	}
+
+	return normalized
+}
+
 // ConfigStore handles reading/writing settings and presets as JSON files.
 type ConfigStore struct {
 	mu sync.Mutex
@@ -144,6 +168,8 @@ func (cs *ConfigStore) SaveAppState(snapshot json.RawMessage) error {
 	if err := json.Unmarshal(snapshot, &decoded); err != nil {
 		return err
 	}
+
+	decoded = normalizeSnapshotPayload(decoded)
 
 	pretty, err := json.MarshalIndent(decoded, "", "  ")
 	if err != nil {

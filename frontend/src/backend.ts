@@ -2,9 +2,11 @@
 // Re-exports the executor API for backward compatibility.
 // New code should import from $lib/executor directly.
 
+import { createDefaultSnapshot, type AppStateSnapshot } from '$lib/domain';
 import { getExecutor } from '$lib/executor';
 
 const executor = getExecutor();
+const defaultSnapshot = createDefaultSnapshot();
 
 export const backend = {
   async getConstants() {
@@ -14,16 +16,23 @@ export const backend = {
   async getSettings() {
     const snapshot = await executor.loadAppState();
     return {
-      output: snapshot.domain?.output || {},
-      modify: snapshot.domain?.modify || {},
-      app: snapshot.domain?.app || {},
+      output: snapshot.domain?.output || defaultSnapshot.domain.output,
+      modify: snapshot.domain?.modify || defaultSnapshot.domain.modify,
+      app: snapshot.domain?.app || defaultSnapshot.domain.app,
     };
   },
 
   saveSettings(payload: { output: any; modify: any; app: any }) {
-    // Transition: this is now handled by appState.buildSnapshot + executor.saveAppState
-    // Kept for backward compat with existing cards
-    return Promise.resolve();
+    const snapshot: AppStateSnapshot = {
+      ...defaultSnapshot,
+      domain: {
+        output: payload.output || defaultSnapshot.domain.output,
+        modify: payload.modify || defaultSnapshot.domain.modify,
+        app: payload.app || defaultSnapshot.domain.app,
+      },
+      executor: executor.name,
+    };
+    return executor.saveAppState(snapshot);
   },
 
   async selectImageFiles(): Promise<string[]> {

@@ -333,6 +333,12 @@ export function getCustomThemes(): CustomThemeConfig[] {
   }
 }
 
+export function setCustomThemes(themes: CustomThemeConfig[]): void {
+  try {
+    localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(themes));
+  } catch {}
+}
+
 export function saveCustomTheme(theme: CustomThemeConfig): void {
   const themes = getCustomThemes();
   const idx = themes.findIndex((t) => t.name === theme.name);
@@ -341,16 +347,12 @@ export function saveCustomTheme(theme: CustomThemeConfig): void {
   } else {
     themes.push(theme);
   }
-  try {
-    localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(themes));
-  } catch {}
+  setCustomThemes(themes);
 }
 
 export function deleteCustomTheme(name: string): void {
   const themes = getCustomThemes().filter((t) => t.name !== name);
-  try {
-    localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(themes));
-  } catch {}
+  setCustomThemes(themes);
 }
 
 // --- Apply Theme ---

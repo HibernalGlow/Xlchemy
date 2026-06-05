@@ -75,23 +75,58 @@ func TestGetTooltips(t *testing.T) {
 
 // TestSettingsPersistence tests save/load settings
 func TestSettingsPersistence(t *testing.T) {
+	previousConfigLocation := ConfigLocation
+	ConfigLocation = t.TempDir()
+	t.Cleanup(func() {
+		ConfigLocation = previousConfigLocation
+	})
+
 	svc := NewAppService()
 	
 	// Test saving settings
 	testSettings := map[string]interface{}{
-		"output": map[string]interface{}{
-			"format":   "JPEG XL",
-			"quality":  80,
-			"lossless": false,
-		},
-		"modify": map[string]interface{}{
-			"downscaling": map[string]interface{}{
-				"enabled": false,
+		"domain": map[string]interface{}{
+			"output": map[string]interface{}{
+				"format":   "JPEG XL",
+				"quality":  80,
+				"lossless": false,
+			},
+			"modify": map[string]interface{}{
+				"downscaling": map[string]interface{}{
+					"enabled": false,
+				},
+			},
+			"app": map[string]interface{}{
+				"theme": "system",
 			},
 		},
-		"app": map[string]interface{}{
-			"theme": "system",
+		"layout": map[string]interface{}{
+			"laneOrder":       []string{"input", "settings"},
+			"collapsedLanes":  []string{"settings"},
+			"hiddenLanes":     []string{},
+			"hiddenCards":     []string{},
+			"laneLabels":      map[string]interface{}{"input": "Input", "settings": "Settings"},
+			"laneWidths":      map[string]interface{}{"input": 24},
+			"cardLayout":      map[string]interface{}{"input": []string{"input-files"}},
+			"singleLaneMode":  false,
+			"activeLaneId":    "input",
+			"progressCardConfig": map[string]interface{}{
+				"showCounter": true,
+			},
 		},
+		"background": map[string]interface{}{
+			"mode":     "dot-grid",
+			"imageUrl": "",
+			"opacity":  40,
+			"blur":     0,
+		},
+		"theme": map[string]interface{}{
+			"name":         "Miku",
+			"mode":         "system",
+			"customThemes": []interface{}{},
+		},
+		"lang":     "zh",
+		"executor": "wails",
 	}
 	
 	settingsJSON, _ := json.Marshal(testSettings)
@@ -106,15 +141,37 @@ func TestSettingsPersistence(t *testing.T) {
 	if err := json.Unmarshal([]byte(loaded), &loadedData); err != nil {
 		t.Fatalf("Failed to parse loaded settings: %v", err)
 	}
-	
-	if _, ok := loadedData["output"]; !ok {
-		t.Error("Loaded settings missing output section")
+
+	domain, ok := loadedData["domain"].(map[string]interface{})
+	if !ok {
+		t.Fatal("Loaded settings missing domain section")
 	}
-	if _, ok := loadedData["modify"]; !ok {
-		t.Error("Loaded settings missing modify section")
+	if _, ok := domain["output"]; !ok {
+		t.Error("Loaded settings missing domain.output section")
 	}
-	if _, ok := loadedData["app"]; !ok {
-		t.Error("Loaded settings missing app section")
+	if _, ok := domain["modify"]; !ok {
+		t.Error("Loaded settings missing domain.modify section")
+	}
+	if _, ok := domain["app"]; !ok {
+		t.Error("Loaded settings missing domain.app section")
+	}
+	if _, ok := loadedData["layout"]; !ok {
+		t.Error("Loaded settings missing layout section")
+	}
+	if _, ok := loadedData["background"]; !ok {
+		t.Error("Loaded settings missing background section")
+	}
+
+	snapshotPath := filepath.Join(ConfigLocation, "app-state.json")
+	if _, err := os.Stat(snapshotPath); err != nil {
+		t.Fatalf("Expected app-state snapshot to be written: %v", err)
+	}
+
+	for _, name := range []string{"OutputTab.json", "ModifyTab.json", "SettingsTab.json"} {
+		path := filepath.Join(ConfigLocation, name)
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("Expected compatibility config file %s to be written: %v", name, err)
+		}
 	}
 }
 

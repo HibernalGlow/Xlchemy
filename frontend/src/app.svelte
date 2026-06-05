@@ -14,7 +14,6 @@
   import { appState } from '$lib/state/app.svelte';
   import { canvasState } from '$lib/state/canvas.svelte';
   import { initConversionEvents } from '$lib/state/conversion.svelte';
-  import { getExecutor } from '$lib/executor';
   import type { LaneId } from '$lib/cards/definitions';
 
   import { _ } from 'svelte-i18n';
@@ -78,16 +77,6 @@
       cleanupFileDrops?.();
       cleanupTheme?.();
     };
-  });
-
-  $effect(() => {
-    if (!appState.isInitialized) return;
-    const out = appState.outputSettings;
-    const mod = appState.modifySettings;
-    const app = appState.appSettings;
-    if (Object.keys(out).length > 0 || Object.keys(mod).length > 0 || Object.keys(app).length > 0) {
-      appState.saveCurrentSettings().catch((e: any) => console.error('saveAppState error:', e));
-    }
   });
 </script>
 

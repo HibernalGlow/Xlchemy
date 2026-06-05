@@ -72,23 +72,11 @@ export class WailsExecutor implements BackendExecutor {
 
   async loadAppState(): Promise<Partial<AppStateSnapshot>> {
     const raw = await callGo('GetSettings');
-    const parsed = JSON.parse(raw);
-    return {
-      domain: {
-        output: parsed.output || {},
-        modify: parsed.modify || {},
-        app: parsed.app || {},
-      },
-    };
+    return JSON.parse(raw);
   }
 
   async saveAppState(snapshot: AppStateSnapshot): Promise<void> {
-    const payload = {
-      output: snapshot.domain.output,
-      modify: snapshot.domain.modify,
-      app: snapshot.domain.app,
-    };
-    return callGo('SaveSettings', JSON.stringify(payload));
+    return callGo('SaveSettings', JSON.stringify(snapshot));
   }
 
   async listPresets(): Promise<string[]> {

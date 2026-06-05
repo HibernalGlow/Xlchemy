@@ -4,6 +4,7 @@ import type { BackendExecutor } from '$lib/executor';
 
 const storage = new Map<string, string>();
 const styleMap = new Map<string, string>();
+const attributeMap = new Map<string, string>();
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: {
@@ -23,6 +24,9 @@ Object.defineProperty(globalThis, 'localStorage', {
 
 Object.defineProperty(globalThis, 'document', {
   value: {
+    body: {
+      appendChild: vi.fn(),
+    },
     documentElement: {
       style: {
         setProperty: (key: string, value: string) => {
@@ -33,6 +37,10 @@ Object.defineProperty(globalThis, 'document', {
         },
       },
       dataset: {},
+      setAttribute: (key: string, value: string) => {
+        attributeMap.set(key, value);
+      },
+      getAttribute: (key: string) => attributeMap.get(key) ?? null,
       classList: {
         add: vi.fn(),
         remove: vi.fn(),
@@ -97,6 +105,46 @@ class MockExecutor implements BackendExecutor {
         modify: { misc: { keep_metadata: 'ExifTool - Preserve' } },
         app: { theme: 'Miku', lane_max_width: 52 },
       } as any,
+      layout: {
+        laneOrder: ['input', 'settings'],
+        laneLabels: { input: 'Input', settings: 'Settings' },
+        laneWidths: { settings: 36 },
+        cardLayout: { input: ['input-files'], settings: ['settings-general'] },
+        singleLaneMode: true,
+        activeLaneId: 'settings',
+        progressCardConfig: {
+          showCounter: true,
+          showSummary: true,
+          showEta: false,
+          showFormat: true,
+          showEncoder: false,
+          showRawLines: false,
+          showCurrentFile: true,
+          showSizeChange: true,
+        },
+        collapsedLanes: ['settings'],
+        hiddenLanes: [],
+        hiddenCards: ['about-info'],
+      },
+      background: {
+        mode: 'image',
+        imageUrl: 'file:///mock/bg.png',
+        opacity: 55,
+        blur: 6,
+      },
+      theme: {
+        name: 'Miku',
+        mode: 'dark',
+        customThemes: [{
+          name: 'Custom A',
+          description: 'test',
+          colors: {
+            light: { primary: 'oklch(0.5 0.1 200)' },
+            dark: { primary: 'oklch(0.4 0.1 200)' },
+          },
+        }],
+      },
+      lang: 'zh',
     };
   }
 
@@ -139,6 +187,12 @@ describe('AppState import/save', async () => {
     expect(state.isInitialized).toBe(true);
     expect(state.outputSettings.format).toBe('AVIF');
     expect(state.outputSettings.quality).toBe(72);
+    expect(state.singleLaneMode).toBe(true);
+    expect(state.activeLaneId).toBe('settings');
+    expect(state.collapsedLanes.has('settings')).toBe(true);
+    expect(state.backgroundSettings.mode).toBe('image');
+    expect(state.backgroundSettings.imageUrl).toBe('file:///mock/bg.png');
+    expect(state.currentLang).toBe('zh');
     expect(executor.savedSnapshots).toHaveLength(0);
   });
 
@@ -186,5 +240,21 @@ describe('AppState import/save', async () => {
     expect(state.activeLaneId).toBe('settings');
     expect(executor.savedSnapshots).toHaveLength(1);
     expect(executor.savedSnapshots[0].domain.output.format).toBe('JPEG');
+  });
+
+  it('queues save for layout and background changes after init', async () => {
+    const state = new AppStateCtor();
+    const executor = (state as any).executor as MockExecutor;
+    await state.init();
+
+    state.toggleLaneCollapsed('input');
+    state.updateBackground({ opacity: 70 });
+
+    await new Promise((resolve) => setTimeout(resolve, 220));
+
+    expect(executor.savedSnapshots.length).toBeGreaterThanOrEqual(1);
+    const lastSnapshot = executor.savedSnapshots.at(-1)!;
+    expect(lastSnapshot.layout.collapsedLanes).toContain('input');
+    expect(lastSnapshot.background.opacity).toBe(70);
   });
 });

@@ -140,6 +140,7 @@
     <div
       bind:this={panelEl}
       use:portal
+      role="presentation"
       class="overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl"
       style={panelStyle}
       onmouseleave={() => (hoveredValue = null)}
