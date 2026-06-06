@@ -88,6 +88,7 @@ export interface AppSettings {
   avif_bit_depth: string;
   avif_aom_iq_tune: boolean;
   processing_order: string;
+  lane_auto_fit: boolean;
 }
 
 export interface ConversionSpec {

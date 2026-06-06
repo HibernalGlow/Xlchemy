@@ -382,6 +382,15 @@ function applyColorVariant(colors: ThemeColorsVariant): void {
     'sidebar-background': ['--bg-3'],
   };
 
+  // Extended token mappings: derive from base tokens if not explicitly set
+  const extendedMappings: Record<string, string> = {
+    'card-bg': '--card',
+    'card-border': '--border',
+    'surface-1': '--card',
+    'surface-2': '--background',
+    'surface-3': '--sidebar-background',
+  };
+
   for (const [key, value] of Object.entries(colors)) {
     if (typeof value === 'string') {
       root.style.setProperty(`--${key}`, value);
@@ -406,6 +415,20 @@ function applyColorVariant(colors: ThemeColorsVariant): void {
         }
       }
     }
+  }
+
+  // Set extended tokens from base tokens
+  for (const [extToken, baseVar] of Object.entries(extendedMappings)) {
+    if (!colors[extToken]) {
+      const baseValue = colors[baseVar.replace(/^--/, '')] || getComputedStyle(root).getPropertyValue(baseVar).trim();
+      if (baseValue) root.style.setProperty(`--${extToken}`, baseValue);
+    }
+  }
+
+  // Generate chart colors from primary if not explicitly set
+  if (!colors['chart-1']) {
+    const primary = colors['primary'] || getComputedStyle(root).getPropertyValue('--primary').trim();
+    root.style.setProperty('--chart-1', primary);
   }
 }
 

@@ -16,6 +16,8 @@ import SettingsConversionCard from '$lib/cards/SettingsConversionCard.svelte';
 import SettingsExifToolCard from '$lib/cards/SettingsExifToolCard.svelte';
 import SettingsFrontendCard from '$lib/cards/SettingsFrontendCard.svelte';
 import SettingsGeneralCard from '$lib/cards/SettingsGeneralCard.svelte';
+import ConversionLogCard from '$lib/cards/ConversionLogCard.svelte';
+import SystemStatusCard from '$lib/cards/SystemStatusCard.svelte';
 
 export const cardRegistry: Record<CardId, Component<{ laneId: LaneId }>> = {
   'input-files': InputFilesCard,
@@ -34,4 +36,6 @@ export const cardRegistry: Record<CardId, Component<{ laneId: LaneId }>> = {
   'settings-frontend': SettingsFrontendCard,
   'layout-manager': LayoutManagerCard,
   'about-info': AboutInfoCard,
+  'conversion-log': ConversionLogCard,
+  'system-status': SystemStatusCard,
 };

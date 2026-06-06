@@ -138,6 +138,7 @@ describe('WailsExecutor', () => {
           avif_bit_depth: 'Auto',
           avif_aom_iq_tune: false,
           processing_order: 'Original',
+                    lane_auto_fit: false,
         },
       },
     };
@@ -257,6 +258,7 @@ describe('WailsExecutor', () => {
           avif_bit_depth: 'Auto',
           avif_aom_iq_tune: false,
           processing_order: 'Original',
+                    lane_auto_fit: false,
         },
       },
     };
@@ -373,6 +375,7 @@ describe('WailsExecutor', () => {
           avif_bit_depth: 'Auto',
           avif_aom_iq_tune: false,
           processing_order: 'Original',
+                    lane_auto_fit: false,
         },
       },
       layout: {

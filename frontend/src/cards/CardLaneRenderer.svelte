@@ -15,6 +15,8 @@
   import SettingsGeneralCard from '$lib/cards/SettingsGeneralCard.svelte';
   import SettingsFrontendCard from '$lib/cards/SettingsFrontendCard.svelte';
   import LayoutManagerCard from '$lib/cards/LayoutManagerCard.svelte';
+  import ConversionLogCard from '$lib/cards/ConversionLogCard.svelte';
+  import SystemStatusCard from '$lib/cards/SystemStatusCard.svelte';
   import { appState } from '$lib/state/app.svelte';
   import type { CardId, LaneId } from '$lib/cards/definitions';
 
@@ -65,6 +67,10 @@
       <AboutInfoCard {laneId} />
     {:else if cardId === 'layout-manager'}
       <LayoutManagerCard {laneId} />
+    {:else if cardId === 'conversion-log'}
+      <ConversionLogCard {laneId} />
+    {:else if cardId === 'system-status'}
+      <SystemStatusCard {laneId} />
     {/if}
   {/each}
 </div>

@@ -94,6 +94,23 @@
     --sidebar-accent-foreground: var(--text-1);
     --sidebar-border: oklch(0.28 0.005 60);
     --sidebar-ring: var(--fill-pop-bg);
+
+    /* Chart palette (5-color scale) */
+    --chart-1: oklch(0.72 0.14 180);
+    --chart-2: oklch(0.6013 0.22 348.53);
+    --chart-3: oklch(0.75 0.15 85);
+    --chart-4: oklch(0.65 0.18 265);
+    --chart-5: oklch(0.70 0.16 140);
+
+    /* Extended semantic tokens */
+    --success: oklch(0.72 0.16 145);
+    --warning: oklch(0.80 0.14 85);
+    --info: oklch(0.72 0.14 240);
+    --card-bg: var(--bg-1);
+    --card-border: var(--border-2);
+    --surface-1: var(--bg-1);
+    --surface-2: var(--bg-2);
+    --surface-3: var(--bg-3);
   }
 
   /* ─── Light theme ─── */
@@ -187,6 +204,23 @@
     --sidebar-accent-foreground: var(--text-1);
     --sidebar-border: oklch(0.28 0.005 60);
     --sidebar-ring: var(--fill-pop-bg);
+
+    /* Chart palette (dark) */
+    --chart-1: oklch(0.72 0.14 180);
+    --chart-2: oklch(0.6013 0.22 348.53);
+    --chart-3: oklch(0.75 0.15 85);
+    --chart-4: oklch(0.65 0.18 265);
+    --chart-5: oklch(0.70 0.16 140);
+
+    /* Extended semantic tokens (dark) */
+    --success: oklch(0.72 0.16 145);
+    --warning: oklch(0.80 0.14 85);
+    --info: oklch(0.72 0.14 240);
+    --card-bg: var(--bg-1);
+    --card-border: var(--border-2);
+    --surface-1: var(--bg-1);
+    --surface-2: var(--bg-2);
+    --surface-3: var(--bg-3);
   }
 }
 
@@ -265,6 +299,23 @@
     --sidebar-accent-foreground: var(--text-1);
     --sidebar-border: oklch(0.80 0.003 60);
     --sidebar-ring: var(--fill-pop-bg);
+
+    /* Chart palette (light) */
+    --chart-1: oklch(0.60 0.14 180);
+    --chart-2: oklch(0.55 0.20 348.53);
+    --chart-3: oklch(0.70 0.15 85);
+    --chart-4: oklch(0.55 0.18 265);
+    --chart-5: oklch(0.60 0.16 140);
+
+    /* Extended semantic tokens (light) */
+    --success: oklch(0.55 0.16 145);
+    --warning: oklch(0.70 0.14 85);
+    --info: oklch(0.55 0.14 240);
+    --card-bg: var(--bg-1);
+    --card-border: var(--border-2);
+    --surface-1: var(--bg-1);
+    --surface-2: var(--bg-2);
+    --surface-3: var(--bg-3);
   }
 }
 
@@ -621,6 +672,16 @@
 .lane--dragging {
   opacity: 0.4;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.lane--fill {
+  /* handled inline */
+}
+
+.lane--auto-fit {
+  flex-shrink: 1;
+  flex-grow: 1;
+  flex-basis: 0;
 }
 
 .lane--drag-over {

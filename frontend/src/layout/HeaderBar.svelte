@@ -2,7 +2,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
-  import { Palette, ChevronDown } from '@lucide/svelte';
+  import { Palette, ChevronDown, Columns3 } from '@lucide/svelte';
   import { _ } from 'svelte-i18n';
   import type { BackgroundSettings } from '$lib/utils/backgroundSettings';
 
@@ -11,14 +11,14 @@
     currentTheme?: string;
     backgroundSettings?: BackgroundSettings;
     isConverting?: boolean;
-    onConvert?: () => void;
-    onCancel?: () => void;
+    laneAutoFit?: boolean;
     singleLaneMode?: boolean;
-    onToggleSingleLaneMode?: () => void;
     onCreateLane?: () => void;
     onThemeChange?: (name: string) => void;
     onThemeModeChange?: (mode: 'light' | 'dark' | 'system') => void;
     onBackgroundChange?: (partial: Partial<BackgroundSettings>) => void;
+    onToggleLaneAutoFit?: () => void;
+    onToggleSingleLaneMode?: () => void;
   }
 
   let {
@@ -26,14 +26,14 @@
     currentTheme = 'Miku',
     backgroundSettings,
     isConverting = false,
-    onConvert,
-    onCancel,
+    laneAutoFit = false,
     singleLaneMode = false,
-    onToggleSingleLaneMode,
     onCreateLane,
     onThemeChange,
     onThemeModeChange,
     onBackgroundChange,
+    onToggleLaneAutoFit,
+    onToggleSingleLaneMode,
   }: Props = $props();
 
   let showThemePopover = $state(false);
@@ -73,13 +73,12 @@
   <div class="chrome-header__center"></div>
 
   <div class="chrome-header__right">
-    <Button kind="outline" variant={singleLaneMode ? 'pop' : 'neutral'} size="sm" onclick={onToggleSingleLaneMode}>{singleLaneMode ? 'Single lane' : 'Multi lane'}</Button>
+    <Button kind="outline" variant={laneAutoFit ? 'pop' : 'neutral'} size="sm" onclick={onToggleLaneAutoFit} title="Auto-fit lane widths">
+      <Columns3 class="h-3.5 w-3.5 mr-1" />
+      Auto-fit
+    </Button>
+    <Button kind="outline" variant={singleLaneMode ? 'pop' : 'neutral'} size="sm" onclick={onToggleSingleLaneMode}>{singleLaneMode ? 'Single' : 'Multi'}</Button>
     <Button kind="outline" variant="neutral" size="sm" onclick={onCreateLane}>+ Lane</Button>
-    {#if isConverting}
-      <Button kind="outline" variant="neutral" size="sm" onclick={onCancel}>{$_('dialog.cancel')}</Button>
-    {:else}
-      <Button kind="solid" variant="pop" size="sm" onclick={onConvert}>{$_('input.convert')}</Button>
-    {/if}
 
     <!-- Theme button with popover -->
     <div class="theme-popover-anchor">

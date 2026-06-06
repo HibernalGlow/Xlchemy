@@ -94,6 +94,7 @@ export function normalizeAppSettings(raw: Partial<AppSettings>): AppSettings {
     avif_bit_depth: raw.avif_bit_depth ?? DEFAULT_APP_SETTINGS.avif_bit_depth,
     avif_aom_iq_tune: raw.avif_aom_iq_tune ?? DEFAULT_APP_SETTINGS.avif_aom_iq_tune,
     processing_order: raw.processing_order ?? DEFAULT_APP_SETTINGS.processing_order,
+    lane_auto_fit: raw.lane_auto_fit ?? DEFAULT_APP_SETTINGS.lane_auto_fit,
   };
 }
 

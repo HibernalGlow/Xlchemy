@@ -13,6 +13,8 @@
     Eraser,
     Eye,
     EyeOff,
+    Play,
+    Square,
   } from '@lucide/svelte';
   import {
     getCoreRowModel,
@@ -735,5 +737,18 @@
         </div>
       {/if}
     </div>
+
+    <!-- Convert / Cancel button -->
+    {#if appState.isConverting}
+      <Button kind="outline" variant="neutral" size="sm" class="w-full" onclick={() => appState.cancelConversion()}>
+        <Square class="h-3.5 w-3.5 mr-1.5" />
+        {$_('dialog.cancel')}
+      </Button>
+    {:else}
+      <Button kind="solid" variant="pop" size="sm" class="w-full" onclick={() => appState.startConversion()} disabled={appState.fileItems.length === 0}>
+        <Play class="h-3.5 w-3.5 mr-1.5" />
+        {$_('input.convert')} ({appState.fileItems.length})
+      </Button>
+    {/if}
   </div>
 </LaneCard>

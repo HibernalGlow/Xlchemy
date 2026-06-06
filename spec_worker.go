@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 )
 
 type specConversionResult struct {
@@ -402,16 +401,7 @@ func samePath(a, b string) bool {
 	return cleanA == cleanB
 }
 
-func sourceTimes(path string) (time.Time, time.Time) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return time.Time{}, time.Time{}
-	}
-	// Python timestamps.getTimestamps captures st_atime_ns and st_mtime_ns separately.
-	// Go's os.Stat only exposes ModTime directly; access time requires platform-specific code.
-	// Use ModTime as fallback for access time (matches practical behavior).
-	return info.ModTime(), info.ModTime()
-}
+// sourceTimes is defined in spec_worker_windows.go / spec_worker_unix.go
 
 func canCopyOriginalLarger(format string) bool {
 	switch format {

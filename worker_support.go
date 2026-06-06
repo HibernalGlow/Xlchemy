@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	allowedInputCJXL         = append([]string{}, append(JPEGAliases, "png", "apng", "gif", "jxl")...)
-	allowedInputCJPEGLI      = append([]string{}, append(JPEGAliases, "png", "jxl")...)
-	allowedInputImageMagick  = append([]string{}, append(JPEGAliases, "png", "gif", "webp", "jp2", "bmp", "ico", "tiff", "tif")...)
-	allowedInputAvifEnc      = append([]string{}, append(JPEGAliases, "png")...)
+	allowedInputCJXL        = append([]string{}, append(JPEGAliases, "png", "apng", "gif", "jxl")...)
+	allowedInputCJPEGLI     = append([]string{}, append(JPEGAliases, "png", "jxl")...)
+	allowedInputImageMagick = append([]string{}, append(JPEGAliases, "png", "gif", "webp", "jp2", "bmp", "ico", "tiff", "tif")...)
+	allowedInputAvifEnc     = append([]string{}, append(JPEGAliases, "png")...)
 )
 
 func supportsInput(ext string, allowed []string) bool {
@@ -78,12 +78,7 @@ func generateProxy(ctx context.Context, srcPath, srcExt, outputDir string) (stri
 	return proxyPath, nil
 }
 
-func removeQuiet(path string) {
-	if path == "" {
-		return
-	}
-	_ = os.Remove(path)
-}
+// removeQuiet is defined in spec_worker_windows.go / spec_worker_unix.go
 
 func buildFinalOutputPath(outputDir, fileName, fileExt string) string {
 	return filepath.Join(outputDir, fmt.Sprintf("%s.%s", fileName, fileExt))

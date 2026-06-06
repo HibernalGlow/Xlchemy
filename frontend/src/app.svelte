@@ -98,9 +98,9 @@
     currentTheme={appState.appSettings.theme || 'Miku'}
     backgroundSettings={appState.backgroundSettings}
     isConverting={appState.isConverting}
-    onConvert={() => appState.startConversion()}
-    onCancel={() => appState.cancelConversion()}
+    laneAutoFit={appState.appSettings.lane_auto_fit}
     singleLaneMode={appState.singleLaneMode}
+    onToggleLaneAutoFit={() => appState.updateApp('lane_auto_fit', !appState.appSettings.lane_auto_fit)}
     onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
     onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
     onThemeChange={(name) => appState.changeTheme(name)}
@@ -133,6 +133,8 @@
               onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
               width={appState.singleLaneMode ? 28 : appState.laneWidth(lane.id)}
               maxWidth={appState.appSettings.lane_max_width || 44}
+              autoFit={appState.appSettings.lane_auto_fit}
+              laneCount={visibleLanes().length}
               onResizeEnd={(nextWidth) => appState.setLaneWidth(lane.id, nextWidth)}
               dragOverId={canvasState.dragOverId}
               onRename={() => appState.renameLane(lane.id, prompt('Lane name', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}

@@ -121,6 +121,19 @@ export class AppState {
   exceptions = $state<{ id: string; msg: string; path: string }[]>([]);
   showExceptions = $state<boolean>(false);
 
+  // Conversion timing for ETA
+  conversionStartTime = $state<number>(0);
+  conversionElapsed = $state<number>(0);
+
+  // Log entries
+  logEntries = $state<{ time: string; level: 'info' | 'warn' | 'error' | 'success'; message: string }[]>([]);
+
+  addLog(level: 'info' | 'warn' | 'error' | 'success', message: string) {
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    this.logEntries = [...this.logEntries.slice(-499), { time, level, message }];
+  }
+
   excludedFormats = $state<Set<string>>(new Set(DEFAULT_EXCLUDED_FORMATS));
 
   showImportDialog = $state<boolean>(false);

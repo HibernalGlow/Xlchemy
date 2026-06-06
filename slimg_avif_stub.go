@@ -2,5 +2,5 @@
 
 package main
 
-// isSlimgAvailable is defined in slimg_dll.go
-// This file is kept for compatibility with the build system
+// When built without the slimg CGO tag, the DLL-based implementation
+// in slimg_dll.go provides convertAVIFWithSlimg and isSlimgAvailable.

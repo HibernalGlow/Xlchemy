@@ -4,6 +4,7 @@ import type { DomainEvent } from '$lib/domain';
 
 export function initConversionEvents() {
   const executor = getExecutor();
+  let elapsedTimer: ReturnType<typeof setInterval> | null = null;
 
   const unsubscribe = executor.subscribeEvents((event: DomainEvent) => {
     switch (event.type) {
@@ -11,6 +12,16 @@ export function initConversionEvents() {
         appState.isConverting = true;
         appState.exceptions = [];
         appState.progress = { completed: 0, total: event.totalTasks, line1: 'Starting...', line2: '' };
+        appState.conversionStartTime = Date.now();
+        appState.conversionElapsed = 0;
+        appState.addLog('info', `Conversion started: ${event.totalTasks} tasks`);
+        // Start elapsed timer
+        if (elapsedTimer) clearInterval(elapsedTimer);
+        elapsedTimer = setInterval(() => {
+          if (appState.isConverting) {
+            appState.conversionElapsed = Date.now() - appState.conversionStartTime;
+          }
+        }, 500);
         break;
 
       case 'task_progress':
@@ -31,10 +42,14 @@ export function initConversionEvents() {
           ...appState.exceptions,
           { id: event.errorId, msg: event.errorMsg, path: event.inputPath },
         ];
+        appState.addLog('error', `[${event.errorId}] ${event.errorMsg}`);
         break;
 
       case 'run_finished':
         appState.isConverting = false;
+        appState.conversionElapsed = Date.now() - appState.conversionStartTime;
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+        appState.addLog('success', `Conversion finished: ${event.completedCount} succeeded, ${event.failedCount} failed`);
         if (appState.exceptions.length > 0) {
           appState.showExceptions = true;
         }
@@ -42,6 +57,8 @@ export function initConversionEvents() {
 
       case 'run_canceled':
         appState.isConverting = false;
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+        appState.addLog('warn', 'Conversion canceled');
         break;
 
       case 'files_dropped':
@@ -50,5 +67,8 @@ export function initConversionEvents() {
     }
   });
 
-  return unsubscribe;
+  return () => {
+    unsubscribe();
+    if (elapsedTimer) clearInterval(elapsedTimer);
+  };
 }

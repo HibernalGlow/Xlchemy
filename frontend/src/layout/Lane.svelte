@@ -14,6 +14,8 @@
     width: number;
     maxWidth?: number;
     fill?: boolean;
+    autoFit?: boolean;
+    laneCount?: number;
     dragOverId?: string | null;
     onRename?: () => void;
     onDelete?: () => void;
@@ -31,6 +33,8 @@
     width,
     maxWidth = 44,
     fill = false,
+    autoFit = false,
+    laneCount = 1,
     dragOverId = null,
     onRename,
     onDelete,
@@ -87,9 +91,9 @@
     role="group"
     aria-label={title}
     bind:this={laneEl}
-    class={cn('lane', fill && 'lane--fill', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
+    class={cn('lane', fill && 'lane--fill', autoFit && !fill && 'lane--auto-fit', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
     data-lane-id={id}
-    style={fill ? 'width:100%;min-width:0;flex:1;' : `width:${liveWidth}rem;min-width:14rem;max-width:${maxWidth}rem;`}
+    style={fill ? 'width:100%;min-width:0;flex:1;' : autoFit ? `min-width:14rem;max-width:${maxWidth}rem;flex:1;` : `width:${liveWidth}rem;min-width:14rem;max-width:${maxWidth}rem;`}
   >
     <div class="stack-view">
       <LaneDragHandle
@@ -107,7 +111,7 @@
       <div class="stack-content">
         {@render children?.()}
       </div>
-      {#if !fill}
+      {#if !fill && !autoFit}
         <LaneResizer onResize={handleResize} onResizeEnd={handleResizeEnd} />
       {/if}
     </div>

@@ -16,7 +16,9 @@ export type CardId =
   | 'settings-advanced'
   | 'settings-frontend'
   | 'layout-manager'
-  | 'about-info';
+  | 'about-info'
+  | 'conversion-log'
+  | 'system-status';
 
 export type CardLayout = Record<LaneId, CardId[]>;
 
@@ -25,7 +27,7 @@ export const DEFAULT_CARD_LAYOUT: CardLayout = {
   output: ['output-format', 'output-conversion', 'output-save'],
   modify: ['modify-downscaling', 'modify-misc'],
   settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend', 'layout-manager'],
-  about: ['about-info'],
+  about: ['about-info', 'conversion-log', 'system-status'],
 };
 
 export const ALL_CARD_IDS: CardId[] = Object.values(DEFAULT_CARD_LAYOUT).flat();

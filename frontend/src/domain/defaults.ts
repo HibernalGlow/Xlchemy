@@ -87,6 +87,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   avif_bit_depth: 'Auto',
   avif_aom_iq_tune: false,
   processing_order: 'Original',
+  lane_auto_fit: false,
 };
 
 export const DEFAULT_PROGRESS_CARD_CONFIG: ProgressCardConfig = {
@@ -122,7 +123,7 @@ export const DEFAULT_CARD_LAYOUT: Record<string, string[]> = {
   output: ['output-format', 'output-conversion', 'output-save'],
   modify: ['modify-downscaling', 'modify-misc'],
   settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend', 'layout-manager'],
-  about: ['about-info'],
+  about: ['about-info', 'conversion-log', 'system-status'],
 };
 
 export function createDefaultSnapshot(): AppStateSnapshot {
