@@ -39,6 +39,7 @@ func (pm *ProcessManager) TerminateAll() {
 	pm.mu.Lock()
 	procs := make([]*exec.Cmd, len(pm.processes))
 	copy(procs, pm.processes)
+	pm.processes = nil
 	pm.mu.Unlock()
 
 	for _, p := range procs {

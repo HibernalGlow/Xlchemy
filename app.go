@@ -117,7 +117,7 @@ func (a *AppService) AddFiles(paths []string) string {
 	var items []FileItem
 	seen := make(map[string]struct{})
 
-	addFile := func(path string, info os.FileInfo) {
+	addFile := func(path string, info os.FileInfo, anchorPath string) {
 		if _, ok := seen[path]; ok {
 			return
 		}
@@ -131,6 +131,7 @@ func (a *AppService) AddFiles(paths []string) string {
 			Ext:     ext,
 			Dir:     filepath.Dir(path),
 			Size:    info.Size(),
+			AnchorPath: anchorPath,
 		})
 		seen[path] = struct{}{}
 	}
@@ -141,16 +142,17 @@ func (a *AppService) AddFiles(paths []string) string {
 			continue
 		}
 		if info.IsDir() {
+			anchorPath := p
 			_ = filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
 				if err != nil || info.IsDir() {
 					return nil
 				}
-				addFile(path, info)
+				addFile(path, info, anchorPath)
 				return nil
 			})
 			continue
 		}
-		addFile(p, info)
+		addFile(p, info, filepath.Dir(p))
 	}
 	b, _ := json.Marshal(items)
 	return string(b)
@@ -175,6 +177,7 @@ func (a *AppService) ScanDirectory(dirPath string) string {
 				Ext:     ext,
 				Dir:     filepath.Dir(path),
 				Size:    info.Size(),
+				AnchorPath: dirPath,
 			})
 			seen[path] = struct{}{}
 		}
@@ -245,6 +248,7 @@ func (a *AppService) RunConversionPlan(planJSON string, threadCount int) error {
 	// Reset state
 	GlobalTaskStatus.Reset()
 	GlobalProcessManager.Clear()
+	GlobalUniquePathStore.Clear()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	a.mu.Lock()
@@ -263,7 +267,11 @@ func (a *AppService) RunConversionPlan(planJSON string, threadCount int) error {
 			a.mu.Unlock()
 		}()
 
-		runExecutionPlan(ctx, plan, threadCount)
+		if plan.Spec != nil {
+			runConversion(ctx, plan.Items, plan.Spec.Output, plan.Spec.Modify, plan.Spec.App, threadCount)
+		} else {
+			runExecutionPlan(ctx, plan, threadCount)
+		}
 
 		if GlobalTaskStatus.WasCanceled() {
 			App.Event.Emit("conversion:canceled", struct{}{})

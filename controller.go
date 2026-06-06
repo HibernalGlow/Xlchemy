@@ -76,7 +76,7 @@ func runConversion(ctx context.Context, items []FileItem, output OutputSettings,
 			}
 
 			// Run the worker for this file
-			srcSize, dstSize, skipped, exc := runWorker(ctx, idx, fi, output, modify, settings, adjustedThreads)
+			srcSize, dstSize, skipped, exc := runWorkerSpec(ctx, idx, fi, output, modify, settings, adjustedThreads)
 
 			if exc != nil {
 				App.Event.Emit("conversion:exception", ExceptionEvent{
@@ -628,7 +628,15 @@ func getMetadataArgs(encoderPath string, mode string, losslessJPEG bool) []strin
 		if encoderPath == CJXlPath && !losslessJPEG {
 			return []string{"-x", "strip=exif", "-x", "strip=xmp", "-x", "strip=jumbf"}
 		}
-		// ImageMagick, avifenc, etc. handle stripping natively
+		if encoderPath == ImageMagickPath {
+			return []string{"-strip"}
+		}
+		if encoderPath == AvifEncPath {
+			return []string{"--ignore-exif", "--ignore-xmp"}
+		}
+		if encoderPath == OxiPNGPath {
+			return []string{"--strip", "safe"}
+		}
 		return nil
 	case "Encoder - Preserve":
 		// Most encoders preserve metadata by default

@@ -30,6 +30,7 @@ type ExecutionPlan struct {
 	Tasks     []ExecutionTask `json:"tasks"`
 	Policies  ResultPolicy    `json:"policies"`
 	Toolchain ToolchainPaths  `json:"toolchain"`
+	Spec      *ExecutionSpec  `json:"spec,omitempty"`
 }
 
 // ResultPolicy defines post-processing decisions.

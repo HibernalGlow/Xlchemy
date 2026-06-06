@@ -27,6 +27,7 @@ type FileItem struct {
 	Ext      string `json:"ext"`
 	Dir      string `json:"dir"`
 	Size     int64  `json:"size"`
+	AnchorPath string `json:"anchorPath,omitempty"`
 }
 
 // OutputSettings from the Output tab.
@@ -81,6 +82,7 @@ type MiscSettings struct {
 // AppSettings from the Settings tab.
 type AppSettings struct {
 	Theme                      string            `json:"theme"`
+	LaneMaxWidth               int               `json:"lane_max_width"`
 	CustomResampling           bool              `json:"custom_resampling"`
 	SortingDisabled            bool              `json:"sorting_disabled"`
 	ExcludedFormats            []string          `json:"excluded_formats"`
@@ -109,6 +111,12 @@ type AppSettings struct {
 	AvifBitDepth              string            `json:"avif_bit_depth"`
 	AvifAOMIQTune             bool              `json:"avif_aom_iq_tune"`
 	ProcessingOrder           string            `json:"processing_order"`
+}
+
+type ExecutionSpec struct {
+	Output OutputSettings `json:"output"`
+	Modify ModifySettings `json:"modify"`
+	App    AppSettings    `json:"app"`
 }
 
 // DefaultOutputSettings returns the default output settings.
