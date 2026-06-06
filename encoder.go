@@ -57,8 +57,8 @@ func (pm *ProcessManager) Clear() {
 
 // TaskStatus tracks cancellation state.
 type TaskStatus struct {
-	mu        sync.Mutex
-	canceled  bool
+	mu       sync.Mutex
+	canceled bool
 }
 
 var GlobalTaskStatus = &TaskStatus{}
@@ -204,14 +204,28 @@ func GetImageRes(ctx context.Context, imagePath string) (int, int, error) {
 }
 
 // IsExifToolAvailable checks if exiftool binary exists and works.
+// Result is cached to avoid repeated checks per file.
+var (
+	exifToolCheckOnce   sync.Once
+	exifToolAvailable   bool
+	exifToolCheckErrMsg string
+)
+
 func IsExifToolAvailable() (bool, string) {
-	if _, err := os.Stat(ExifToolPath); os.IsNotExist(err) {
-		return false, fmt.Sprintf("ExifTool not found at: %s", ExifToolPath)
-	}
-	ctx := context.Background()
-	_, err := RunBinaryOutput(ctx, ExifToolPath, "-ver")
-	if err != nil {
-		return false, fmt.Sprintf("ExifTool failed to run: %s", err)
-	}
-	return true, ""
+	exifToolCheckOnce.Do(func() {
+		if _, err := os.Stat(ExifToolPath); os.IsNotExist(err) {
+			exifToolAvailable = false
+			exifToolCheckErrMsg = fmt.Sprintf("ExifTool not found at: %s", ExifToolPath)
+			return
+		}
+		ctx := context.Background()
+		_, err := RunBinaryOutput(ctx, ExifToolPath, "-ver")
+		if err != nil {
+			exifToolAvailable = false
+			exifToolCheckErrMsg = fmt.Sprintf("ExifTool failed to run: %s", err)
+			return
+		}
+		exifToolAvailable = true
+	})
+	return exifToolAvailable, exifToolCheckErrMsg
 }

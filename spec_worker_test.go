@@ -141,3 +141,55 @@ func TestSamePath(t *testing.T) {
 		t.Fatal("different paths should not match")
 	}
 }
+
+func TestLinearRegression(t *testing.T) {
+	// Simple case: y = 2x + 1
+	// x = [1, 2, 3], y = [3, 5, 7]
+	x := []int64{1, 2, 3}
+	y := []int64{3, 5, 7}
+	slope, intercept := linearRegression(x, y)
+	if slope < 1.99 || slope > 2.01 {
+		t.Fatalf("expected slope ~2.0, got %f", slope)
+	}
+	if intercept < 0.99 || intercept > 1.01 {
+		t.Fatalf("expected intercept ~1.0, got %f", intercept)
+	}
+}
+
+func TestLinearRegressionFlat(t *testing.T) {
+	// All same y values -> slope should be 0
+	x := []int64{100, 200, 300}
+	y := []int64{50, 50, 50}
+	slope, intercept := linearRegression(x, y)
+	if slope != 0 {
+		t.Fatalf("expected slope 0, got %f", slope)
+	}
+	if intercept != 50 {
+		t.Fatalf("expected intercept 50, got %f", intercept)
+	}
+}
+
+func TestExtrapolateScale(t *testing.T) {
+	// Sample: at 66% scale, file is 500KB; at 33% scale, file is 250KB
+	// Linear: file_size = m * percent + b
+	// We want target = 375KB
+	sampleSizes := []int64{500 * 1024, 250 * 1024}
+	samplePercents := []int64{66, 33}
+	target := int64(375 * 1024)
+	scale := extrapolateScale(sampleSizes, samplePercents, target)
+	// Expected: roughly 50% (midpoint between 33 and 66)
+	if scale < 40 || scale > 60 {
+		t.Fatalf("expected scale ~50, got %d", scale)
+	}
+}
+
+func TestExtrapolateScaleLargeTarget(t *testing.T) {
+	// If target is larger than both samples, scale should be > max percent
+	sampleSizes := []int64{100, 50}
+	samplePercents := []int64{66, 33}
+	target := int64(200)
+	scale := extrapolateScale(sampleSizes, samplePercents, target)
+	if scale <= 66 {
+		t.Fatalf("expected scale > 66 for large target, got %d", scale)
+	}
+}

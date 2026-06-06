@@ -12,10 +12,10 @@ import (
 )
 
 type specConversionResult struct {
-	outputPath       string
-	outputExt        string
-	losslessJPEG     bool
-	reportedDstSize  int64
+	outputPath      string
+	outputExt       string
+	losslessJPEG    bool
+	reportedDstSize int64
 }
 
 func runWorkerSpec(ctx context.Context, idx int, fi FileItem, output OutputSettings, modify ModifySettings, settings AppSettings, threads int) (int64, int64, bool, *conversionError) {
@@ -57,7 +57,7 @@ func runWorkerSpec(ctx context.Context, idx int, fi FileItem, output OutputSetti
 		currentExt = "png"
 	}
 
-	if modify.Downscaling.Enabled {
+	if modify.Downscaling.Enabled && modify.Downscaling.Mode != "File Size" {
 		downscaledPath := getUniqueTmpFilePath(outputDir, "png")
 		if err := applyDownscaling(ctx, currentPath, downscaledPath, modify, threads); err != nil {
 			removeQuiet(downscaledPath)
@@ -68,12 +68,37 @@ func runWorkerSpec(ctx context.Context, idx int, fi FileItem, output OutputSetti
 		currentExt = "png"
 	}
 
-	result, err := executeSpecConversion(ctx, fi, currentPath, currentExt, outputDir, output, modify, settings, threads)
-	if err != nil {
-		if result.outputPath != "" {
-			removeQuiet(result.outputPath)
+	// File Size mode: skip regular downscaling AND regular conversion.
+	// The iterative resize-encode loop handles both.
+	isFileSizeMode := modify.Downscaling.Enabled && modify.Downscaling.Mode == "File Size" && output.Format != "Smallest Lossless"
+
+	var result specConversionResult
+	if isFileSizeMode {
+		// Resolve output extension without doing full conversion
+		outputExt, resErr := resolveOutputExtension(ctx, fi, output)
+		if resErr != nil {
+			return srcSize, 0, false, resErr
 		}
-		return srcSize, 0, false, err
+		tmpOutput := getUniqueTmpFilePath(outputDir, outputExt)
+		result = specConversionResult{
+			outputPath:   tmpOutput,
+			outputExt:    outputExt,
+			losslessJPEG: false,
+		}
+		// Iterative File Size downscale: resize-encode-measure loop
+		if fsErr := applyDownscalingToFileSize(ctx, currentPath, tmpOutput, fi, output, modify, settings, outputDir, threads); fsErr != nil {
+			removeQuiet(tmpOutput)
+			return srcSize, 0, false, fsErr
+		}
+	} else {
+		var err *conversionError
+		result, err = executeSpecConversion(ctx, fi, currentPath, currentExt, outputDir, output, modify, settings, threads)
+		if err != nil {
+			if result.outputPath != "" {
+				removeQuiet(result.outputPath)
+			}
+			return srcSize, 0, false, err
+		}
 	}
 
 	if result.outputPath == "" || !fileExists(result.outputPath) {
@@ -85,7 +110,9 @@ func runWorkerSpec(ctx context.Context, idx int, fi FileItem, output OutputSetti
 	}
 
 	if strings.HasPrefix(modify.Misc.KeepMetadata, "ExifTool") && !result.losslessJPEG {
-		if err := runExifTool(fi.AbsPath, result.outputPath, modify.Misc.KeepMetadata, settings.ExifToolArgs); err != nil {
+		if available, _ := IsExifToolAvailable(); !available {
+			// ExifTool not available: skip metadata step gracefully (matches Python behavior)
+		} else if err := runExifTool(fi.AbsPath, result.outputPath, modify.Misc.KeepMetadata, settings.ExifToolArgs); err != nil {
 			return srcSize, 0, false, &conversionError{"E2", err.Error()}
 		}
 	}
@@ -380,6 +407,9 @@ func sourceTimes(path string) (time.Time, time.Time) {
 	if err != nil {
 		return time.Time{}, time.Time{}
 	}
+	// Python timestamps.getTimestamps captures st_atime_ns and st_mtime_ns separately.
+	// Go's os.Stat only exposes ModTime directly; access time requires platform-specific code.
+	// Use ModTime as fallback for access time (matches practical behavior).
 	return info.ModTime(), info.ModTime()
 }
 

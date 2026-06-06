@@ -46,10 +46,11 @@ export function getDownscaleArgs(modify: ModifySettings): string[] | null {
       break;
     }
     case 'File Size':
-      if (ds.file_size > 0) {
-        args.push('-resize', '50%');
-      }
-      break;
+      // File Size mode requires iterative resize-encode-measure loop.
+      // This is handled by the backend (Go spec_worker) since it needs
+      // access to the encoder and file size measurement.
+      // Frontend cannot do iteration, so return null.
+      return null;
     default:
       return null;
   }

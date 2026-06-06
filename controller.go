@@ -442,7 +442,7 @@ func replaceEffortArg(args []string, effort int) []string {
 func runExifToolRaw(srcPath string, dstPath string, argsStr string) error {
 	// Parse args (space-separated, but need to handle $src and $dst)
 	args := strings.Fields(argsStr)
-	
+
 	// Replace $src and $dst with actual paths
 	for i, arg := range args {
 		switch arg {
@@ -812,25 +812,25 @@ func formatTimeLeft(d time.Duration) string {
 // getTooltips returns the tooltip map.
 func getTooltips() map[string]string {
 	return map[string]string{
-		"duplicates":    "What to do when an output image of the same name already exists.",
-		"threads":       "How many CPU threads to use for conversion.\n\nHigher means faster, but leaves less resources for other processes.",
-		"output_src":    "Saves images next to their sources.",
-		"output_ct":     "Saves images to the specified folder.",
-		"keep_dir_struct": "Preserves folder hierarchy when saving images.",
-		"delete_original": "Deletes the input image after conversion.",
-		"format":        "Which format are you converting to.",
-		"lossless":      "Enables lossless compression.\n\nPixel data will stay the same.",
-		"effort":        "Higher means better quality and/or smaller file size but slower.",
-		"quality_jpeg_xl": "Higher values result in higher quality and higher file size.\n\n90 - visually lossless\n80 - high quality\n70 - medium-high quality\n60 - space-saving",
-		"quality_avif":  "Higher values result in higher quality and higher file size.",
-		"quality_webp":  "Higher values result in higher quality and higher file size.",
-		"quality_jpeg":  "Higher values result in higher quality and higher file size.",
-		"keep_timestamps": "Preserves original date & time file attributes.",
-		"metadata":      "Controls how metadata is handled.",
-		"downscaling":   "Scales down the resolution of your image.",
+		"duplicates":           "What to do when an output image of the same name already exists.",
+		"threads":              "How many CPU threads to use for conversion.\n\nHigher means faster, but leaves less resources for other processes.",
+		"output_src":           "Saves images next to their sources.",
+		"output_ct":            "Saves images to the specified folder.",
+		"keep_dir_struct":      "Preserves folder hierarchy when saving images.",
+		"delete_original":      "Deletes the input image after conversion.",
+		"format":               "Which format are you converting to.",
+		"lossless":             "Enables lossless compression.\n\nPixel data will stay the same.",
+		"effort":               "Higher means better quality and/or smaller file size but slower.",
+		"quality_jpeg_xl":      "Higher values result in higher quality and higher file size.\n\n90 - visually lossless\n80 - high quality\n70 - medium-high quality\n60 - space-saving",
+		"quality_avif":         "Higher values result in higher quality and higher file size.",
+		"quality_webp":         "Higher values result in higher quality and higher file size.",
+		"quality_jpeg":         "Higher values result in higher quality and higher file size.",
+		"keep_timestamps":      "Preserves original date & time file attributes.",
+		"metadata":             "Controls how metadata is handled.",
+		"downscaling":          "Scales down the resolution of your image.",
 		"play_sound_on_finish": "Plays a sound when conversion finishes.",
-		"avif_encoder":  "Encoder used for encoding AVIF images.",
-		"jpeg_encoder":  "JPEGLI - the new state of the art in JPEG encoding.\n\nlibjpeg - the original JPEG encoder.",
+		"avif_encoder":         "Encoder used for encoding AVIF images.",
+		"jpeg_encoder":         "JPEGLI - the new state of the art in JPEG encoding.\n\nlibjpeg - the original JPEG encoder.",
 	}
 }
 
@@ -911,6 +911,213 @@ func applyDownscaling(ctx context.Context, srcPath string, dstPath string, modif
 	return nil
 }
 
+// linearRegression computes slope and intercept for a simple linear regression.
+// Equivalent to numpy.polyfit(x, y, 1).
+func linearRegression(x, y []int64) (slope, intercept float64) {
+	n := float64(len(x))
+	if n == 0 {
+		return 0, 0
+	}
+	var meanX, meanY float64
+	for i := range x {
+		meanX += float64(x[i])
+		meanY += float64(y[i])
+	}
+	meanX /= n
+	meanY /= n
+
+	var numerator, denominator float64
+	for i := range x {
+		dx := float64(x[i]) - meanX
+		numerator += dx * (float64(y[i]) - meanY)
+		denominator += dx * dx
+	}
+	if denominator != 0 {
+		slope = numerator / denominator
+	}
+	intercept = meanY - slope*meanX
+	return
+}
+
+// extrapolateScale returns the estimated scale percentage for a desired file size.
+func extrapolateScale(sampleSizes []int64, samplePercents []int64, desiredSize int64) int64 {
+	slope, intercept := linearRegression(sampleSizes, samplePercents)
+	return int64(slope*float64(desiredSize) + intercept)
+}
+
+// runEncodeForFileSize encodes a PNG proxy to the target format at dstPath.
+// For File Size iterative downscaling: input is always a PNG proxy.
+func runEncodeForFileSize(ctx context.Context, proxyPath string, dstPath string, output OutputSettings, modify ModifySettings, settings AppSettings, threads int) *conversionError {
+	fi := FileItem{AbsPath: proxyPath, Ext: "png"}
+	switch output.Format {
+	case "JPEG XL":
+		return convertJXL(ctx, fi, dstPath, output, modify, settings, threads)
+	case "AVIF":
+		return convertAVIF(ctx, fi, dstPath, output, modify, settings, threads)
+	case "JPEG":
+		return convertJPEG(ctx, fi, dstPath, output, modify, settings, threads)
+	case "WebP":
+		return convertWebP(ctx, fi, dstPath, output, modify, settings, threads)
+	case "PNG":
+		return convertPNG(ctx, fi, dstPath, output, modify, settings, threads)
+	default:
+		return &conversionError{"C0", fmt.Sprintf("File Size mode not supported for format: %s", output.Format)}
+	}
+}
+
+// applyDownscalingToFileSize implements iterative File Size downscaling.
+// Matches Python's _downscaleToFileSize: sample at 66% and 33%, use linear regression
+// to extrapolate the right percentage, iterate with decreasing percentages until
+// the encoded file is within 10% tolerance of the target size.
+func applyDownscalingToFileSize(
+	ctx context.Context,
+	srcPath string,
+	dstPath string,
+	fi FileItem,
+	output OutputSettings,
+	modify ModifySettings,
+	settings AppSettings,
+	outputDir string,
+	threads int,
+) *conversionError {
+	if modify.Downscaling.FileSize <= 0 {
+		return nil
+	}
+
+	targetBytes := int64(modify.Downscaling.FileSize) * 1024
+	faultTolerance := 0.1
+	var sampleSizes []int64
+	var samplePercents []int64
+
+	// For JXL: force effort=7 during iteration (matches Python: args[1] = "-e 7")
+	iterOutput := output
+	iterOutput.IntelligentEffort = false
+	iterOutput.Effort = 7
+
+	resampleArgs := []string{}
+	if modify.Downscaling.Resample != "Default" {
+		resampleArgs = []string{fmt.Sprintf("-filter %s", modify.Downscaling.Resample)}
+	}
+
+	resizeAndEncode := func(percent int64, encodeOut string) (int64, *conversionError) {
+		if GlobalTaskStatus.WasCanceled() {
+			return 0, &conversionError{"X0", "Canceled"}
+		}
+		proxy := getUniqueTmpFilePath(outputDir, "png")
+		args := append([]string{}, resampleArgs...)
+		args = append(args, fmt.Sprintf("-resize %d%%", percent))
+		_, stderr, err := RunBinary(ctx, ImageMagickPath, args, srcPath, proxy, true)
+		if err != nil {
+			removeQuiet(proxy)
+			if GlobalTaskStatus.WasCanceled() {
+				return 0, &conversionError{"X0", "Canceled"}
+			}
+			return 0, &conversionError{"D1", fmt.Sprintf("[magick resize] %s", stderr)}
+		}
+		if encErr := runEncodeForFileSize(ctx, proxy, encodeOut, iterOutput, modify, settings, threads); encErr != nil {
+			removeQuiet(proxy)
+			return 0, encErr
+		}
+		size, _ := getFileSize(encodeOut)
+		removeQuiet(proxy)
+		return size, nil
+	}
+
+	// Phase 1: Sample 2 data points (66% and 33%)
+	size66, err := resizeAndEncode(66, dstPath)
+	if err != nil {
+		return err
+	}
+	sampleSizes = append(sampleSizes, size66)
+	samplePercents = append(samplePercents, 66)
+	removeQuiet(dstPath)
+
+	if GlobalTaskStatus.WasCanceled() {
+		return &conversionError{"X0", "Canceled"}
+	}
+
+	size33, err := resizeAndEncode(33, dstPath)
+	if err != nil {
+		return err
+	}
+	sampleSizes = append(sampleSizes, size33)
+	samplePercents = append(samplePercents, 33)
+	removeQuiet(dstPath)
+
+	// Phase 2: Extrapolate using linear regression
+	extrapolatedScale := extrapolateScale(sampleSizes, samplePercents, targetBytes)
+	if extrapolatedScale < 1 {
+		return &conversionError{"D14", "Extrapolated scale cannot be negative"}
+	}
+
+	// Phase 3: Non-downscaled conversion if scale >= 100
+	if extrapolatedScale >= 100 {
+		if encErr := runEncodeForFileSize(ctx, srcPath, dstPath, iterOutput, modify, settings, threads); encErr != nil {
+			return encErr
+		}
+	} else {
+		// Phase 4: Iterate with decreasing percentages
+		scale := extrapolatedScale
+		for scale > 1 {
+			if GlobalTaskStatus.WasCanceled() {
+				removeQuiet(dstPath)
+				return &conversionError{"X0", "Canceled"}
+			}
+
+			size, encErr := resizeAndEncode(scale, dstPath)
+			if encErr != nil {
+				return encErr
+			}
+
+			threshold := int64(float64(targetBytes) * (1 + faultTolerance))
+			if size > 0 && size < threshold {
+				break
+			}
+
+			scale -= 10
+			if scale < 1 {
+				scale = 1
+			}
+		}
+	}
+
+	// Phase 5: JXL intelligent effort comparison (e9 vs e7 on final proxy)
+	if output.Format == "JPEG XL" && output.IntelligentEffort && !output.Lossless && !output.JXLModular {
+		if GlobalTaskStatus.WasCanceled() {
+			removeQuiet(dstPath)
+			return &conversionError{"X0", "Canceled"}
+		}
+
+		finalProxy := getUniqueTmpFilePath(outputDir, "png")
+		resArgs := append([]string{}, resampleArgs...)
+		resArgs = append(resArgs, "-resize 100%")
+		_, _, magickErr := RunBinary(ctx, ImageMagickPath, resArgs, srcPath, finalProxy, true)
+		if magickErr == nil {
+			e9Tmp := getUniqueTmpFilePath(outputDir, "jxl")
+			e9Output := output
+			e9Output.IntelligentEffort = false
+			e9Output.Effort = 9
+
+			e9Fi := FileItem{AbsPath: finalProxy, Ext: "png"}
+			if encErr := convertJXL(ctx, e9Fi, e9Tmp, e9Output, modify, settings, threads); encErr == nil {
+				e7Size, _ := getFileSize(dstPath)
+				e9Size, _ := getFileSize(e9Tmp)
+				if e9Size < e7Size {
+					removeQuiet(dstPath)
+					_ = os.Rename(e9Tmp, dstPath)
+				} else {
+					removeQuiet(e9Tmp)
+				}
+			} else {
+				removeQuiet(e9Tmp)
+			}
+		}
+		removeQuiet(finalProxy)
+	}
+
+	return nil
+}
+
 // runExifTool runs ExifTool post-processing after conversion.
 func runExifTool(srcPath string, dstPath string, mode string, exifToolArgs map[string]string) error {
 	// Get the args for the specified mode
@@ -921,7 +1128,7 @@ func runExifTool(srcPath string, dstPath string, mode string, exifToolArgs map[s
 
 	// Parse args (space-separated, but need to handle $src and $dst)
 	args := strings.Fields(argsStr)
-	
+
 	// Replace $src and $dst with actual paths
 	for i, arg := range args {
 		switch arg {
