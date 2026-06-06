@@ -116,6 +116,10 @@ export class WailsExecutor implements BackendExecutor {
     return callGo('DeletePreset', name);
   }
 
+  async showFileInFolder(path: string): Promise<void> {
+    return callGo('ShowFileInFolder', path);
+  }
+
   subscribeEvents(handler: (event: DomainEvent) => void): Unsubscribe {
     const unsubs: (() => void)[] = [];
     let active = true;

@@ -15,6 +15,8 @@
     EyeOff,
     Play,
     Square,
+    FolderOpen,
+    X,
   } from '@lucide/svelte';
   import {
     getCoreRowModel,
@@ -30,6 +32,8 @@
   import LocalFilePreview from '$lib/components/ui/LocalFilePreview.svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
+  import ContextMenu from '$lib/components/ui/ContextMenu.svelte';
+  import type { ContextMenuItem } from '$lib/components/ui/ContextMenu.svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
@@ -450,6 +454,34 @@
   let expandedFolders = $state<Record<string, boolean>>({});
   let selectedPaths = $state<Set<string>>(new Set());
 
+  // Context menu state
+  let ctxMenu = $state<{ x: number; y: number; path: string } | null>(null);
+
+  function contextMenuItems(): ContextMenuItem[] {
+    return [
+      { id: 'open_location', label: $_('input.open_file_location'), icon: FolderOpen },
+      { id: 'separator', label: '', separator: true },
+      { id: 'remove', label: $_('input.remove_from_list'), icon: X },
+    ];
+  }
+
+  function handleContextMenu(e: MouseEvent, path: string) {
+    e.preventDefault();
+    ctxMenu = { x: e.clientX, y: e.clientY, path };
+  }
+
+  function handleCtxSelect(id: string) {
+    if (!ctxMenu) return;
+    if (id === 'open_location') {
+      appState.showFileInFolder(ctxMenu.path);
+    } else if (id === 'remove') {
+      appState.fileItems = appState.fileItems.filter((item) => item.absPath !== ctxMenu!.path);
+      const next = new Set(selectedPaths);
+      next.delete(ctxMenu.path);
+      selectedPaths = next;
+    }
+  }
+
   const activeSort = $derived(resolveSort(sorting));
   const fileTable = createSvelteTable<FileItem>({
     get data() {
@@ -624,7 +656,7 @@
               </thead>
               <tbody>
                 {#each fileTable.getRowModel().rows as row (row.original.absPath)}
-                  <tr class="border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55">
+                  <tr class="border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55" oncontextmenu={(e) => handleContextMenu(e, row.original.absPath)}>
                     <td class="px-3 py-2.5 align-top">
                       <div class="flex h-9 items-center justify-center">
                         <Checkbox checked={isSelected(row.original.absPath)} onCheckedChange={(checked) => toggleSelection(row.original.absPath, checked)} />
@@ -709,6 +741,7 @@
                   <div
                     class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
                     style={`padding-left:${12 + row.depth * 16}px`}
+                    oncontextmenu={(e) => handleContextMenu(e, row.node.path)}
                   >
                     <Checkbox checked={isSelected(row.node.path)} onCheckedChange={(checked) => toggleSelection(row.node.path, checked)} />
                     <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border-2/70 bg-bg-1/70">
@@ -751,4 +784,14 @@
       </Button>
     {/if}
   </div>
+
+  {#if ctxMenu}
+    <ContextMenu
+      x={ctxMenu.x}
+      y={ctxMenu.y}
+      items={contextMenuItems()}
+      onSelect={handleCtxSelect}
+      onClose={() => { ctxMenu = null; }}
+    />
+  {/if}
 </LaneCard>

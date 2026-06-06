@@ -500,6 +500,17 @@ export class AppState {
     await getExecutor().cancelRun('current');
   }
 
+  async showFileInFolder(path: string) {
+    try {
+      const executor = getExecutor();
+      if (executor.showFileInFolder) {
+        await executor.showFileInFolder(path);
+      }
+    } catch (e) {
+      console.error('ShowFileInFolder error:', e);
+    }
+  }
+
   clearExceptions() {
     this.exceptions = [];
     this.showExceptions = false;

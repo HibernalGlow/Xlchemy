@@ -17,7 +17,9 @@
     "location": "位置",
     "list_view": "列表视图",
     "tree_view": "树状视图",
-    "convert": "转换"
+    "convert": "转换",
+    "open_file_location": "打开文件所在位置",
+    "remove_from_list": "从列表中移除"
   },
   "output": {
     "format": "格式",
@@ -82,6 +84,7 @@
     "disable_downscaling_startup": "启动时禁用缩小",
     "disable_delete_startup": "启动时禁用删除原文件",
     "lane_max_width": "Lane 最大宽度：",
+    "lane_auto_fit": "自动适应泳道宽度",
     "disable_sorting": "禁用排序",
     "quality_precision_snapping": "质量精度吸附",
     "play_sound": "完成时播放提示音",

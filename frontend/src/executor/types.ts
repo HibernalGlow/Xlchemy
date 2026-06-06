@@ -37,4 +37,7 @@ export interface BackendExecutor {
 
   // Event subscription
   subscribeEvents(handler: (event: DomainEvent) => void): Unsubscribe;
+
+  // System integration
+  showFileInFolder?(path: string): Promise<void>;
 }

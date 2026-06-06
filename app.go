@@ -658,6 +658,11 @@ func (a *AppService) GetCPUCount() int {
 	return runtime.NumCPU()
 }
 
+// ShowFileInFolder opens the system file manager with the given file selected.
+func (a *AppService) ShowFileInFolder(path string) error {
+	return showFileInFolder(path)
+}
+
 // CheckForUpdates checks for a newer version.
 func (a *AppService) CheckForUpdates() string {
 	if !UpdateCheckerEnabled {

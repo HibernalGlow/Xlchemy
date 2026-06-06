@@ -98,9 +98,7 @@
     currentTheme={appState.appSettings.theme || 'Miku'}
     backgroundSettings={appState.backgroundSettings}
     isConverting={appState.isConverting}
-    laneAutoFit={appState.appSettings.lane_auto_fit}
     singleLaneMode={appState.singleLaneMode}
-    onToggleLaneAutoFit={() => appState.updateApp('lane_auto_fit', !appState.appSettings.lane_auto_fit)}
     onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
     onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
     onThemeChange={(name) => appState.changeTheme(name)}
