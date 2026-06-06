@@ -270,11 +270,14 @@ describe('WailsExecutor', () => {
     );
   });
 
-  it('should translate Wails events to DomainEvents', () => {
+  it('should translate Wails events to DomainEvents', async () => {
     const handler = vi.fn();
     const mockOn = vi.mocked(Events.On);
 
     executor.subscribeEvents(handler);
+
+    // subscribeEvents internally uses loadRuntime().then(...) which is async
+    await new Promise((r) => setTimeout(r, 0));
 
     // Simulate progress event
     const progressCallback = mockOn.mock.calls.find(

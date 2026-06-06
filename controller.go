@@ -319,7 +319,11 @@ func runWorker(ctx context.Context, idx int, fi FileItem, output OutputSettings,
 
 // convertJXL converts an image to JPEG XL format.
 func convertJXL(ctx context.Context, fi FileItem, dstPath string, output OutputSettings, modify ModifySettings, settings AppSettings, threads int) *conversionError {
-	args := make([]string, 0, 6)
+	args := make([]string, 0, 8)
+
+	// Intelligent effort: when lossless or jxl_modular, use e9 directly.
+	// Otherwise (lossy, non-modular), run e7 vs e9 comparison later.
+	runIntelligentComparison := output.IntelligentEffort && !output.Lossless && !output.JXLModular
 
 	if output.Lossless {
 		args = append(args, "-q 100")
@@ -333,7 +337,12 @@ func convertJXL(ctx context.Context, fi FileItem, dstPath string, output OutputS
 		args = append(args, "--lossless_jpeg=0")
 	}
 
-	args = append(args, fmt.Sprintf("-e %d", output.Effort))
+	// For lossless/jxl_modular + intelligent_effort, use e9 directly (matches pycore)
+	effort := output.Effort
+	if output.IntelligentEffort && (output.Lossless || output.JXLModular) {
+		effort = 9
+	}
+	args = append(args, fmt.Sprintf("-e %d", effort))
 	args = append(args, fmt.Sprintf("--num_threads=%d", threads))
 
 	if !output.Lossless && output.JXLModular {
@@ -348,6 +357,60 @@ func convertJXL(ctx context.Context, fi FileItem, dstPath string, output OutputS
 		args = append(args, settings.CJXLArgs)
 	}
 
+	// Intelligent effort comparison: run e7 and e9, pick smaller (matches pycore)
+	if runIntelligentComparison {
+		tmpDir := filepath.Dir(dstPath)
+		pathE7 := getUniqueTmpFilePath(tmpDir, "jxl")
+		pathE9 := getUniqueTmpFilePath(tmpDir, "jxl")
+
+		// Run e7
+		argsE7 := replaceEffortArg(args, 7)
+		_, stderr7, err7 := RunBinary(ctx, CJXlPath, argsE7, fi.AbsPath, pathE7, false)
+		if GlobalTaskStatus.WasCanceled() {
+			removeQuiet(pathE7)
+			removeQuiet(pathE9)
+			return &conversionError{"X0", "Canceled"}
+		}
+
+		// Run e9
+		argsE9 := replaceEffortArg(args, 9)
+		_, stderr9, err9 := RunBinary(ctx, CJXlPath, argsE9, fi.AbsPath, pathE9, false)
+		if GlobalTaskStatus.WasCanceled() {
+			removeQuiet(pathE7)
+			removeQuiet(pathE9)
+			return &conversionError{"X0", "Canceled"}
+		}
+
+		if err7 != nil {
+			removeQuiet(pathE7)
+			removeQuiet(pathE9)
+			return &conversionError{"C3", fmt.Sprintf("[cjxl] %s", stderr7)}
+		}
+		if err9 != nil {
+			removeQuiet(pathE7)
+			removeQuiet(pathE9)
+			return &conversionError{"C3", fmt.Sprintf("[cjxl] %s", stderr9)}
+		}
+
+		sizeE7, _ := getFileSize(pathE7)
+		sizeE9, _ := getFileSize(pathE9)
+
+		if sizeE9 < sizeE7 {
+			removeQuiet(pathE7)
+			if err := os.Rename(pathE9, dstPath); err != nil {
+				removeQuiet(pathE9)
+				return &conversionError{"C2", fmt.Sprintf("Rename failed: %s", err)}
+			}
+		} else {
+			removeQuiet(pathE9)
+			if err := os.Rename(pathE7, dstPath); err != nil {
+				removeQuiet(pathE7)
+				return &conversionError{"C2", fmt.Sprintf("Rename failed: %s", err)}
+			}
+		}
+		return nil
+	}
+
 	_, stderr, err := RunBinary(ctx, CJXlPath, args, fi.AbsPath, dstPath, false)
 	if err != nil {
 		if GlobalTaskStatus.WasCanceled() {
@@ -360,6 +423,19 @@ func convertJXL(ctx context.Context, fi FileItem, dstPath string, output OutputS
 		return &conversionError{"C3", fmt.Sprintf("[cjxl] %s", stderr)}
 	}
 	return nil
+}
+
+// replaceEffortArg returns a copy of args with the effort value replaced.
+func replaceEffortArg(args []string, effort int) []string {
+	result := make([]string, len(args))
+	copy(result, args)
+	for i, a := range result {
+		if strings.HasPrefix(a, "-e ") {
+			result[i] = fmt.Sprintf("-e %d", effort)
+			break
+		}
+	}
+	return result
 }
 
 // runExifToolRaw runs ExifTool with raw args string.

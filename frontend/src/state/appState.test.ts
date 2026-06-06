@@ -157,10 +157,12 @@ class MockExecutor implements BackendExecutor {
   }
 }
 
+const mockExecutor = new MockExecutor();
+
 vi.mock('$lib/executor', async () => {
-  const executor = new MockExecutor();
   return {
-    getExecutor: () => executor,
+    getExecutor: () => mockExecutor,
+    getExecutorName: () => mockExecutor.name,
   };
 });
 
@@ -171,16 +173,16 @@ describe('AppState import/save', async () => {
   beforeEach(async () => {
     vi.resetModules();
     localStorage.clear();
+    mockExecutor.savedSnapshots = [];
     ({ AppState: AppStateCtor } = await import('./app.svelte'));
     MockedExecutorCtor = MockExecutor;
   });
 
   it('does not save before init completes and preserves loaded settings', async () => {
     const state = new AppStateCtor();
-    const executor = (state as any).executor as MockExecutor;
 
     expect(state.isInitialized).toBe(false);
-    expect(executor.savedSnapshots).toHaveLength(0);
+    expect(mockExecutor.savedSnapshots).toHaveLength(0);
 
     await state.init();
 
@@ -193,12 +195,11 @@ describe('AppState import/save', async () => {
     expect(state.backgroundSettings.mode).toBe('image');
     expect(state.backgroundSettings.imageUrl).toBe('file:///mock/bg.png');
     expect(state.currentLang).toBe('zh');
-    expect(executor.savedSnapshots).toHaveLength(0);
+    expect(mockExecutor.savedSnapshots).toHaveLength(0);
   });
 
   it('imports exported snapshot format and saves immediately', async () => {
     const state = new AppStateCtor();
-    const executor = (state as any).executor as MockExecutor;
     await state.init();
 
     state.importSettingsJson = JSON.stringify({
@@ -238,13 +239,12 @@ describe('AppState import/save', async () => {
     expect(state.appSettings.theme).toBe('Ocean');
     expect(state.singleLaneMode).toBe(true);
     expect(state.activeLaneId).toBe('settings');
-    expect(executor.savedSnapshots).toHaveLength(1);
-    expect(executor.savedSnapshots[0].domain.output.format).toBe('JPEG');
+    expect(mockExecutor.savedSnapshots).toHaveLength(1);
+    expect(mockExecutor.savedSnapshots[0].domain.output.format).toBe('JPEG');
   });
 
   it('queues save for layout and background changes after init', async () => {
     const state = new AppStateCtor();
-    const executor = (state as any).executor as MockExecutor;
     await state.init();
 
     state.toggleLaneCollapsed('input');
@@ -252,8 +252,8 @@ describe('AppState import/save', async () => {
 
     await new Promise((resolve) => setTimeout(resolve, 220));
 
-    expect(executor.savedSnapshots.length).toBeGreaterThanOrEqual(1);
-    const lastSnapshot = executor.savedSnapshots.at(-1)!;
+    expect(mockExecutor.savedSnapshots.length).toBeGreaterThanOrEqual(1);
+    const lastSnapshot = mockExecutor.savedSnapshots.at(-1)!;
     expect(lastSnapshot.layout.collapsedLanes).toContain('input');
     expect(lastSnapshot.background.opacity).toBe(70);
   });

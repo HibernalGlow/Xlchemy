@@ -4,6 +4,7 @@
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import { appState } from '$lib/state/app.svelte';
+  import { ALLOWED_RESAMPLING } from '$lib/domain';
   import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
 
@@ -20,7 +21,9 @@
   const ds = $derived(appState.modifySettings.downscaling || {});
 
   function resampleOptions() {
-    const allowed = Array.isArray(appState.constants.allowedResampling) ? appState.constants.allowedResampling : [];
+    const allowed = Array.isArray(appState.constants.allowedResampling) && appState.constants.allowedResampling.length > 0
+      ? appState.constants.allowedResampling
+      : [...ALLOWED_RESAMPLING];
     return ['Default', ...allowed].map((value) => ({ value, label: value }));
   }
 </script>

@@ -144,7 +144,9 @@ func runWorkerSpec(ctx context.Context, idx int, fi FileItem, output OutputSetti
 		}
 	case "Replace":
 		if fileExists(targetOutput) && sameAsOriginal {
-			if (settings.KeepIfLarger || settings.CopyIfLarger) && dstSize >= srcSize {
+			// keep_if_larger / copy_if_larger: redirect to unique path when result is larger
+			// Python uses `>` (strictly), not `>=`
+			if (settings.KeepIfLarger || settings.CopyIfLarger) && dstSize > srcSize {
 				targetOutput = getUniqueFilePath(outputDir, fi.Name, result.outputExt)
 				break
 			}

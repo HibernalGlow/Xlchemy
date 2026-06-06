@@ -28,6 +28,8 @@ import {
   normalizeAppSettings,
   createDefaultSnapshot,
   DEFAULT_LANE_WIDTH,
+  DEFAULT_APP_CONSTANTS,
+  mergeConstants,
 } from '$lib/domain';
 import {
   sortItems,
@@ -111,15 +113,7 @@ export class AppState {
   appSettings = $state<AppSettings>(normalizeAppSettings({}));
 
   // Runtime state
-  constants = $state<AppConstants>({
-    version: '',
-    allowedInput: [],
-    allowedResampling: [],
-    allowedInputFilters: [],
-    jpegAliases: [],
-    cpuCount: 4,
-    updateCheckerEnabled: false,
-  });
+  constants = $state<AppConstants>({ ...DEFAULT_APP_CONSTANTS });
   cpuCount = $state<number>(4);
 
   isConverting = $state<boolean>(false);
@@ -613,8 +607,8 @@ export class AppState {
   async init() {
     try {
       const c = await getExecutor().getConstants();
-      this.constants = c;
-      this.cpuCount = c.cpuCount || 4;
+      this.constants = mergeConstants(c);
+      this.cpuCount = this.constants.cpuCount || 4;
 
       const saved = await getExecutor().loadAppState();
       let shouldMigrateLegacyState = false;
