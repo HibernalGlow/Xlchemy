@@ -95,6 +95,7 @@ export function normalizeAppSettings(raw: Partial<AppSettings>): AppSettings {
     avif_aom_iq_tune: raw.avif_aom_iq_tune ?? DEFAULT_APP_SETTINGS.avif_aom_iq_tune,
     processing_order: raw.processing_order ?? DEFAULT_APP_SETTINGS.processing_order,
     lane_auto_fit: raw.lane_auto_fit ?? DEFAULT_APP_SETTINGS.lane_auto_fit,
+    auto_clear_completed: raw.auto_clear_completed ?? DEFAULT_APP_SETTINGS.auto_clear_completed,
   };
 }
 

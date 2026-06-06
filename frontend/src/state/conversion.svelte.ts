@@ -14,6 +14,8 @@ export function initConversionEvents() {
         appState.progress = { completed: 0, total: event.totalTasks, line1: 'Starting...', line2: '' };
         appState.conversionStartTime = Date.now();
         appState.conversionElapsed = 0;
+        // Snapshot current file paths for clear-completed
+        appState.conversionFilePaths = new Set(appState.fileItems.map((item) => item.absPath));
         appState.addLog('info', `Conversion started: ${event.totalTasks} tasks`);
         // Start elapsed timer
         if (elapsedTimer) clearInterval(elapsedTimer);
@@ -50,6 +52,10 @@ export function initConversionEvents() {
         appState.conversionElapsed = Date.now() - appState.conversionStartTime;
         if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
         appState.addLog('success', `Conversion finished: ${event.completedCount} succeeded, ${event.failedCount} failed`);
+        // Auto-clear completed items if setting is enabled
+        if (appState.appSettings.auto_clear_completed) {
+          appState.clearCompleted();
+        }
         if (appState.exceptions.length > 0) {
           appState.showExceptions = true;
         }

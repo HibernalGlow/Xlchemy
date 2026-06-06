@@ -88,6 +88,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   avif_aom_iq_tune: false,
   processing_order: 'Original',
   lane_auto_fit: false,
+  auto_clear_completed: false,
 };
 
 export const DEFAULT_PROGRESS_CARD_CONFIG: ProgressCardConfig = {

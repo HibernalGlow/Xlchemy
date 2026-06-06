@@ -21,5 +21,13 @@
       />
       <span class="text-xs text-text-1">{$_('settings.lane_auto_fit')}</span>
     </div>
+
+    <div class="flex items-center gap-2 px-1 py-1">
+      <Checkbox
+        checked={appState.appSettings.auto_clear_completed}
+        onCheckedChange={(checked) => appState.updateApp('auto_clear_completed', checked)}
+      />
+      <span class="text-xs text-text-1">{$_('settings.auto_clear_completed')}</span>
+    </div>
   </div>
 </LaneCard>

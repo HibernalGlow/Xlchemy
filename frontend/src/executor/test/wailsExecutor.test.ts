@@ -139,6 +139,7 @@ describe('WailsExecutor', () => {
           avif_aom_iq_tune: false,
           processing_order: 'Original',
                     lane_auto_fit: false,
+                    auto_clear_completed: false,
         },
       },
     };
@@ -259,6 +260,7 @@ describe('WailsExecutor', () => {
           avif_aom_iq_tune: false,
           processing_order: 'Original',
                     lane_auto_fit: false,
+                    auto_clear_completed: false,
         },
       },
     };
@@ -376,6 +378,7 @@ describe('WailsExecutor', () => {
           avif_aom_iq_tune: false,
           processing_order: 'Original',
                     lane_auto_fit: false,
+                    auto_clear_completed: false,
         },
       },
       layout: {

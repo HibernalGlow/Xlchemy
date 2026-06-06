@@ -121,6 +121,9 @@ export class AppState {
   exceptions = $state<{ id: string; msg: string; path: string }[]>([]);
   showExceptions = $state<boolean>(false);
 
+  // Snapshot of file paths at conversion start (for clear-completed)
+  conversionFilePaths = $state<Set<string>>(new Set());
+
   // Conversion timing for ETA
   conversionStartTime = $state<number>(0);
   conversionElapsed = $state<number>(0);
@@ -450,6 +453,12 @@ export class AppState {
 
   clearFiles() {
     this.fileItems = [];
+  }
+
+  clearCompleted() {
+    if (this.conversionFilePaths.size === 0) return;
+    this.fileItems = this.fileItems.filter((item) => !this.conversionFilePaths.has(item.absPath));
+    this.conversionFilePaths = new Set();
   }
 
   async startConversion() {

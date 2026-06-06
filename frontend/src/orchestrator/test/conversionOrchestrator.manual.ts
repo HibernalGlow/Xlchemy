@@ -93,6 +93,7 @@ const testApp: AppSettings = {
   avif_aom_iq_tune: false,
   processing_order: 'Original',
   lane_auto_fit: false,
+  auto_clear_completed: false,
 };
 
 const testToolchain: ToolchainSelection = {

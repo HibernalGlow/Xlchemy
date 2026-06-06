@@ -17,6 +17,7 @@
     Square,
     FolderOpen,
     X,
+    CheckCheck,
   } from '@lucide/svelte';
   import {
     getCoreRowModel,
@@ -551,6 +552,9 @@
       </Button>
       <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.clear')} onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>
         <Eraser class="h-3.5 w-3.5" />
+      </Button>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.remove_completed')} onclick={() => appState.clearCompleted()} disabled={appState.conversionFilePaths.size === 0 || appState.isConverting}>
+        <CheckCheck class="h-3.5 w-3.5" />
       </Button>
       <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title="Delete selected" onclick={removeSelected} disabled={selectedCount === 0}>
         <Trash2 class="h-3.5 w-3.5" />

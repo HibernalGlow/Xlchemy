@@ -19,7 +19,8 @@
     "tree_view": "Tree View",
     "convert": "Convert",
     "open_file_location": "Open file location",
-    "remove_from_list": "Remove from list"
+    "remove_from_list": "Remove from list",
+    "remove_completed": "Remove completed"
   },
   "output": {
     "format": "Format",
@@ -85,6 +86,7 @@
     "disable_delete_startup": "Disable delete original on startup",
     "lane_max_width": "Lane max width:",
     "lane_auto_fit": "Auto-fit lane widths",
+    "auto_clear_completed": "Auto-clear completed items after conversion",
     "disable_sorting": "Disable sorting",
     "quality_precision_snapping": "Quality precision snapping",
     "play_sound": "Play sound on finish",
