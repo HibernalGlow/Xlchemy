@@ -31,7 +31,7 @@
   {oninput}
   class={cn(
     'flex h-7 w-full rounded-gb border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)] px-2 text-xs text-text-1',
-    'backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]',
+    'backdrop-blur-sm shadow-[inset_0_1px_0_var(--highlight)]',
     'transition-[border-color,box-shadow] duration-50 ease-in-out',
     'file:border-0 file:bg-transparent file:text-xs file:font-medium',
     'placeholder:text-text-2',

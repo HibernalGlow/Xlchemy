@@ -664,7 +664,7 @@
                     </td>
                     <td class="min-w-0 px-3 py-2.5">
                       <div class="flex min-w-0 items-center gap-3" title={row.original.absPath}>
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_var(--highlight)]">
                           <LocalFilePreview
                             path={row.original.absPath}
                             name={row.original.name}

@@ -59,7 +59,7 @@
       'inline-flex items-center justify-center gap-1.5',
       'font-sans text-xs font-medium',
       'rounded-gb border',
-      'backdrop-blur-sm shadow-[0_1px_0_rgba(255,255,255,0.65)_inset,0_8px_22px_rgba(15,23,42,0.06)]',
+      'backdrop-blur-sm shadow-[0_1px_0_var(--highlight)_inset,0_8px_22px_rgba(var(--shadow-color-rgb),0.06)]',
       'transition-[color,background-color,border-color,box-shadow,transform] duration-100 ease-in-out',
       'hover:-translate-y-px active:translate-y-0',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fill-pop focus-visible:ring-offset-1 focus-visible:ring-offset-bg-1',

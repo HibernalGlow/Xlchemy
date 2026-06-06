@@ -125,7 +125,7 @@
     onclick={toggleOpen}
     class={cn(
       'flex h-7 w-full items-center justify-between gap-1.5 rounded-gb border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)] px-2 text-xs text-text-1',
-      'backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]',
+      'backdrop-blur-sm shadow-[inset_0_1px_0_var(--highlight)]',
       'transition-[color,border-color,box-shadow] duration-50 ease-in-out',
       'focus:outline-none focus:ring-2 focus:ring-fill-pop focus:ring-offset-1 focus:ring-offset-bg-1',
       'disabled:cursor-not-allowed disabled:opacity-50',
@@ -141,7 +141,7 @@
       bind:this={panelEl}
       use:portal
       role="presentation"
-      class="overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl"
+      class="overflow-hidden rounded-[14px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_92%,transparent)] shadow-[0_18px_36px_rgba(var(--shadow-color-rgb),0.14)] backdrop-blur-xl"
       style={panelStyle}
       onmouseleave={() => (hoveredValue = null)}
     >

@@ -75,9 +75,16 @@ func init() {
 func initBinaryPaths() {
 	var basePath string
 
+	// In dev mode, the binary is built into bin/ (e.g. bin/xlchemy-wails.exe),
+	// so ProgramFolder already points to bin/. Detect this and walk up one level.
+	toolsRoot := ProgramFolder
+	if filepath.Base(toolsRoot) == "bin" {
+		toolsRoot = filepath.Dir(toolsRoot)
+	}
+
 	switch runtime.GOOS {
 	case "windows":
-		basePath = filepath.Join(ProgramFolder, "bin", "win")
+		basePath = filepath.Join(toolsRoot, "bin", "win")
 		CJXlPath = filepath.Join(basePath, "libjxl", "cjxl.exe")
 		DJXlPath = filepath.Join(basePath, "libjxl", "djxl.exe")
 		JxlInfoPath = filepath.Join(basePath, "libjxl", "jxlinfo.exe")
@@ -90,7 +97,7 @@ func initBinaryPaths() {
 		JPEGTranPath = filepath.Join(basePath, "jpegtran", "jpegtran.exe")
 
 	case "linux":
-		basePath = filepath.Join(ProgramFolder, "bin", "linux")
+		basePath = filepath.Join(toolsRoot, "bin", "linux")
 		CJXlPath = filepath.Join(basePath, "cjxl")
 		DJXlPath = filepath.Join(basePath, "djxl")
 		JxlInfoPath = filepath.Join(basePath, "jxlinfo")
@@ -102,7 +109,7 @@ func initBinaryPaths() {
 		JPEGTranPath = filepath.Join(basePath, "jpegtran")
 
 	case "darwin":
-		basePath = filepath.Join(ProgramFolder, "bin", "macos")
+		basePath = filepath.Join(toolsRoot, "bin", "macos")
 		CJXlPath = filepath.Join(basePath, "cjxl")
 		DJXlPath = filepath.Join(basePath, "djxl")
 		JxlInfoPath = filepath.Join(basePath, "jxlinfo")

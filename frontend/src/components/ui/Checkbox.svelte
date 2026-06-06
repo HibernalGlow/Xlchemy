@@ -33,7 +33,7 @@
   onclick={toggle}
   class={cn(
     'inline-flex h-4 w-4 items-center justify-center rounded-[5px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)]',
-    'backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]',
+    'backdrop-blur-sm shadow-[inset_0_1px_0_var(--highlight)]',
     'transition-[background-color,border-color,box-shadow] duration-50 ease-in-out',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fill-pop focus-visible:ring-offset-1 focus-visible:ring-offset-bg-1',
     (checked || indeterminate) && 'border-fill-pop bg-fill-pop text-bg-2',
