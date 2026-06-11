@@ -1,9 +1,7 @@
 <script lang="ts">
-  import Button from '$lib/components/ui/Button.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
   import { Palette, ChevronDown } from '@lucide/svelte';
-  import { _ } from 'svelte-i18n';
   import type { BackgroundSettings } from '$lib/utils/backgroundSettings';
 
   interface Props {
@@ -11,12 +9,9 @@
     currentTheme?: string;
     backgroundSettings?: BackgroundSettings;
     isConverting?: boolean;
-    singleLaneMode?: boolean;
-    onCreateLane?: () => void;
     onThemeChange?: (name: string) => void;
     onThemeModeChange?: (mode: 'light' | 'dark' | 'system') => void;
     onBackgroundChange?: (partial: Partial<BackgroundSettings>) => void;
-    onToggleSingleLaneMode?: () => void;
   }
 
   let {
@@ -24,12 +19,9 @@
     currentTheme = 'Miku',
     backgroundSettings,
     isConverting = false,
-    singleLaneMode = false,
-    onCreateLane,
     onThemeChange,
     onThemeModeChange,
     onBackgroundChange,
-    onToggleSingleLaneMode,
   }: Props = $props();
 
   let showThemePopover = $state(false);
@@ -69,9 +61,6 @@
   <div class="chrome-header__center"></div>
 
   <div class="chrome-header__right">
-    <Button kind="outline" variant={singleLaneMode ? 'pop' : 'neutral'} size="sm" onclick={onToggleSingleLaneMode}>{singleLaneMode ? 'Single' : 'Multi'}</Button>
-    <Button kind="outline" variant="neutral" size="sm" onclick={onCreateLane}>+ Lane</Button>
-
     <!-- Theme button with popover -->
     <div class="theme-popover-anchor">
       <button
@@ -114,25 +103,30 @@
   .chrome-header__theme-button {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    height: 30px;
+    gap: 6px;
+    padding: 4px 11px;
+    height: 32px;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-1);
-    background: color-mix(in oklch, var(--bg-1) 44%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 94%, transparent), color-mix(in oklch, var(--bg-1) 82%, var(--surface-ornament)));
     border: 1px solid color-mix(in oklch, var(--border-2) 70%, transparent);
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      inset 0 1px 0 var(--highlight),
+      0 10px 24px rgba(var(--shadow-color-rgb), 0.08);
     transition: all 0.15s ease;
     white-space: nowrap;
   }
 
   .chrome-header__theme-button:hover {
-    background: color-mix(in oklch, var(--bg-1) 82%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 98%, transparent), color-mix(in oklch, var(--bg-1) 86%, var(--surface-ornament)));
     color: var(--text-1);
-    border-color: var(--border-2);
+    border-color: color-mix(in oklch, var(--fill-pop-bg) 26%, var(--border-2));
   }
 
   .theme-chevron {

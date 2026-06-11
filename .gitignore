@@ -45,3 +45,4 @@ frontend/components.json
 frontend/.vite-dev.log
 frontend/.vite-dev.err.log
 frontend/.vite-dev.out.log
+*.png

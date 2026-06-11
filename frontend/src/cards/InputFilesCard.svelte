@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
   import {
     ArrowDown,
     ArrowUp,
@@ -28,6 +28,7 @@
     type Updater,
   } from '@tanstack/table-core';
   import { createSvelteTable, FlexRender } from '$lib/components/ui/data-table';
+  import Badge from '$lib/components/ui/Badge.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Checkbox from '$lib/components/ui/Checkbox.svelte';
   import LocalFilePreview from '$lib/components/ui/LocalFilePreview.svelte';
@@ -510,6 +511,7 @@
   const allVisibleSelected = $derived(visiblePaths.length > 0 && visibleSelectedCount === visiblePaths.length);
   const someVisibleSelected = $derived(visibleSelectedCount > 0 && visibleSelectedCount < visiblePaths.length);
   const selectedCount = $derived(selectedPaths.size);
+  const totalBytes = $derived(appState.fileItems.reduce((sum, item) => sum + (item.size || 0), 0));
 
   $effect(() => {
     try {
@@ -542,8 +544,9 @@
 </script>
 
 <LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`}>
-  <div class="flex min-h-0 min-w-0 flex-col gap-3">
-    <div class="flex flex-wrap items-center gap-1">
+  <div class="input-files-card flex min-h-0 min-w-0 flex-col gap-3">
+    <div class="input-files-card__toolbar flex flex-wrap items-center gap-2 rounded-[16px] border border-border/70 bg-[color-mix(in_oklch,var(--bg-1)_74%,transparent)] px-2.5 py-2 shadow-[inset_0_1px_0_var(--highlight)]">
+      <div class="input-files-card__actions flex flex-wrap items-center gap-2">
       <Button kind="outline" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.add_files')} onclick={() => appState.handleAddFiles()}>
         <FilePlus class="h-3.5 w-3.5" />
       </Button>
@@ -556,20 +559,30 @@
       <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.remove_completed')} onclick={() => appState.clearCompleted()} disabled={appState.conversionFilePaths.size === 0 || appState.isConverting}>
         <CheckCheck class="h-3.5 w-3.5" />
       </Button>
-      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title="Delete selected" onclick={removeSelected} disabled={selectedCount === 0}>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title="删除已选" onclick={removeSelected} disabled={selectedCount === 0}>
         <Trash2 class="h-3.5 w-3.5" />
       </Button>
-      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={showOriginalPreview ? 'Hide preview' : 'Show preview'} onclick={() => (showOriginalPreview = !showOriginalPreview)}>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-7 w-7" title={showOriginalPreview ? '隐藏预览' : '显示预览'} onclick={() => (showOriginalPreview = !showOriginalPreview)}>
         {#if showOriginalPreview}
           <Eye class="h-3.5 w-3.5" />
         {:else}
           <EyeOff class="h-3.5 w-3.5" />
         {/if}
       </Button>
+      </div>
 
-      <div class="ml-auto flex items-center gap-1">
+      <div class="input-files-card__filters ml-auto flex flex-wrap items-center gap-1.5">
+        <div class="input-files-card__summary flex flex-wrap items-center gap-1.5">
+        <Badge variant="secondary">{appState.fileItems.length} 项</Badge>
+        {#if totalBytes > 0}
+          <Badge variant="outline">{formatBytes(totalBytes)}</Badge>
+        {/if}
+        {#if selectedCount > 0}
+          <Badge variant="outline">已选 {selectedCount}</Badge>
+        {/if}
+        </div>
         <Select class="w-28" value={activeSort.field} options={sortOptions()} onChange={setSortField} />
-        <div title={activeSort.desc ? 'Descending' : 'Ascending'}>
+        <div title={activeSort.desc ? '降序' : '升序'}>
           <Button kind="outline" variant="neutral" size="icon" class="h-6 w-6" onclick={toggleSortDirection}>
             {#if activeSort.desc}
               <ArrowDown class="h-3.5 w-3.5" />
@@ -603,13 +616,31 @@
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-gb border border-border-2 bg-bg-2/70">
+    <div class="input-files-card__surface overflow-hidden rounded-[18px] border border-border/75 bg-[color-mix(in_oklch,var(--bg-2)_78%,transparent)] shadow-[inset_0_1px_0_var(--highlight)]">
       {#if appState.fileItems.length === 0}
-        <div class="flex min-h-[160px] items-center justify-center px-4 text-center text-xs text-text-2">
-          No files added
+        <div class="input-files-card__empty flex min-h-[220px] flex-col items-center justify-center gap-4 px-6 text-center">
+          <div class="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[color-mix(in_oklch,var(--border-2)_72%,transparent)] bg-[linear-gradient(180deg,color-mix(in_oklch,var(--bg-1)_96%,transparent),color-mix(in_oklch,var(--bg-1)_84%,var(--surface-ornament)))] shadow-[inset_0_1px_0_var(--highlight),0_14px_26px_rgba(var(--shadow-color-rgb),0.08)]">
+            <FileImage class="h-6 w-6 text-[color:var(--fill-pop-bg)]" />
+          </div>
+          <div class="space-y-1">
+            <div class="text-sm font-semibold text-text-1">添加待转换图片</div>
+            <p class="max-w-[26rem] text-xs leading-5 text-text-2">
+              支持拖入文件或文件夹。这里会保留预览、筛选、排序和批量选择，适合先整理再开始转换。
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <Button kind="solid" variant="pop" size="sm" onclick={() => appState.handleAddFiles()}>
+              <FilePlus class="mr-1.5 h-3.5 w-3.5" />
+              添加文件
+            </Button>
+            <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>
+              <FolderPlus class="mr-1.5 h-3.5 w-3.5" />
+              添加文件夹
+            </Button>
+          </div>
         </div>
       {:else}
-        <div class="min-w-0 overflow-auto pr-1" style="max-height:min(46vh, 31rem);">
+        <div class="input-files-card__list min-w-0 overflow-auto pr-1" style="max-height:min(46vh, 31rem);">
           {#if viewMode === 'list'}
             <table class="w-full table-fixed border-collapse text-left">
               <colgroup>
@@ -660,7 +691,7 @@
               </thead>
               <tbody>
                 {#each fileTable.getRowModel().rows as row (row.original.absPath)}
-                  <tr class="border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55" oncontextmenu={(e) => handleContextMenu(e, row.original.absPath)}>
+                  <tr class="input-files-card__row border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55" oncontextmenu={(e) => handleContextMenu(e, row.original.absPath)}>
                     <td class="px-3 py-2.5 align-top">
                       <div class="flex h-9 items-center justify-center">
                         <Checkbox checked={isSelected(row.original.absPath)} onCheckedChange={(checked) => toggleSelection(row.original.absPath, checked)} />
@@ -711,7 +742,7 @@
                     />
                     <span class="truncate">{treeModel.rootLabel}</span>
                     {#if selectedCount > 0}
-                      <span class="ml-auto text-[10px] text-text-2">{selectedCount} selected</span>
+                      <span class="ml-auto text-[10px] text-text-2">已选 {selectedCount}</span>
                     {/if}
                   </div>
                 </div>
@@ -721,7 +752,7 @@
                 {#if row.node.kind === 'folder'}
                   {@const folderState = getFolderSelectionState(row.node)}
                   <div
-                    class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
+                    class="input-files-card__tree-row input-files-card__tree-row--folder flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
                     style={`padding-left:${12 + row.depth * 16}px`}
                   >
                     <Checkbox
@@ -738,12 +769,14 @@
                       <Folder class="h-4 w-4 shrink-0 text-text-2" />
                       <span class="min-w-0 flex-1 truncate text-xs font-medium text-text-1">{row.node.name}</span>
                     </button>
-                    <span class="shrink-0 text-[10px] tabular-nums text-text-2">{row.node.fileCount}</span>
-                    <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
+                    <div class="input-files-card__tree-meta ml-auto flex items-center gap-2">
+                      <span class="shrink-0 text-[10px] tabular-nums text-text-2">{row.node.fileCount}</span>
+                      <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
+                    </div>
                   </div>
                 {:else}
                   <div
-                    class="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
+                    class="input-files-card__tree-row flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
                     style={`padding-left:${12 + row.depth * 16}px`}
                     oncontextmenu={(e) => handleContextMenu(e, row.node.path)}
                   >
@@ -762,10 +795,12 @@
                       <div class="truncate text-xs text-text-1">{row.node.name}</div>
                       <div class="truncate text-[11px] text-text-2">{row.node.ext ? `.${row.node.ext}` : 'file'}</div>
                     </div>
-                    <span class="shrink-0 rounded-full border border-border-2/70 bg-bg-1/70 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
-                      {row.node.ext || '-'}
-                    </span>
-                    <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
+                    <div class="input-files-card__tree-meta ml-auto flex items-center gap-2">
+                      <span class="shrink-0 rounded-full border border-border-2/70 bg-bg-1/70 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
+                        {row.node.ext || '-'}
+                      </span>
+                      <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>
+                    </div>
                   </div>
                 {/if}
               {/each}
@@ -799,3 +834,4 @@
     />
   {/if}
 </LaneCard>
+

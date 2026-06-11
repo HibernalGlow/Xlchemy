@@ -108,7 +108,7 @@ describe('WailsExecutor', () => {
           },
         },
         app: {
-          theme: 'Miku',
+          theme: 'Graphite',
           lane_max_width: 44,
           custom_resampling: false,
           sorting_disabled: false,
@@ -229,7 +229,7 @@ describe('WailsExecutor', () => {
           },
         },
         app: {
-          theme: 'Miku',
+          theme: 'Graphite',
           lane_max_width: 44,
           custom_resampling: false,
           sorting_disabled: false,
@@ -347,7 +347,7 @@ describe('WailsExecutor', () => {
           },
         },
         app: {
-          theme: 'Miku',
+          theme: 'Graphite',
           lane_max_width: 52,
           custom_resampling: false,
           sorting_disabled: false,
@@ -404,7 +404,7 @@ describe('WailsExecutor', () => {
       },
       presets: [],
       theme: {
-        name: 'Miku',
+        name: 'Graphite',
         mode: 'system',
         customThemes: [],
       },

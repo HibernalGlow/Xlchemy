@@ -4,10 +4,8 @@
   import ExceptionsDialog from '$lib/dialogs/ExceptionsDialog.svelte';
   import ImportSettingsDialog from '$lib/dialogs/ImportSettingsDialog.svelte';
 
-  import ChromeSidebar from '$lib/layout/ChromeSidebar.svelte';
   import CustomScrollbar from '$lib/layout/CustomScrollbar.svelte';
   import BottomLaneNav from '$lib/layout/BottomLaneNav.svelte';
-  import FloatingLaneSwitcher from '$lib/layout/FloatingLaneSwitcher.svelte';
   import HeaderBar from '$lib/layout/HeaderBar.svelte';
   import Lane from '$lib/layout/Lane.svelte';
   import LaneContainer from '$lib/layout/LaneContainer.svelte';
@@ -98,20 +96,12 @@
     currentTheme={appState.appSettings.theme || 'Miku'}
     backgroundSettings={appState.backgroundSettings}
     isConverting={appState.isConverting}
-    singleLaneMode={appState.singleLaneMode}
-    onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
-    onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
     onThemeChange={(name) => appState.changeTheme(name)}
     onThemeModeChange={(mode) => appState.changeThemeMode(mode)}
     onBackgroundChange={(partial) => appState.updateBackground(partial)}
   />
 
   <div class="chrome-body">
-    <ChromeSidebar
-      laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: canvasState.visibleLanes.includes(lane.id) }))}
-      onLaneSelect={(laneId) => canvasState.scrollToLane(laneId as LaneId)}
-    />
-
     <div class="chrome-content">
       <div class="chrome-workspace canvas-bg canvas-bg--{appState.backgroundSettings.mode}">
         {#if appState.backgroundSettings.mode === 'image' && appState.backgroundSettings.imageUrl}
@@ -135,7 +125,7 @@
               laneCount={visibleLanes().length}
               onResizeEnd={(nextWidth) => appState.setLaneWidth(lane.id, nextWidth)}
               dragOverId={canvasState.dragOverId}
-              onRename={() => appState.renameLane(lane.id, prompt('Lane name', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}
+              onRename={() => appState.renameLane(lane.id, prompt('泳道名称', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}
               onDelete={['input', 'output', 'modify', 'settings', 'about'].includes(lane.id) ? undefined : () => appState.deleteLane(lane.id)}
               onHide={() => appState.toggleLaneHidden(lane.id)}
             >
@@ -144,23 +134,16 @@
           {/each}
         </LaneContainer>
 
-        {#if appState.singleLaneMode}
-          <FloatingLaneSwitcher
-            laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: lane.id === appState.activeLaneId }))}
-            activeLaneId={appState.activeLaneId}
-            onSelect={(laneId) => appState.setActiveLaneId(laneId as LaneId)}
-          />
-        {/if}
-
         <CustomScrollbar viewport={canvasState.canvasEl} />
 
         <BottomLaneNav
           laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: lane.id === appState.activeLaneId }))}
+          singleLaneMode={appState.singleLaneMode}
           onSelect={(laneId) => {
             appState.setActiveLaneId(laneId as LaneId);
             canvasState.scrollToLane(laneId as LaneId);
           }}
-          onCreateLane={() => appState.createLane(prompt('Lane name') || 'New Lane')}
+          onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
         />
       </div>
     </div>

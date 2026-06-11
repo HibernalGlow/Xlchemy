@@ -103,7 +103,7 @@ class MockExecutor implements BackendExecutor {
       domain: {
         output: { format: 'AVIF', quality: 72 },
         modify: { misc: { keep_metadata: 'ExifTool - Preserve' } },
-        app: { theme: 'Miku', lane_max_width: 52 },
+        app: { theme: 'Graphite', lane_max_width: 52 },
       } as any,
       layout: {
         laneOrder: ['input', 'settings'],
@@ -133,7 +133,7 @@ class MockExecutor implements BackendExecutor {
         blur: 6,
       },
       theme: {
-        name: 'Miku',
+        name: 'Graphite',
         mode: 'dark',
         customThemes: [{
           name: 'Custom A',

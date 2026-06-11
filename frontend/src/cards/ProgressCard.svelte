@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Badge from '$lib/components/ui/Badge.svelte';
   import Checkbox from '$lib/components/ui/Checkbox.svelte';
   import Progress from '$lib/components/ui/Progress.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
@@ -36,13 +37,12 @@
     const elapsedMs = appState.conversionElapsed;
     const avgPerTask = elapsedMs / appState.progress.completed;
     const remaining = appState.progress.total - appState.progress.completed;
-    const etaMs = remaining * avgPerTask;
-    return formatDuration(etaMs);
+    return formatDuration(remaining * avgPerTask);
   });
 
   const speed = $derived(() => {
     if (!appState.isConverting || appState.conversionElapsed <= 0 || appState.progress.completed <= 0) return '';
-    const perSec = (appState.progress.completed / (appState.conversionElapsed / 1000));
+    const perSec = appState.progress.completed / (appState.conversionElapsed / 1000);
     if (perSec >= 1) return `${perSec.toFixed(1)}/s`;
     return `${(perSec * 60).toFixed(1)}/min`;
   });
@@ -50,11 +50,51 @@
 
 <LaneCard id="progress-status" laneId={laneId} movable header={$_('dialog.converting')}>
   <div class="flex flex-col gap-3">
-    <Progress value={percent} />
+    <div class="rounded-[16px] border border-border/70 bg-[color-mix(in_oklch,var(--bg-1)_72%,transparent)] p-3 shadow-[inset_0_1px_0_var(--highlight)]">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div class="text-[11px] tracking-[0.08em] text-text-2">运行状态</div>
+          <div class="mt-1 text-sm font-semibold text-text-1">
+            {#if appState.isConverting}
+              转换进行中
+            {:else if appState.progress.total > 0}
+              最近一次转换已完成
+            {:else}
+              等待开始
+            {/if}
+          </div>
+        </div>
+        <Badge variant={appState.isConverting ? 'default' : 'secondary'}>
+          {#if appState.isConverting}
+            运行中
+          {:else if appState.progress.total > 0}
+            已完成
+          {:else}
+            待机
+          {/if}
+        </Badge>
+      </div>
 
-    <!-- Timing row -->
+      <Progress value={percent} />
+
+      <div class="progress-card__stats mt-3 grid grid-cols-3 gap-2">
+        <div class="rounded-[12px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-2)_78%,transparent)] px-3 py-2">
+          <div class="text-[10px] tracking-[0.08em] text-text-2">进度</div>
+          <div class="mt-1 text-sm font-semibold tabular-nums text-text-1">{appState.progress.completed}/{appState.progress.total || 0}</div>
+        </div>
+        <div class="rounded-[12px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-2)_78%,transparent)] px-3 py-2">
+          <div class="text-[10px] tracking-[0.08em] text-text-2">已用时间</div>
+          <div class="mt-1 text-sm font-semibold tabular-nums text-text-1">{elapsed}</div>
+        </div>
+        <div class="rounded-[12px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-2)_78%,transparent)] px-3 py-2">
+          <div class="text-[10px] tracking-[0.08em] text-text-2">ETA</div>
+          <div class="mt-1 text-sm font-semibold tabular-nums text-text-1">{appState.isConverting ? eta() : '--:--'}</div>
+        </div>
+      </div>
+    </div>
+
     {#if appState.isConverting || appState.conversionElapsed > 0}
-      <div class="flex items-center gap-3 text-[11px] text-text-2 tabular-nums">
+      <div class="flex items-center gap-3 rounded-[14px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-1)_68%,transparent)] px-3 py-2 text-[11px] text-text-2 tabular-nums">
         <span class="inline-flex items-center gap-1">
           <Clock class="h-3 w-3" />
           <span class="text-text-1">{elapsed}</span>
@@ -70,22 +110,35 @@
       </div>
     {/if}
 
-    <div class="text-xs text-text-2">{appState.progressSummary() || $_('dialog.converting')}</div>
+    {#if appState.progressCurrentFile() || appState.progressSizeChange()}
+      <div class="rounded-[14px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-1)_66%,transparent)] px-3 py-2">
+        {#if appState.progressCurrentFile()}
+          <div class="truncate text-xs font-medium text-text-1">{appState.progressCurrentFile()}</div>
+        {/if}
+        {#if appState.progressSizeChange()}
+          <div class="mt-1 text-[11px] text-text-2">{appState.progressSizeChange()}</div>
+        {/if}
+      </div>
+    {/if}
+
+    <div class="text-xs leading-5 text-text-2">
+      {appState.progressSummary() || '添加文件后，这里会显示当前进度、耗时、ETA 和输出摘要。'}
+    </div>
 
     {#if appState.progressCardConfig.showRawLines}
-      <div class="flex flex-col gap-1 rounded-gb border border-border-2 bg-bg-2 p-2 text-[11px] text-text-2">
+      <div class="flex flex-col gap-1 rounded-[14px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-2)_78%,transparent)] p-2.5 text-[11px] text-text-2">
         <div>{appState.progress.line1 || '—'}</div>
         <div>{appState.progress.line2 || '—'}</div>
       </div>
     {/if}
 
-    <div class="grid grid-cols-2 gap-2 text-[11px] text-text-1">
-      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showCounter} onCheckedChange={(v) => appState.updateProgressCardConfig('showCounter', v)} /> Counter</label>
-      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showSummary} onCheckedChange={(v) => appState.updateProgressCardConfig('showSummary', v)} /> Summary</label>
+    <div class="progress-card__toggles grid grid-cols-2 gap-2 rounded-[14px] border border-border/60 bg-[color-mix(in_oklch,var(--bg-1)_68%,transparent)] p-3 text-[11px] text-text-1">
+      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showCounter} onCheckedChange={(v) => appState.updateProgressCardConfig('showCounter', v)} /> 计数</label>
+      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showSummary} onCheckedChange={(v) => appState.updateProgressCardConfig('showSummary', v)} /> 摘要</label>
       <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showEta} onCheckedChange={(v) => appState.updateProgressCardConfig('showEta', v)} /> ETA</label>
-      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showFormat} onCheckedChange={(v) => appState.updateProgressCardConfig('showFormat', v)} /> Format</label>
-      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showEncoder} onCheckedChange={(v) => appState.updateProgressCardConfig('showEncoder', v)} /> Encoder</label>
-      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showRawLines} onCheckedChange={(v) => appState.updateProgressCardConfig('showRawLines', v)} /> Raw lines</label>
+      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showFormat} onCheckedChange={(v) => appState.updateProgressCardConfig('showFormat', v)} /> 格式</label>
+      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showEncoder} onCheckedChange={(v) => appState.updateProgressCardConfig('showEncoder', v)} /> 编码器</label>
+      <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showRawLines} onCheckedChange={(v) => appState.updateProgressCardConfig('showRawLines', v)} /> 原始日志</label>
     </div>
   </div>
 </LaneCard>

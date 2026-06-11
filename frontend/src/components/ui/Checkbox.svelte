@@ -32,11 +32,11 @@
   {disabled}
   onclick={toggle}
   class={cn(
-    'inline-flex h-4 w-4 items-center justify-center rounded-[5px] border border-[color-mix(in_oklch,var(--border-2)_70%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_82%,transparent)]',
+    'inline-flex h-4 w-4 items-center justify-center rounded-[6px] border border-[color-mix(in_oklch,var(--border-2)_72%,transparent)] bg-[linear-gradient(180deg,color-mix(in_oklch,var(--bg-1)_94%,transparent),color-mix(in_oklch,var(--bg-1)_84%,var(--surface-ornament)))]',
     'backdrop-blur-sm shadow-[inset_0_1px_0_var(--highlight)]',
     'transition-[background-color,border-color,box-shadow] duration-50 ease-in-out',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fill-pop focus-visible:ring-offset-1 focus-visible:ring-offset-bg-1',
-    (checked || indeterminate) && 'border-fill-pop bg-fill-pop text-bg-2',
+    (checked || indeterminate) && 'border-fill-pop bg-[linear-gradient(180deg,color-mix(in_oklch,var(--fill-pop-bg)_96%,white_4%),color-mix(in_oklch,var(--fill-pop-bg)_76%,var(--bg-3)_24%))] text-bg-2',
     disabled && 'cursor-not-allowed opacity-50',
     className,
   )}
