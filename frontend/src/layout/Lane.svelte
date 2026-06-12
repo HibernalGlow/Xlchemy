@@ -47,9 +47,10 @@
   let laneEl = $state<HTMLDivElement | null>(null);
   let poppedOut = $state(false);
   let liveWidth = $state(18);
+  const MIN_LANE_WIDTH = 12;
 
   function clampWidth(value: number): number {
-    return Math.max(14, Math.min(maxWidth, value));
+    return Math.max(MIN_LANE_WIDTH, Math.min(maxWidth, value));
   }
 
   function handleResize(deltaPx: number) {
@@ -93,7 +94,7 @@
     bind:this={laneEl}
     class={cn('lane', fill && 'lane--fill', autoFit && !fill && 'lane--auto-fit', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
     data-lane-id={id}
-    style={fill ? 'width:100%;min-width:0;flex:1;' : autoFit ? `min-width:14rem;max-width:${maxWidth}rem;flex:1;` : `width:${liveWidth}rem;min-width:14rem;max-width:${maxWidth}rem;`}
+    style={fill ? 'width:100%;min-width:0;flex:1;' : autoFit ? `min-width:${MIN_LANE_WIDTH}rem;max-width:${maxWidth}rem;flex:1;` : `width:${liveWidth}rem;min-width:${MIN_LANE_WIDTH}rem;max-width:${maxWidth}rem;`}
   >
     <div class="stack-view">
       <LaneDragHandle

@@ -71,11 +71,11 @@
     canvasState.setupEffects();
     const cleanupTheme = appState.watchTheme();
 
-    // pywebview 宿主注入是异步的，监听 pywebviewready 事件在注入完成后重新初始化
+    // pywebview 宿主注入是异步的，这里在注入完成后重新初始化。
     const onPywebviewReady = () => {
       console.log('[App] pywebviewready fired, re-initializing with pywebview executor');
       appState.init();
-      // 重新订阅文件拖放事件（executor 已切换为 pywebview）
+      // executor 切换到 pywebview 后，重新订阅文件拖放事件。
       cleanupFileDrops?.();
       cleanupFileDrops = appState.subscribeFileDrops();
     };

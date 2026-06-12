@@ -20,18 +20,25 @@
   let { x, y, items, onSelect, onClose }: Props = $props();
 
   let menuEl = $state<HTMLDivElement | null>(null);
-  let adjustedX = $state(x);
-  let adjustedY = $state(y);
+  let adjustedX = $state(0);
+  let adjustedY = $state(0);
+
+  function updatePosition() {
+    adjustedX = x;
+    adjustedY = y;
+
+    if (!menuEl) return;
+
+    const rect = menuEl.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (rect.right > vw) adjustedX = Math.max(0, vw - rect.width - 4);
+    if (rect.bottom > vh) adjustedY = Math.max(0, vh - rect.height - 4);
+  }
 
   onMount(() => {
-    // Adjust position if menu would overflow viewport
-    if (menuEl) {
-      const rect = menuEl.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if (rect.right > vw) adjustedX = Math.max(0, vw - rect.width - 4);
-      if (rect.bottom > vh) adjustedY = Math.max(0, vh - rect.height - 4);
-    }
+    updatePosition();
 
     function handleClickOutside(e: MouseEvent) {
       if (menuEl && !menuEl.contains(e.target as Node)) {
@@ -43,7 +50,6 @@
       if (e.key === 'Escape') onClose?.();
     }
 
-    // Delay to avoid the same contextmenu event closing it
     setTimeout(() => {
       document.addEventListener('click', handleClickOutside, true);
       document.addEventListener('keydown', handleKeyDown);
@@ -53,6 +59,12 @@
       document.removeEventListener('click', handleClickOutside, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
+  });
+
+  $effect(() => {
+    x;
+    y;
+    updatePosition();
   });
 
   function handleSelect(id: string) {
@@ -65,22 +77,26 @@
 
 <div
   bind:this={menuEl}
+  role="menu"
+  tabindex="-1"
   class="ctx-menu"
   style="left:{adjustedX}px;top:{adjustedY}px;"
   oncontextmenu={(e) => e.preventDefault()}
 >
   {#each items as item (item.id)}
     {#if item.separator}
-      <div class="ctx-menu__separator" />
+      <div class="ctx-menu__separator" role="separator"></div>
     {:else}
+      {@const Icon = item.icon}
       <button
         type="button"
+        role="menuitem"
         class="ctx-menu__item"
         class:ctx-menu__item--disabled={item.disabled}
         onclick={() => handleSelect(item.id)}
       >
-        {#if item.icon}
-          <svelte:component this={item.icon} class="ctx-menu__icon" />
+        {#if Icon}
+          <Icon class="ctx-menu__icon" />
         {/if}
         <span class="ctx-menu__label">{item.label}</span>
       </button>
@@ -101,7 +117,7 @@
     box-shadow:
       inset 0 1px 0 var(--highlight),
       0 8px 24px rgba(0, 0, 0, 0.16),
-      0 2px 8px rgba(0, 0, 0, 0.10);
+      0 2px 8px rgba(0, 0, 0, 0.1);
     animation: ctx-menu-in 0.12s ease;
   }
 
@@ -110,6 +126,7 @@
       opacity: 0;
       transform: scale(0.96);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -135,7 +152,7 @@
   }
 
   .ctx-menu__item:hover {
-    background: color-mix(in oklch, var(--fill-pop) 14%, transparent);
+    background: color-mix(in oklch, var(--fill-pop-bg) 14%, transparent);
   }
 
   .ctx-menu__item--disabled {

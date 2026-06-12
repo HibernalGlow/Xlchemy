@@ -912,6 +912,16 @@
   z-index: 2;
 }
 
+.drawer-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
+  border-bottom-color: transparent;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .drawer--border {
   /* border now handled by base .drawer */
 }
@@ -1136,6 +1146,35 @@
   border-radius: 14px;
   min-width: 0;
   overflow: hidden;
+}
+
+.drawer--input-files .drawer__content {
+  padding: 0;
+  background: transparent;
+}
+
+.drawer--input-files .input-files-card {
+  gap: 10px;
+}
+
+.drawer--input-files .input-files-card__toolbar {
+  margin: 0;
+  padding: 10px 12px 8px;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--border-2) 64%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 96%, transparent), color-mix(in oklch, var(--bg-1) 86%, var(--surface-ornament)));
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+
+.drawer--input-files .input-files-card__surface,
+.drawer--input-files .input-files-card__footer {
+  margin: 0 12px;
+}
+
+.drawer--input-files .input-files-card__footer {
+  padding-bottom: 12px;
 }
 
 /* ─── Folded Lane (CollapsedLane) ─── */
@@ -1494,9 +1533,10 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .input-files-card__actions > :global(button),
-  .input-files-card__actions > :global(div) {
+  .input-files-card__actions > button,
+  .input-files-card__actions > div {
     width: 100%;
+    min-width: 0;
   }
 
   .input-files-card__filters {
@@ -1509,7 +1549,7 @@
     grid-column: 1 / -1;
   }
 
-  .input-files-card__filters :global(.select-trigger) {
+  .input-files-card__filters .select-trigger {
     width: 100%;
   }
 
@@ -1517,35 +1557,35 @@
     min-width: 0;
   }
 
-  .input-files-card__list :global(table),
-  .input-files-card__list :global(thead),
-  .input-files-card__list :global(tbody),
-  .input-files-card__list :global(tr),
-  .input-files-card__list :global(th),
-  .input-files-card__list :global(td),
-  .input-files-card__list :global(colgroup) {
+  .input-files-card__list table,
+  .input-files-card__list thead,
+  .input-files-card__list tbody,
+  .input-files-card__list tr,
+  .input-files-card__list th,
+  .input-files-card__list td,
+  .input-files-card__list colgroup {
     display: block;
     width: 100%;
   }
 
-  .input-files-card__list :global(colgroup),
-  .input-files-card__list :global(thead th:not(:first-child)),
-  .input-files-card__list :global(td:nth-child(3)),
-  .input-files-card__list :global(td:nth-child(4)),
-  .input-files-card__list :global(td:nth-child(5)) {
+  .input-files-card__list colgroup,
+  .input-files-card__list thead th:not(:first-child),
+  .input-files-card__list td:nth-child(3),
+  .input-files-card__list td:nth-child(4),
+  .input-files-card__list td:nth-child(5) {
     display: none;
   }
 
-  .input-files-card__list :global(thead th:first-child) {
+  .input-files-card__list thead th:first-child {
     display: flex;
     justify-content: flex-start;
   }
 
-  .input-files-card__list :global(tbody) {
+  .input-files-card__list tbody {
     padding: 6px;
   }
 
-  .input-files-card__list :global(tbody tr) {
+  .input-files-card__list tbody tr {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 8px;
@@ -1557,20 +1597,20 @@
     background: color-mix(in oklch, var(--bg-1) 70%, transparent);
   }
 
-  .input-files-card__list :global(tbody td) {
+  .input-files-card__list tbody td {
     padding: 0;
     min-width: 0;
     border: 0;
   }
 
-  .input-files-card__list :global(tbody td:first-child) {
+  .input-files-card__list tbody td:first-child {
     grid-row: span 2;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .input-files-card__list :global(tbody td:nth-child(2) > div) {
+  .input-files-card__list tbody td:nth-child(2) > div {
     align-items: flex-start;
   }
 

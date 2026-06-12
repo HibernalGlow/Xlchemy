@@ -543,8 +543,8 @@
   });
 </script>
 
-<LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`}>
-  <div class="input-files-card flex min-h-0 min-w-0 flex-col gap-3">
+<LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`} class="drawer--input-files">
+  <div class="input-files-card flex min-h-0 min-w-0 flex-col gap-2">
     <div class="input-files-card__toolbar flex flex-wrap items-center gap-2 rounded-[16px] border border-border/70 bg-[color-mix(in_oklch,var(--bg-1)_74%,transparent)] px-2.5 py-2 shadow-[inset_0_1px_0_var(--highlight)]">
       <div class="input-files-card__actions flex flex-wrap items-center gap-2">
       <Button kind="outline" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.add_files')} onclick={() => appState.handleAddFiles()}>
@@ -776,6 +776,8 @@
                   </div>
                 {:else}
                   <div
+                    role="row"
+                    tabindex="-1"
                     class="input-files-card__tree-row flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
                     style={`padding-left:${12 + row.depth * 16}px`}
                     oncontextmenu={(e) => handleContextMenu(e, row.node.path)}
@@ -810,18 +812,19 @@
       {/if}
     </div>
 
-    <!-- Convert / Cancel button -->
-    {#if appState.isConverting}
-      <Button kind="outline" variant="neutral" size="sm" class="w-full" onclick={() => appState.cancelConversion()}>
-        <Square class="h-3.5 w-3.5 mr-1.5" />
-        {$_('dialog.cancel')}
-      </Button>
-    {:else}
-      <Button kind="solid" variant="pop" size="sm" class="w-full" onclick={() => appState.startConversion()} disabled={appState.fileItems.length === 0}>
-        <Play class="h-3.5 w-3.5 mr-1.5" />
-        {$_('input.convert')} ({appState.fileItems.length})
-      </Button>
-    {/if}
+    <div class="input-files-card__footer">
+      {#if appState.isConverting}
+        <Button kind="outline" variant="neutral" size="sm" class="w-full" onclick={() => appState.cancelConversion()}>
+          <Square class="h-3.5 w-3.5 mr-1.5" />
+          {$_('dialog.cancel')}
+        </Button>
+      {:else}
+        <Button kind="solid" variant="pop" size="sm" class="w-full" onclick={() => appState.startConversion()} disabled={appState.fileItems.length === 0}>
+          <Play class="h-3.5 w-3.5 mr-1.5" />
+          {$_('input.convert')} ({appState.fileItems.length})
+        </Button>
+      {/if}
+    </div>
   </div>
 
   {#if ctxMenu}
@@ -834,4 +837,3 @@
     />
   {/if}
 </LaneCard>
-
