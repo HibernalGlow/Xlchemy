@@ -1,92 +1,87 @@
-version: "3"
+version: '3'
 
 vars:
-  VERSION_FILE: data/constants.py
+  APP_NAME: "xlchemy-wails"
+  BIN_DIR: "bin"
+  PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "pnpm"}}'
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  SLIMG_SRC: "ref/slimg"
+  LIBJXL_PATH: "D:/scoop/apps/libjxl/current"
+  PREBUILT_DAV1D: "prebuilt/dav1d"
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+  darwin: ./build/darwin/Taskfile.yml
+  linux: ./build/linux/Taskfile.yml
+  ios: ./build/ios/Taskfile.yml
+  android: ./build/android/Taskfile.yml
 
 tasks:
-  default:
-    desc: List all available tasks
-    cmds:
-      - task --list
-
   build:
-    desc: Build the project
+    summary: Builds the application
     cmds:
-      - .venv/Scripts/python.exe build.py
+      - task: "{{OS}}:build"
 
-  build:portable:
-    desc: Build portable package
+  package:
+    summary: Packages a production build of the application
     cmds:
-      - uv run python build.py --build-type portable
+      - task: "{{OS}}:package"
 
-  build:rust:
-    desc: Build Rust bindings
+  run:
+    summary: Runs the application
     cmds:
-      - uv run python build_rust.py
+      - task: "{{OS}}:run"
 
-  test:
-    desc: Run tests
+  dev:
+    summary: Runs the application in development mode
     cmds:
-      - uv run pytest tests/
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
-  test:gil:
-    desc: Test GIL release
+  # slimg 编译任务
+  build:slimg:
+    summary: Builds slimg DLL for AVIF/JXL encoding
     cmds:
-      - uv run python tests/test_gil_release.py
+      - |
+        $env:PKG_CONFIG_PATH = "{{.LIBJXL_PATH}}/lib/pkgconfig;{{.PREBUILT_DAV1D}}/lib/pkgconfig"
+        cargo build --release -p slimg-cffi --manifest-path {{.SLIMG_SRC}}/Cargo.toml
+      - cp {{.SLIMG_SRC}}/target/release/slimg_cffi.dll ./slimg_cffi.dll
+      - cp {{.PREBUILT_DAV1D}}/bin/dav1d.dll ./dav1d.dll
+    sources:
+      - "{{.SLIMG_SRC}}/crates/slimg-cffi/src/**/*.rs"
+    generates:
+      - "{{.SLIMG_SRC}}/target/release/slimg_cffi.dll"
+      - "./slimg_cffi.dll"
+      - "./dav1d.dll"
 
-  prepare:
-    desc: Prepare a release with the given version (e.g., task prepare -- 1.2.4)
-    cmds:
-      - python scripts/set_version.py {{.CLI_ARGS}} --constants-only
-
-  push-tag:
-    desc: Push a tag to remote repository (e.g., task push-tag -- v1.2.4)
-    cmds:
-      - git tag {{.CLI_ARGS}}
-      - git push origin {{.CLI_ARGS}}
-
-  delete-tag:
-    desc: Delete a tag locally and remotely (e.g., task delete-tag -- v1.2.4)
-    cmds:
-      - git tag -d {{.CLI_ARGS}}
-      - git push origin --delete {{.CLI_ARGS}}
-
-  release:
-    desc: Prepare and push a release tag (e.g., task release -- 1.2.4)
+  build:all:
+    summary: Builds slimg DLL and Go application
     deps:
-      - task: prepare
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
+      - build:slimg
     cmds:
-      - task: push-tag
-        vars:
-          CLI_ARGS: "v{{.CLI_ARGS}}"
+      - go build -o xlchemy.exe .
 
-  clean:
-    desc: Clean build artifacts
+  setup:docker:
+    summary: Builds Docker image for cross-compilation (~800MB download)
     cmds:
-      - rm -rf dist/
-      - rm -rf _pyinstaller/
-      - rm -rf build/
+      - task: common:setup:docker
 
-  # Aliases
-  pr:
-    desc: Alias for prepare
+  build:server:
+    summary: Builds the application in server mode (no GUI, HTTP server only)
     cmds:
-      - task: prepare
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
+      - task: common:build:server
 
-  pt:
-    desc: Alias for push-tag
+  run:server:
+    summary: Runs the application in server mode
     cmds:
-      - task: push-tag
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
+      - task: common:run:server
 
-  rel:
-    desc: Alias for release
+  build:docker:
+    summary: Builds a Docker image for server mode deployment
     cmds:
-      - task: release
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
+      - task: common:build:docker
+
+  run:docker:
+    summary: Builds and runs the Docker image
+    cmds:
+      - task: common:run:docker

@@ -1,0 +1,92 @@
+version: "3"
+
+vars:
+  VERSION_FILE: data/constants.py
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the project
+    cmds:
+      - .venv/Scripts/python.exe build.py
+
+  build:portable:
+    desc: Build portable package
+    cmds:
+      - uv run python build.py --build-type portable
+
+  build:rust:
+    desc: Build Rust bindings
+    cmds:
+      - uv run python build_rust.py
+
+  test:
+    desc: Run tests
+    cmds:
+      - uv run pytest tests/
+
+  test:gil:
+    desc: Test GIL release
+    cmds:
+      - uv run python tests/test_gil_release.py
+
+  prepare:
+    desc: Prepare a release with the given version (e.g., task prepare -- 1.2.4)
+    cmds:
+      - python scripts/set_version.py {{.CLI_ARGS}} --constants-only
+
+  push-tag:
+    desc: Push a tag to remote repository (e.g., task push-tag -- v1.2.4)
+    cmds:
+      - git tag {{.CLI_ARGS}}
+      - git push origin {{.CLI_ARGS}}
+
+  delete-tag:
+    desc: Delete a tag locally and remotely (e.g., task delete-tag -- v1.2.4)
+    cmds:
+      - git tag -d {{.CLI_ARGS}}
+      - git push origin --delete {{.CLI_ARGS}}
+
+  release:
+    desc: Prepare and push a release tag (e.g., task release -- 1.2.4)
+    deps:
+      - task: prepare
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+    cmds:
+      - task: push-tag
+        vars:
+          CLI_ARGS: "v{{.CLI_ARGS}}"
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf dist/
+      - rm -rf _pyinstaller/
+      - rm -rf build/
+
+  # Aliases
+  pr:
+    desc: Alias for prepare
+    cmds:
+      - task: prepare
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+
+  pt:
+    desc: Alias for push-tag
+    cmds:
+      - task: push-tag
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+
+  rel:
+    desc: Alias for release
+    cmds:
+      - task: release
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"

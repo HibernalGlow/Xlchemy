@@ -54,6 +54,7 @@ func main() {
 		MinWidth:         700,
 		MinHeight:        520,
 		EnableFileDrop:   true,
+		Frameless:        true,
 	})
 
 	win.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
