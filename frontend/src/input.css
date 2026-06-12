@@ -408,6 +408,13 @@
     gap: 12px;
     background: var(--bg-2);
     border-bottom: 1px solid var(--border-2);
+    --wails-draggable: drag;
+  }
+
+  .chrome-header button,
+  .chrome-header .theme-popover-anchor,
+  .chrome-header .window-controls {
+    --wails-draggable: no-drag;
   }
 
   .chrome-header__left,
@@ -741,7 +748,8 @@
 /* Stack view inner wrapper */
 .stack-view {
   display: flex;
-  position: relative;
+  position: static;
+  z-index: auto;
   flex-direction: column;
   min-height: 0;
   height: 100%;
@@ -893,7 +901,11 @@
   box-shadow: none;
 }
 
-.drawer > *:not(.card-menu__panel) {
+.drawer--menu-open {
+  z-index: var(--z-dropdown);
+}
+
+.drawer > *:not(.card-menu__panel):not(.drawer-header) {
   position: relative;
   z-index: 1;
 }
@@ -1080,7 +1092,7 @@
     var(--bg-2);
   border-radius: var(--radius-m) var(--radius-m) 0 0;
   position: relative;
-  z-index: 1;
+  z-index: 3;
 }
 
 .drawer-header__title {
@@ -1355,7 +1367,7 @@
   padding: 4px;
   border: 1px solid var(--border-2);
   border-radius: var(--radius-m);
-  background: var(--bg-1);
+  background: var(--bg-2);
   box-shadow: 0 8px 20px rgba(var(--shadow-color-rgb), 0.16);
 }
 
@@ -1365,6 +1377,7 @@
   width: 100%;
   align-items: center;
   justify-content: flex-start;
+  gap: 8px;
   border: none;
   background: transparent;
   color: var(--text-1);
@@ -1486,15 +1499,57 @@
 }
 
 .page-control__mode {
-  min-width: 40px;
+  width: 28px;
   height: 28px;
-  padding: 0 8px;
   border-radius: 6px;
   background: transparent;
   color: var(--text-2);
   cursor: pointer;
+}
+
+.page-control__visibility {
+  position: relative;
+}
+
+.page-control__visibility-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  min-width: 140px;
+  padding: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-m);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-dropdown);
+}
+
+.page-control__visibility-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-1);
   font-size: 11px;
-  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.page-control__visibility-item:hover {
+  background: var(--bg-2);
+}
+
+.page-control__visibility-check {
+  width: 14px;
+  font-size: 10px;
+  color: var(--fill-pop);
+  flex-shrink: 0;
 }
 
 @container drawer-content (max-width: 26rem) {

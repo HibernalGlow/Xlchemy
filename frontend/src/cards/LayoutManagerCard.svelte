@@ -100,7 +100,7 @@
           class="text-[10px] text-center py-1 text-accent hover:underline"
           onclick={() => appState.showAllLanes()}
         >
-          {$_('layout.show_all_hidden_lanes')} ({appState.hiddenLanes.size})
+          <Eye class="w-3 h-3 inline mr-0.5" />{$_('layout.show_all_hidden_lanes')} ({appState.hiddenLanes.size})
         </button>
       {/if}
     </div>

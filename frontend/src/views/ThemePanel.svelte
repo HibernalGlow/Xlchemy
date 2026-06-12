@@ -218,7 +218,7 @@
               placeholder="https://example.com/bg.jpg"
               class="theme-panel__input"
             />
-            <Button kind="outline" variant="neutral" size="sm" onclick={handleBgUrlBlur}>{$_('common.apply')}</Button>
+            <Button kind="outline" variant="neutral" size="sm" onclick={handleBgUrlBlur}><Check class="w-3 h-3" />{$_('common.apply')}</Button>
           </div>
         </div>
 

@@ -137,13 +137,14 @@
         <CustomScrollbar viewport={canvasState.canvasEl} />
 
         <BottomLaneNav
-          laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: lane.id === appState.activeLaneId }))}
+          laneTabs={sortedLanes().map((lane) => ({ id: lane.id, title: lane.title, active: lane.id === appState.activeLaneId, hidden: appState.hiddenLanes.has(lane.id) }))}
           singleLaneMode={appState.singleLaneMode}
           onSelect={(laneId) => {
             appState.setActiveLaneId(laneId as LaneId);
             canvasState.scrollToLane(laneId as LaneId);
           }}
           onToggleSingleLaneMode={() => appState.setSingleLaneMode(!appState.singleLaneMode)}
+          onToggleHidden={(laneId) => appState.toggleLaneHidden(laneId)}
         />
       </div>
     </div>

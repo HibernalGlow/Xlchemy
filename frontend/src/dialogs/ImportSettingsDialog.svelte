@@ -2,6 +2,7 @@
   import Dialog from '$lib/components/ui/Dialog.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Textarea from '$lib/components/ui/Textarea.svelte';
+  import { X, Upload } from '@lucide/svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
 
@@ -18,8 +19,8 @@
     <h2 class="text-sm font-semibold text-text-1">{$_('theme.import')} {$_('nav.settings')}</h2>
     <Textarea bind:value={appState.importSettingsJson} placeholder={$_('theme.paste_json')} class="min-h-[200px] font-mono" />
     <div class="flex justify-end gap-2">
-      <Button kind="outline" variant="neutral" onclick={() => (open = false)}>{$_('dialog.cancel')}</Button>
-      <Button kind="solid" variant="pop" onclick={() => appState.handleImportSettings()}>{$_('theme.import')}</Button>
+      <Button kind="outline" variant="neutral" onclick={() => (open = false)}><X class="w-3 h-3" />{$_('dialog.cancel')}</Button>
+      <Button kind="solid" variant="pop" onclick={() => appState.handleImportSettings()}><Upload class="w-3 h-3" />{$_('theme.import')}</Button>
     </div>
   </div>
 </Dialog>

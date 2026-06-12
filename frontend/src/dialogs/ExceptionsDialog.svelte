@@ -1,6 +1,7 @@
 <script lang="ts">
   import Dialog from '$lib/components/ui/Dialog.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import { X } from '@lucide/svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
 
@@ -34,7 +35,7 @@
       </table>
     </div>
     <div class="flex justify-end">
-      <Button kind="outline" variant="neutral" onclick={() => appState.clearExceptions()}>{$_('dialog.close')}</Button>
+      <Button kind="outline" variant="neutral" onclick={() => appState.clearExceptions()}><X class="w-3 h-3" />{$_('dialog.close')}</Button>
     </div>
   </div>
 </Dialog>

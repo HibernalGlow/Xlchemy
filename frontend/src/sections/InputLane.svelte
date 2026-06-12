@@ -2,6 +2,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import Select from '$lib/components/ui/Select.svelte';
+  import { FilePlus, FolderPlus, Trash2 } from '@lucide/svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
 
@@ -22,9 +23,9 @@
   <LaneCard id="input-files" header={`${$_('nav.input')} (${appState.fileItems.length})`} grow>
     <div class="flex flex-col gap-3 h-full">
       <div class="flex gap-1.5 flex-wrap">
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}>{$_('input.add_files')}</Button>
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}>{$_('input.add_folder')}</Button>
-        <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}>{$_('input.clear')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFiles()}><FilePlus class="w-3 h-3" />{$_('input.add_files')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleAddFolder()}><FolderPlus class="w-3 h-3" />{$_('input.add_folder')}</Button>
+        <Button kind="ghost" variant="neutral" size="sm" onclick={() => appState.clearFiles()} disabled={appState.fileItems.length === 0}><Trash2 class="w-3 h-3" />{$_('input.clear')}</Button>
       </div>
 
       <div class="flex-1 overflow-auto rounded-gb border border-border-2 bg-bg-2">

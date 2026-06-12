@@ -110,7 +110,7 @@
     z-index: var(--z-dropdown, 1000);
     min-width: 168px;
     padding: 4px;
-    background: var(--bg-1);
+    background: var(--bg-2);
     border: 1px solid var(--border-2);
     border-radius: var(--radius-m);
     box-shadow: 0 8px 20px rgba(var(--shadow-color-rgb), 0.16);

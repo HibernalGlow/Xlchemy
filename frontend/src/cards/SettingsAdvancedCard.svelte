@@ -5,6 +5,7 @@
   import Select from '$lib/components/ui/Select.svelte';
   import Textarea from '$lib/components/ui/Textarea.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
+  import { Download, Upload } from '@lucide/svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
   import type { LaneId } from '$lib/cards/definitions';
@@ -38,8 +39,8 @@
     {/if}
 
     <div class="flex gap-2 flex-wrap pt-2 border-t border-border-2/50">
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}>{$_('theme.export')}</Button>
-      <Button kind="outline" variant="neutral" size="sm" onclick={() => (appState.showImportDialog = true)}>{$_('theme.import')}</Button>
+      <Button kind="outline" variant="neutral" size="sm" onclick={() => appState.handleExportSettings()}><Download class="w-3 h-3" />{$_('theme.export')}</Button>
+      <Button kind="outline" variant="neutral" size="sm" onclick={() => (appState.showImportDialog = true)}><Upload class="w-3 h-3" />{$_('theme.import')}</Button>
     </div>
   </div>
 </LaneCard>

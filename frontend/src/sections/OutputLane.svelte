@@ -4,6 +4,7 @@
   import NumberInput from '$lib/components/ui/NumberInput.svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
+  import { FolderDot, FolderOpen } from '@lucide/svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
 
@@ -93,8 +94,8 @@
   <LaneCard id="output-save" header={$_('output.save_to')}>
     <div class="flex flex-col gap-3">
       <div class="flex gap-2 flex-wrap">
-        <button type="button" class={`px-2 py-1 rounded-gb text-xs border ${!appState.outputSettings.custom_output_dir ? 'border-fill-pop bg-fill-pop/10 text-fill-pop' : 'border-border-2 text-text-2'}`} onclick={() => appState.updateOutput('custom_output_dir', false)}>{$_('output.next_to_source')}</button>
-        <button type="button" class={`px-2 py-1 rounded-gb text-xs border ${appState.outputSettings.custom_output_dir ? 'border-fill-pop bg-fill-pop/10 text-fill-pop' : 'border-border-2 text-text-2'}`} onclick={() => appState.updateOutput('custom_output_dir', true)}>{$_('output.custom_folder')}</button>
+        <button type="button" class={`flex items-center gap-1 px-2 py-1 rounded-gb text-xs border ${!appState.outputSettings.custom_output_dir ? 'border-fill-pop bg-fill-pop/10 text-fill-pop' : 'border-border-2 text-text-2'}`} onclick={() => appState.updateOutput('custom_output_dir', false)}><FolderDot class="w-3 h-3" />{$_('output.next_to_source')}</button>
+        <button type="button" class={`flex items-center gap-1 px-2 py-1 rounded-gb text-xs border ${appState.outputSettings.custom_output_dir ? 'border-fill-pop bg-fill-pop/10 text-fill-pop' : 'border-border-2 text-text-2'}`} onclick={() => appState.updateOutput('custom_output_dir', true)}><FolderOpen class="w-3 h-3" />{$_('output.custom_folder')}</button>
       </div>
 
       {#if appState.outputSettings.custom_output_dir}

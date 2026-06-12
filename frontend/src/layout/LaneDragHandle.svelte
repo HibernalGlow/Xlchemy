@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Ellipsis, GripVertical } from '@lucide/svelte';
+  import { Ellipsis, GripVertical, ExternalLink, X, Pencil, ChevronDown, ChevronUp, EyeOff, Trash2 } from '@lucide/svelte';
   import { cn } from '$lib/utils/cn';
   import { _ } from 'svelte-i18n';
 
@@ -51,14 +51,26 @@
       </button>
       {#if menuOpen}
         <div class="lane-card-menu lane-card-menu--lane">
-          <button type="button" onclick={() => { menuOpen = false; onPopout?.(); }}>{poppedOut ? $_('lane_actions.close_pop_out') : $_('lane_actions.pop_out')}</button>
-          <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>{$_('lane_actions.rename')}</button>
-          <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>{collapsed ? $_('lane_actions.expand_lane') : $_('lane_actions.collapse_lane')}</button>
+          <button type="button" onclick={() => { menuOpen = false; onPopout?.(); }}>
+            {#if poppedOut}<X class="w-3.5 h-3.5" />{:else}<ExternalLink class="w-3.5 h-3.5" />{/if}
+            {poppedOut ? $_('lane_actions.close_pop_out') : $_('lane_actions.pop_out')}
+          </button>
+          <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>
+            <Pencil class="w-3.5 h-3.5" />{$_('lane_actions.rename')}
+          </button>
+          <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>
+            {#if collapsed}<ChevronDown class="w-3.5 h-3.5" />{:else}<ChevronUp class="w-3.5 h-3.5" />{/if}
+            {collapsed ? $_('lane_actions.expand_lane') : $_('lane_actions.collapse_lane')}
+          </button>
           {#if onHide}
-            <button type="button" onclick={() => { menuOpen = false; onHide?.(); }}>{$_('lane_actions.hide_lane')}</button>
+            <button type="button" onclick={() => { menuOpen = false; onHide?.(); }}>
+              <EyeOff class="w-3.5 h-3.5" />{$_('lane_actions.hide_lane')}
+            </button>
           {/if}
           {#if onDelete}
-            <button type="button" class="danger" onclick={() => { menuOpen = false; onDelete?.(); }}>{$_('lane_actions.delete_lane')}</button>
+            <button type="button" class="danger" onclick={() => { menuOpen = false; onDelete?.(); }}>
+              <Trash2 class="w-3.5 h-3.5" />{$_('lane_actions.delete_lane')}
+            </button>
           {/if}
         </div>
       {/if}

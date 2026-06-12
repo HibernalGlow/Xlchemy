@@ -2,6 +2,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
+  import { Globe, Code } from '@lucide/svelte';
   import { appState } from '$lib/state/app.svelte';
   import { _ } from 'svelte-i18n';
 </script>
@@ -15,8 +16,8 @@
       <p class="text-[11px] text-text-2">{$_('about.subtitle')}</p>
       <p class="text-[10px] text-text-2">Built with Wails 3 + Svelte + Go + Rust</p>
       <div class="flex gap-2 mt-2">
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://codepoems.eu', '_blank')}>{$_('about.website')}</Button>
-        <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://github.com/nicjacek/xlchemy', '_blank')}>{$_('about.source')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://codepoems.eu', '_blank')}><Globe class="w-3 h-3" />{$_('about.website')}</Button>
+        <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://github.com/nicjacek/xlchemy', '_blank')}><Code class="w-3 h-3" />{$_('about.source')}</Button>
       </div>
     </div>
   </LaneCard>

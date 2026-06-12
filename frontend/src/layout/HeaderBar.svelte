@@ -1,7 +1,7 @@
 <script lang="ts">
   import Badge from '$lib/components/ui/Badge.svelte';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
-  import { Palette, ChevronDown } from '@lucide/svelte';
+  import { Palette, ChevronDown, Minus, Maximize2, Minimize2, X } from '@lucide/svelte';
   import type { BackgroundSettings } from '$lib/utils/backgroundSettings';
 
   interface Props {
@@ -27,6 +27,27 @@
   let showThemePopover = $state(false);
   let popoverEl = $state<HTMLDivElement | null>(null);
   let buttonEl = $state<HTMLButtonElement | null>(null);
+  let isMaximised = $state(false);
+
+  async function handleMinimise() {
+    const { Window } = await import('@wailsio/runtime');
+    Window.Minimise();
+  }
+
+  async function handleToggleMaximise() {
+    const { Window } = await import('@wailsio/runtime');
+    Window.ToggleMaximise();
+    isMaximised = !isMaximised;
+  }
+
+  async function handleClose() {
+    const { Window } = await import('@wailsio/runtime');
+    Window.Close();
+  }
+
+  function handleDblClick() {
+    handleToggleMaximise();
+  }
 
   function togglePopover() {
     showThemePopover = !showThemePopover;
@@ -43,7 +64,8 @@
 
 <svelte:document onclick={handleClickOutside} />
 
-<header class="chrome-header">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<header class="chrome-header" ondblclick={handleDblClick}>
   <div class="chrome-header__left">
     <div class="chrome-header__brand">
       <div class="chrome-header__logo">X</div>
@@ -92,12 +114,60 @@
         </div>
       {/if}
     </div>
+
+    <!-- Window control buttons -->
+    <div class="window-controls">
+      <button type="button" class="window-controls__btn" onclick={handleMinimise} aria-label="Minimise">
+        <Minus class="w-3.5 h-3.5" />
+      </button>
+      <button type="button" class="window-controls__btn" onclick={handleToggleMaximise} aria-label="Maximise">
+        {#if isMaximised}
+          <Minimize2 class="w-3.5 h-3.5" />
+        {:else}
+          <Maximize2 class="w-3.5 h-3.5" />
+        {/if}
+      </button>
+      <button type="button" class="window-controls__btn window-controls__btn--close" onclick={handleClose} aria-label="Close">
+        <X class="w-3.5 h-3.5" />
+      </button>
+    </div>
   </div>
 </header>
 
 <style>
   .theme-popover-anchor {
     position: relative;
+  }
+
+  .window-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: 8px;
+  }
+
+  .window-controls__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-s, 4px);
+    border: none;
+    background: transparent;
+    color: var(--text-2, #aaa);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .window-controls__btn:hover {
+    background: var(--bg-3, rgba(255, 255, 255, 0.08));
+    color: var(--text-1, #fff);
+  }
+
+  .window-controls__btn--close:hover {
+    background: #c42b1c;
+    color: #fff;
   }
 
   .chrome-header__theme-button {

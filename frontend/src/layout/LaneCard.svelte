@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cn } from '$lib/utils/cn';
-  import { X, GripVertical, ChevronRight, Ellipsis } from '@lucide/svelte';
+  import { X, GripVertical, ChevronRight, ChevronDown, ChevronUp, Ellipsis, ExternalLink } from '@lucide/svelte';
   import { clearDrag, setCardDrag } from '$lib/state/dragState';
   import { canvasState } from '$lib/state/canvas.svelte';
   import { _ } from 'svelte-i18n';
@@ -131,6 +131,7 @@
     isDragging && 'drawer--dragging',
     isDropTarget && !dropAfter && 'drawer--drop-before',
     isDropTarget && dropAfter && 'drawer--drop-after',
+    menuOpen && 'drawer--menu-open',
     className,
   )}
   data-card-id={movable ? id : undefined}
@@ -167,8 +168,14 @@
 
         {#if menuOpen}
           <div class="card-menu__panel">
-            <button type="button" class="card-menu__item" onclick={handlePopout}>{poppedOut ? $_('card_actions.close_popout') : $_('card_actions.pop_out')}</button>
-            <button type="button" class="card-menu__item" onclick={() => { handleToggle(); menuOpen = false; }}>{collapsed ? $_('card_actions.expand_card') : $_('card_actions.collapse_card')}</button>
+            <button type="button" class="card-menu__item" onclick={handlePopout}>
+              {#if poppedOut}<X class="w-3.5 h-3.5" />{:else}<ExternalLink class="w-3.5 h-3.5" />{/if}
+              {poppedOut ? $_('card_actions.close_popout') : $_('card_actions.pop_out')}
+            </button>
+            <button type="button" class="card-menu__item" onclick={() => { handleToggle(); menuOpen = false; }}>
+              {#if collapsed}<ChevronDown class="w-3.5 h-3.5" />{:else}<ChevronUp class="w-3.5 h-3.5" />{/if}
+              {collapsed ? $_('card_actions.expand_card') : $_('card_actions.collapse_card')}
+            </button>
           </div>
         {/if}
       </div>
