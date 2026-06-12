@@ -5,6 +5,8 @@ permissions:
 
 on:
   push:
+    branches:
+      - svelte-rewrite
     tags:
       - "v*"
   workflow_dispatch:
@@ -110,6 +112,7 @@ jobs:
           Get-ChildItem dist/ | Format-Table Name, Length
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
