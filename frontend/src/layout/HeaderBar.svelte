@@ -104,29 +104,23 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 11px;
-    height: 32px;
+    padding: 4px 10px;
+    height: 28px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-1);
-    background:
-      linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 94%, transparent), color-mix(in oklch, var(--bg-1) 82%, var(--surface-ornament)));
-    border: 1px solid color-mix(in oklch, var(--border-2) 70%, transparent);
-    border-radius: 10px;
+    background: var(--bg-1);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-m);
     cursor: pointer;
-    backdrop-filter: blur(12px);
-    box-shadow:
-      inset 0 1px 0 var(--highlight),
-      0 10px 24px rgba(var(--shadow-color-rgb), 0.08);
     transition: all 0.15s ease;
     white-space: nowrap;
   }
 
   .chrome-header__theme-button:hover {
-    background:
-      linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 98%, transparent), color-mix(in oklch, var(--bg-1) 86%, var(--surface-ornament)));
+    background: var(--bg-1);
     color: var(--text-1);
-    border-color: color-mix(in oklch, var(--fill-pop-bg) 26%, var(--border-2));
+    border-color: var(--border-2);
   }
 
   .theme-chevron {
@@ -144,14 +138,11 @@
     right: 0;
     z-index: var(--z-dropdown);
     min-width: 280px;
-    padding: 10px;
-    background: color-mix(in oklch, var(--bg-1) 92%, transparent);
-    border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
-    border-radius: 12px;
-    backdrop-filter: blur(18px);
-    box-shadow:
-      inset 0 1px 0 var(--highlight),
-      0 16px 40px rgba(0, 0, 0, 0.18);
+    padding: 8px;
+    background: var(--bg-1);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-m);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     animation: popover-in 0.15s ease;
   }
 

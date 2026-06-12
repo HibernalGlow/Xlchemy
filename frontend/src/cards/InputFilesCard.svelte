@@ -552,7 +552,7 @@
   scrollable
 >
   <div class="input-files-card flex min-h-0 min-w-0 flex-col gap-2">
-    <div class="input-files-card__toolbar flex flex-wrap items-center gap-2 rounded-[16px] border border-border/70 bg-[color-mix(in_oklch,var(--bg-1)_74%,transparent)] px-2.5 py-2 shadow-[inset_0_1px_0_var(--highlight)]">
+    <div class="input-files-card__toolbar flex flex-wrap items-center gap-2 rounded-md border border-border px-2.5 py-2 bg-bg-1">
       <div class="input-files-card__actions flex flex-wrap items-center gap-2">
       <Button kind="outline" variant="neutral" size="icon" class="h-7 w-7" title={$_('input.add_files')} onclick={() => appState.handleAddFiles()}>
         <FilePlus class="h-3.5 w-3.5" />
@@ -623,10 +623,10 @@
       </div>
     </div>
 
-    <div class="input-files-card__surface overflow-hidden rounded-[18px] border border-border/75 bg-[color-mix(in_oklch,var(--bg-2)_78%,transparent)] shadow-[inset_0_1px_0_var(--highlight)]">
+    <div class="input-files-card__surface overflow-hidden rounded-md border border-border bg-bg-1">
       {#if appState.fileItems.length === 0}
         <div class="input-files-card__empty flex min-h-[220px] flex-col items-center justify-center gap-4 px-6 text-center">
-          <div class="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[color-mix(in_oklch,var(--border-2)_72%,transparent)] bg-[linear-gradient(180deg,color-mix(in_oklch,var(--bg-1)_96%,transparent),color-mix(in_oklch,var(--bg-1)_84%,var(--surface-ornament)))] shadow-[inset_0_1px_0_var(--highlight),0_14px_26px_rgba(var(--shadow-color-rgb),0.08)]">
+          <div class="flex h-14 w-14 items-center justify-center rounded-md border border-border bg-bg-1">
             <FileImage class="h-6 w-6 text-[color:var(--fill-pop-bg)]" />
           </div>
           <div class="space-y-1">
@@ -662,7 +662,7 @@
                   <tr class="border-b border-border-2/70">
                     {#each headerGroup.headers as header (header.id)}
                       <th
-                        class="sticky top-0 z-[1] bg-[color-mix(in_oklch,var(--bg-2)_88%,transparent)] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-text-2 backdrop-blur-xl"
+                        class="sticky top-0 z-[1] bg-bg-1 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-text-2"
                       >
                         {#if header.column.id === 'name'}
                           <div class="flex items-center gap-2">
@@ -698,7 +698,7 @@
               </thead>
               <tbody>
                 {#each fileTable.getRowModel().rows as row (row.original.absPath)}
-                  <tr class="input-files-card__row border-b border-border-2/40 transition-colors last:border-b-0 hover:bg-bg-3/55" oncontextmenu={(e) => handleContextMenu(e, row.original.absPath)}>
+                  <tr class="input-files-card__row border-b border-border transition-colors last:border-b-0 hover:bg-bg-2" oncontextmenu={(e) => handleContextMenu(e, row.original.absPath)}>
                     <td class="px-3 py-2.5 align-top">
                       <div class="flex h-9 items-center justify-center">
                         <Checkbox checked={isSelected(row.original.absPath)} onCheckedChange={(checked) => toggleSelection(row.original.absPath, checked)} />
@@ -706,7 +706,7 @@
                     </td>
                     <td class="min-w-0 px-3 py-2.5">
                       <div class="flex min-w-0 items-center gap-3" title={row.original.absPath}>
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border-2/70 bg-bg-1/75 shadow-[inset_0_1px_0_var(--highlight)]">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-bg-1">
                           <LocalFilePreview
                             path={row.original.absPath}
                             name={row.original.name}
@@ -723,7 +723,7 @@
                       </div>
                     </td>
                     <td class="min-w-0 px-3 py-2.5">
-                      <span class="inline-flex max-w-full truncate rounded-full border border-border-2/70 bg-bg-1/75 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
+                      <span class="inline-flex max-w-full truncate rounded-sm border border-border bg-bg-2 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
                         {row.original.ext || '-'}
                       </span>
                     </td>
@@ -759,7 +759,7 @@
                 {#if row.node.kind === 'folder'}
                   {@const folderState = getFolderSelectionState(row.node)}
                   <div
-                    class="input-files-card__tree-row input-files-card__tree-row--folder flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
+                    class="input-files-card__tree-row input-files-card__tree-row--folder flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-2"
                     style={`padding-left:${12 + row.depth * 16}px`}
                   >
                     <Checkbox
@@ -785,12 +785,12 @@
                   <div
                     role="row"
                     tabindex="-1"
-                    class="input-files-card__tree-row flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-3/60"
+                    class="input-files-card__tree-row flex items-center gap-2 px-3 py-2 transition-colors hover:bg-bg-2"
                     style={`padding-left:${12 + row.depth * 16}px`}
                     oncontextmenu={(e) => handleContextMenu(e, row.node.path)}
                   >
                     <Checkbox checked={isSelected(row.node.path)} onCheckedChange={(checked) => toggleSelection(row.node.path, checked)} />
-                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border-2/70 bg-bg-1/70">
+                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-bg-1">
                       <LocalFilePreview
                         path={row.node.path}
                         name={row.node.name}
@@ -805,7 +805,7 @@
                       <div class="truncate text-[11px] text-text-2">{row.node.ext ? `.${row.node.ext}` : 'file'}</div>
                     </div>
                     <div class="input-files-card__tree-meta ml-auto flex items-center gap-2">
-                      <span class="shrink-0 rounded-full border border-border-2/70 bg-bg-1/70 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
+                      <span class="shrink-0 rounded-sm border border-border bg-bg-2 px-2 py-0.5 text-[10px] uppercase tracking-normal text-text-2">
                         {row.node.ext || '-'}
                       </span>
                       <span class="shrink-0 text-[11px] tabular-nums text-text-2">{formatBytes(row.node.size)}</span>

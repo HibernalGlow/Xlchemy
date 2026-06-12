@@ -54,7 +54,7 @@
 
 <LaneCard id="progress-status" laneId={laneId} movable header={$_('dialog.converting')}>
   <div class="progress-card flex flex-col gap-3">
-    <div class="rounded-[18px] border border-border/75 bg-[color-mix(in_oklch,var(--bg-1)_78%,transparent)] p-3 shadow-[inset_0_1px_0_var(--highlight),0_12px_24px_rgba(var(--shadow-color-rgb),0.08)]">
+    <div class="rounded-md border border-border bg-bg-1 p-3">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div>
           <div class="text-[11px] tracking-[0.08em] text-text-2">运行状态</div>
@@ -82,17 +82,17 @@
       <Progress value={percent} />
 
       <div class="progress-card__stats mt-3 grid grid-cols-3 gap-2">
-        <div class="rounded-[14px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-2)_82%,transparent)] px-3 py-2">
+        <div class="rounded-md border border-border bg-bg-2 px-3 py-2">
           <div class="text-[10px] tracking-[0.08em] text-text-2">进度</div>
           <div class="mt-1 text-sm font-semibold tabular-nums text-text-1">
             {appState.progress.completed}/{appState.progress.total || 0}
           </div>
         </div>
-        <div class="rounded-[14px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-2)_82%,transparent)] px-3 py-2">
+        <div class="rounded-md border border-border bg-bg-2 px-3 py-2">
           <div class="text-[10px] tracking-[0.08em] text-text-2">已用时间</div>
           <div class="mt-1 text-sm font-semibold tabular-nums text-text-1">{elapsed}</div>
         </div>
-        <div class="rounded-[14px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-2)_82%,transparent)] px-3 py-2">
+        <div class="rounded-md border border-border bg-bg-2 px-3 py-2">
           <div class="text-[10px] tracking-[0.08em] text-text-2">ETA</div>
           <div class="mt-1 text-sm font-semibold tabular-nums text-text-1">
             {appState.isConverting ? eta() : '--:--'}
@@ -102,7 +102,7 @@
     </div>
 
     {#if appState.isConverting || appState.conversionElapsed > 0}
-      <div class="flex items-center gap-3 rounded-[16px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-1)_72%,transparent)] px-3 py-2 text-[11px] text-text-2 tabular-nums shadow-[inset_0_1px_0_var(--highlight)]">
+      <div class="flex items-center gap-3 rounded-md border border-border bg-bg-1 px-3 py-2 text-[11px] text-text-2 tabular-nums">
         <span class="inline-flex items-center gap-1">
           <Clock class="h-3 w-3" />
           <span class="text-text-1">{elapsed}</span>
@@ -119,7 +119,7 @@
     {/if}
 
     {#if appState.progressCurrentFile() || appState.progressSizeChange()}
-      <div class="rounded-[16px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-1)_72%,transparent)] px-3 py-2 shadow-[inset_0_1px_0_var(--highlight)]">
+      <div class="rounded-md border border-border bg-bg-1 px-3 py-2">
         {#if appState.progressCurrentFile()}
           <div class="truncate text-xs font-medium text-text-1">{appState.progressCurrentFile()}</div>
         {/if}
@@ -134,13 +134,13 @@
     </div>
 
     {#if appState.progressCardConfig.showRawLines}
-      <div class="flex flex-col gap-1 rounded-[16px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-2)_82%,transparent)] p-2.5 text-[11px] text-text-2">
+      <div class="flex flex-col gap-1 rounded-md border border-border bg-bg-2 p-2.5 text-[11px] text-text-2">
         <div>{appState.progress.line1 || '—'}</div>
         <div>{appState.progress.line2 || '—'}</div>
       </div>
     {/if}
 
-    <div class="progress-card__toggles grid grid-cols-2 gap-2 rounded-[16px] border border-border/65 bg-[color-mix(in_oklch,var(--bg-1)_72%,transparent)] p-3 text-[11px] text-text-1 shadow-[inset_0_1px_0_var(--highlight)]">
+    <div class="progress-card__toggles grid grid-cols-2 gap-2 rounded-md border border-border bg-bg-1 p-3 text-[11px] text-text-1">
       <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showCounter} onCheckedChange={(v) => appState.updateProgressCardConfig('showCounter', v)} /> 计数</label>
       <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showSummary} onCheckedChange={(v) => appState.updateProgressCardConfig('showSummary', v)} /> 摘要</label>
       <label class="flex items-center gap-2"><Checkbox checked={appState.progressCardConfig.showEta} onCheckedChange={(v) => appState.updateProgressCardConfig('showEta', v)} /> ETA</label>
