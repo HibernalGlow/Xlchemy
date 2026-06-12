@@ -16,51 +16,98 @@
     poppedOut?: boolean;
   }
 
-  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onHide, onPopout, poppedOut = false }: Props = $props();
+  const labels = {
+    expand: '展开',
+    collapse: '折叠',
+    drag: '拖动',
+    more: '更多操作',
+    closePopout: '关闭浮出',
+    popoutLane: '浮出显示',
+    renameLane: '重命名泳道',
+    expandLane: '展开泳道',
+    collapseLane: '折叠泳道',
+    hideLane: '隐藏泳道',
+    deleteLane: '删除泳道',
+  };
+
+  let {
+    title,
+    collapsed,
+    onToggleCollapse,
+    onDragStart,
+    onDragEnd,
+    actions,
+    onRename,
+    onDelete,
+    onHide,
+    onPopout,
+    poppedOut = false,
+  }: Props = $props();
+
   let menuOpen = $state(false);
 </script>
 
 <div class="lane-drag-handle">
-  <button
-    type="button"
-    class={cn('lane-drag-handle__collapse', collapsed && 'lane-drag-handle__collapse--folded')}
-    onclick={onToggleCollapse}
-    title={collapsed ? `Expand ${title}` : `Collapse ${title}`}
-  >
-    <svg class="lane-drag-handle__icon" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M11.75 0.75H2.75C1.64543 0.75 0.75 1.64543 0.75 2.75V6.75C0.75 7.85457 1.64543 8.75 2.75 8.75H11.75C12.8546 8.75 13.75 7.85457 13.75 6.75V2.75C13.75 1.64543 12.8546 0.75 11.75 0.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      <rect class="lane-drag-handle__lane-rect" x="0.75" y="0.75" width="5" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/>
-    </svg>
-  </button>
+  <div class="lane-drag-handle__side lane-drag-handle__side--left">
+    <button
+      type="button"
+      class={cn('lane-drag-handle__collapse', collapsed && 'lane-drag-handle__collapse--folded')}
+      onclick={onToggleCollapse}
+      title={collapsed ? `${labels.expand} ${title}` : `${labels.collapse} ${title}`}
+    >
+      <svg class="lane-drag-handle__icon" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11.75 0.75H2.75C1.64543 0.75 0.75 1.64543 0.75 2.75V6.75C0.75 7.85457 1.64543 8.75 2.75 8.75H11.75C12.8546 8.75 13.75 7.85457 13.75 6.75V2.75C13.75 1.64543 12.8546 0.75 11.75 0.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        <rect class="lane-drag-handle__lane-rect" x="0.75" y="0.75" width="5" height="8" rx="2" stroke="currentColor" stroke-width="1.5" />
+      </svg>
+    </button>
+  </div>
 
   <div class="lane-drag-handle__center">
     <span class="lane-drag-handle__title">{title}</span>
   </div>
 
-  <div class="lane-drag-handle__actions">
-    <div role="button" aria-label={`Drag ${title}`} tabindex="0" class="lane-drag-handle__grip" draggable="true" ondragstart={onDragStart} ondragend={onDragEnd} data-drag-handle>
-      <GripVertical class="w-[10px] h-[14px]" />
-    </div>
-    {#if actions}
-      {@render actions()}
-    {/if}
-    <div class="lane-menu-anchor">
-      <button type="button" class="lane-drag-handle__menu" title="More actions" onclick={() => (menuOpen = !menuOpen)}>
-        <Ellipsis class="w-3.5 h-3.5" />
-      </button>
-      {#if menuOpen}
-        <div class="lane-card-menu lane-card-menu--lane">
-          <button type="button" onclick={() => { menuOpen = false; onPopout?.(); }}>{poppedOut ? 'Close pop out' : 'Pop out lane'}</button>
-          <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>Rename lane</button>
-          <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>{collapsed ? 'Expand lane' : 'Collapse lane'}</button>
-          {#if onHide}
-            <button type="button" onclick={() => { menuOpen = false; onHide?.(); }}>Hide lane</button>
-          {/if}
-          {#if onDelete}
-            <button type="button" class="danger" onclick={() => { menuOpen = false; onDelete?.(); }}>Delete lane</button>
-          {/if}
-        </div>
+  <div class="lane-drag-handle__side lane-drag-handle__side--right">
+    <div class="lane-drag-handle__actions">
+      <div
+        role="button"
+        aria-label={`${labels.drag} ${title}`}
+        tabindex="0"
+        class="lane-drag-handle__grip"
+        draggable="true"
+        ondragstart={onDragStart}
+        ondragend={onDragEnd}
+        data-drag-handle
+      >
+        <GripVertical class="w-[10px] h-[14px]" />
+      </div>
+
+      {#if actions}
+        {@render actions()}
       {/if}
+
+      <div class="lane-menu-anchor">
+        <button type="button" class="lane-drag-handle__menu" title={labels.more} onclick={() => (menuOpen = !menuOpen)}>
+          <Ellipsis class="w-3.5 h-3.5" />
+        </button>
+
+        {#if menuOpen}
+          <div class="lane-card-menu lane-card-menu--lane">
+            <button type="button" onclick={() => { menuOpen = false; onPopout?.(); }}>
+              {poppedOut ? labels.closePopout : labels.popoutLane}
+            </button>
+            <button type="button" onclick={() => { menuOpen = false; onRename?.(); }}>{labels.renameLane}</button>
+            <button type="button" onclick={() => { menuOpen = false; onToggleCollapse(); }}>
+              {collapsed ? labels.expandLane : labels.collapseLane}
+            </button>
+            {#if onHide}
+              <button type="button" onclick={() => { menuOpen = false; onHide?.(); }}>{labels.hideLane}</button>
+            {/if}
+            {#if onDelete}
+              <button type="button" class="danger" onclick={() => { menuOpen = false; onDelete?.(); }}>{labels.deleteLane}</button>
+            {/if}
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
