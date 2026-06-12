@@ -888,7 +888,7 @@
   flex-shrink: 0;
   overflow: visible;
   border-radius: var(--radius-m);
-  background: var(--bg-1);
+  background: transparent;
   border: 1px solid var(--border-2);
   box-shadow: none;
 }
@@ -1073,7 +1073,7 @@
   border-bottom: 1px solid color-mix(in oklch, var(--border-2) 70%, transparent);
   background:
     linear-gradient(180deg, color-mix(in oklch, var(--fill-pop-soft) 26%, transparent), transparent 72%),
-    var(--bg-1);
+    transparent;
   border-radius: var(--radius-m) var(--radius-m) 0 0;
   position: relative;
   z-index: 1;
@@ -1133,6 +1133,8 @@
   min-height: 0;
   overflow-y: auto;
   padding: 10px 10px 12px;
+  background: var(--bg-1);
+  border-radius: 0 0 var(--radius-m) var(--radius-m);
 }
 
 .drawer__content {
