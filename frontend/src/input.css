@@ -1073,7 +1073,7 @@
   border-bottom: 1px solid color-mix(in oklch, var(--border-2) 70%, transparent);
   background:
     linear-gradient(180deg, color-mix(in oklch, var(--fill-pop-soft) 26%, transparent), transparent 72%),
-    transparent;
+    var(--bg-2);
   border-radius: var(--radius-m) var(--radius-m) 0 0;
   position: relative;
   z-index: 1;
