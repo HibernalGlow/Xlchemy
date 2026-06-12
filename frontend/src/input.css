@@ -755,27 +755,51 @@
 
 /* ─── Lane Drag Handle (StackDragHandle) ─── */
 .lane-drag-handle {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 36px;
   margin: 0;
-  padding: 0 10px;
+  padding: 0 8px;
   color: var(--text-2);
   flex-shrink: 0;
-  gap: 4px;
-  background: transparent;
+  gap: 8px;
+  background: color-mix(in oklch, var(--bg-2) 76%, transparent);
   border-bottom: 1px solid var(--border-2);
   border-radius: 0;
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+.lane-drag-handle__side {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.lane-drag-handle__side--left {
+  justify-content: flex-start;
+}
+
+.lane-drag-handle__side--right {
+  justify-content: flex-end;
 }
 
 .lane-drag-handle__center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  gap: 8px;
+  width: max-content;
+  max-width: calc(100% - 104px);
   min-width: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 .lane-drag-handle__collapse {
@@ -838,14 +862,16 @@
 }
 
 .lane-drag-handle__title {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--text-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   user-select: none;
+  text-align: center;
 }
 
 .lane-drag-handle__actions {
@@ -881,30 +907,35 @@
   width: 100%;
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: var(--radius-m);
-  background: var(--bg-1);
-  border: 1px solid var(--border-2);
-  box-shadow: none;
+  border-radius: 16px;
+  background: color-mix(in oklch, var(--bg-1) 92%, var(--fill-pop-soft) 8%);
+  border: 1px solid color-mix(in oklch, var(--border-2) 78%, white 22%);
+  box-shadow:
+    0 1px 0 color-mix(in oklch, white 8%, transparent) inset,
+    0 18px 36px rgba(var(--shadow-color-rgb), 0.14);
 }
 
 .drawer::before {
   content: '';
   position: absolute;
   inset: 0;
-  border: none;
+  border: 1px solid color-mix(in oklch, white 7%, transparent);
   border-radius: inherit;
   pointer-events: none;
   z-index: 2;
+  opacity: 0.5;
 }
 
 .drawer-header::before {
   content: '';
   position: absolute;
   inset: 0;
-  border: none;
-  border-bottom-color: transparent;
   border-radius: inherit;
   pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in oklch, white 6%, transparent), transparent 52%),
+    linear-gradient(180deg, color-mix(in oklch, var(--fill-pop-soft) 18%, transparent), transparent 65%);
+  opacity: 0.9;
 }
 
 .drawer--border {
@@ -1055,9 +1086,11 @@
   height: 42px;
   padding: 0 12px 0 14px;
   gap: 8px;
-  border-bottom: 1px solid var(--border-2);
-  background: var(--bg-card-header);
-  border-radius: var(--radius-m) var(--radius-m) 0 0;
+  border-bottom: 1px solid color-mix(in oklch, var(--border-2) 72%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-card-header) 92%, white 8%), color-mix(in oklch, var(--bg-card-header) 98%, transparent)),
+    color-mix(in oklch, var(--bg-card-header) 88%, transparent);
+  border-radius: 16px 16px 0 0;
   position: relative;
   z-index: 1;
 }
@@ -1072,9 +1105,11 @@
 }
 
 .drawer-header__text {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--text-1);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1178,16 +1213,20 @@
   flex-shrink: 0;
   height: 100%;
   padding: 8px 8px 12px;
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-m);
-  background: var(--bg-1);
+  border: 1px solid color-mix(in oklch, var(--border-2) 72%, white 10%);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 44%, transparent), color-mix(in oklch, var(--bg-2) 26%, transparent)),
+    transparent;
+  backdrop-filter: blur(18px) saturate(135%);
   color: var(--text-2);
   cursor: grab;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .folded-lane:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: color-mix(in oklch, var(--fill-pop-bg) 22%, var(--border-2));
+  box-shadow: 0 12px 24px rgba(var(--shadow-color-rgb), 0.12);
 }
 
 .folded-lane--dragging {
@@ -1325,15 +1364,20 @@
   top: calc(100% + 6px);
   right: 0;
   z-index: var(--z-dropdown);
-  min-width: 160px;
+  min-width: 176px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-m);
-  background: var(--bg-1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid color-mix(in oklch, var(--border-2) 78%, white 22%);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in oklch, white 6%, transparent), transparent 38%),
+    color-mix(in oklch, var(--bg-1) 95%, transparent);
+  backdrop-filter: blur(22px) saturate(145%);
+  box-shadow:
+    0 1px 0 color-mix(in oklch, white 7%, transparent) inset,
+    0 20px 38px rgba(var(--shadow-color-rgb), 0.22);
 }
 
 .lane-card-menu button,
@@ -1345,14 +1389,17 @@
   border: none;
   background: transparent;
   color: var(--text-1);
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: var(--radius-s);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 8px 10px;
+  border-radius: 9px;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .lane-card-menu button:hover,
 .card-menu__item:hover {
-  background: var(--bg-2);
+  background: color-mix(in oklch, var(--fill-pop-soft) 54%, var(--bg-2));
 }
 
 .lane-card-menu .danger,

@@ -108,12 +108,17 @@
   .ctx-menu {
     position: fixed;
     z-index: var(--z-dropdown, 1000);
-    min-width: 160px;
-    padding: 4px;
-    background: var(--bg-1);
-    border: 1px solid var(--border-2);
-    border-radius: var(--radius-m);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    min-width: 176px;
+    padding: 6px;
+    background:
+      linear-gradient(180deg, color-mix(in oklch, white 6%, transparent), transparent 38%),
+      color-mix(in oklch, var(--bg-1) 95%, transparent);
+    border: 1px solid color-mix(in oklch, var(--border-2) 78%, white 22%);
+    border-radius: 12px;
+    backdrop-filter: blur(22px) saturate(145%);
+    box-shadow:
+      0 1px 0 color-mix(in oklch, white 7%, transparent) inset,
+      0 20px 38px rgba(var(--shadow-color-rgb), 0.22);
     animation: ctx-menu-in 0.12s ease;
   }
 
@@ -134,21 +139,22 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 450;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: var(--text-1);
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: 9px;
     cursor: pointer;
-    transition: background 0.1s ease;
+    transition: background 0.12s ease, color 0.12s ease;
     text-align: left;
     white-space: nowrap;
   }
 
   .ctx-menu__item:hover {
-    background: var(--bg-2);
+    background: color-mix(in oklch, var(--fill-pop-soft) 54%, var(--bg-2));
   }
 
   .ctx-menu__item--disabled {
@@ -161,7 +167,7 @@
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-    color: var(--text-2);
+    color: color-mix(in oklch, var(--text-2) 72%, var(--fill-pop-bg) 28%);
   }
 
   .ctx-menu__label {
@@ -171,7 +177,7 @@
 
   .ctx-menu__separator {
     height: 1px;
-    margin: 3px 6px;
-    background: var(--border-2);
+    margin: 4px 6px;
+    background: color-mix(in oklch, var(--border-2) 80%, transparent);
   }
 </style>
