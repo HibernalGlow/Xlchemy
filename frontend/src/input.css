@@ -771,7 +771,7 @@
   flex-shrink: 0;
   gap: 8px;
   background: transparent;
-  border-bottom: 1px solid var(--border-2);
+  border-bottom: none;
   border-radius: 0;
 }
 
@@ -939,6 +939,10 @@
 
 .drawer--collapsed {
   max-height: none;
+  border-radius: 0;
+}
+.drawer--collapsed .drawer-header {
+  border-radius: 0;
 }
 
 .drawer--expanded {
@@ -1198,8 +1202,8 @@
   height: 100%;
   padding: 8px 8px 12px;
   border: 1px solid var(--border-2);
-  border-radius: var(--radius-m);
-  background: var(--bg-1);
+  border-radius: 0;
+  background: var(--bg-2);
   color: var(--text-2);
   cursor: grab;
   transition: box-shadow 0.2s ease;
