@@ -89,27 +89,27 @@ jobs:
       - name: Package portable zip
         shell: powershell
         run: |
-          $releaseDir = "release/Xlchemy-${{ github.ref_name }}-portable"
+          $releaseDir = "release/Xlchemy-Wails-${{ github.ref_name }}-portable"
           New-Item -ItemType Directory -Force -Path $releaseDir
           Copy-Item "bin/${{ env.APP_NAME }}.exe" $releaseDir
           Copy-Item -Recurse "bin/win" "$releaseDir/bin/win"
-          Compress-Archive -Path "$releaseDir/*" -DestinationPath "release/Xlchemy-${{ github.ref_name }}-portable-win-x64.zip"
+          Compress-Archive -Path "$releaseDir/*" -DestinationPath "release/Xlchemy-Wails-${{ github.ref_name }}-portable-win-x64.zip"
 
       # ─── Collect & Release ────────────────────────────────
       - name: Collect release files
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force dist
-          Copy-Item "bin/${{ env.APP_NAME }}-amd64-installer.exe" "dist/Xlchemy-${{ github.ref_name }}-setup-win-x64.exe"
-          Copy-Item "release/Xlchemy-${{ github.ref_name }}-portable-win-x64.zip" "dist/"
+          Copy-Item "bin/${{ env.APP_NAME }}-amd64-installer.exe" "dist/Xlchemy-Wails-${{ github.ref_name }}-setup-win-x64.exe"
+          Copy-Item "release/Xlchemy-Wails-${{ github.ref_name }}-portable-win-x64.zip" "dist/"
           Get-ChildItem dist/ | Format-Table Name, Length
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/Xlchemy-${{ github.ref_name }}-setup-win-x64.exe
-            dist/Xlchemy-${{ github.ref_name }}-portable-win-x64.zip
+            dist/Xlchemy-Wails-${{ github.ref_name }}-setup-win-x64.exe
+            dist/Xlchemy-Wails-${{ github.ref_name }}-portable-win-x64.zip
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
