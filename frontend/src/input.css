@@ -951,10 +951,9 @@
 
 .drawer--collapsed {
   max-height: none;
-  border-radius: 0;
 }
 .drawer--collapsed .drawer-header {
-  border-radius: 0;
+  border-radius: var(--radius-m) var(--radius-m) 0 0;
 }
 
 .drawer--expanded {

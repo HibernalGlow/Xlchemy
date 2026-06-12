@@ -1,4 +1,4 @@
-name: Build Windows Portable
+name: Release
 
 permissions:
   contents: write
@@ -6,73 +6,53 @@ permissions:
 on:
   push:
     tags:
-      - "v*.*.*"
-  workflow_dispatch:
+      - "v*"
 
 env:
-  CARGO_TERM_COLOR: always
-  CARGO_INCREMENTAL: 0
+  APP_NAME: xlchemy-wails
+  GOPROXY: https://goproxy.cn,https://proxy.golang.org,direct
 
 jobs:
   build-windows:
     runs-on: windows-latest
-    name: Build Windows Portable
+    name: Build Windows
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      # ─── Toolchain ────────────────────────────────────────
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          python-version: "3.13"
+          go-version: "1.25"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          enable-cache: true
+          node-version: 20
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
 
-      - name: Install pkgconf
-        shell: powershell
-        run: choco install pkgconfiglite -y
+      - name: Install NSIS
+        run: choco install nsis -y
 
-      - name: Configure dav1d environment
-        shell: powershell
-        run: |
-          $dav1dRoot = "${{ github.workspace }}\prebuilt\dav1d"
-          $pkgCfgPath = "$dav1dRoot\lib\pkgconfig"
-          $binPath = "$dav1dRoot\bin"
+      - name: Install Wails 3 CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
-          $newPath = "$binPath;$env:PATH"
-          echo "PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "PKG_CONFIG_PATH=$pkgCfgPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      # ─── Frontend ─────────────────────────────────────────
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install
 
-          Write-Host "Environment configured"
-          Write-Host "PKG_CONFIG_PATH: $pkgCfgPath"
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm run build
 
-      - name: Verify dav1d detection
-        shell: powershell
-        run: |
-          pkg-config --modversion dav1d
-          pkg-config --libs --cflags dav1d
-
-      - name: Install Python dependencies
-        run: uv sync --all-groups
-
-      - name: Build Rust bindings
-        run: uv run python build_rust.py
-
-      - name: Copy dav1d.dll to xlchemy_rust
-        shell: powershell
-        run: |
-          $src = "${{ github.workspace }}\prebuilt\dav1d\bin\dav1d.dll"
-          $dst = "${{ github.workspace }}\xlchemy_rust\dav1d.dll"
-          Copy-Item -Path $src -Destination $dst -Force
-          Write-Host "Copied dav1d.dll to xlchemy_rust"
-
+      # ─── Extract tools ────────────────────────────────────
       - name: Extract bin/win tools
         shell: powershell
         run: |
@@ -80,57 +60,55 @@ jobs:
           $destPath = "${{ github.workspace }}\bin\win"
           if (Test-Path $zipPath) {
             Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
-            Write-Host "Extracted bin/win.zip to bin/win"
+            Write-Host "Extracted bin/win.zip"
             Get-ChildItem $destPath -Directory | Select-Object Name
           } else {
             Write-Error "bin/win.zip not found"
             exit 1
           }
 
-      - name: Build portable package
-        run: uv run python build.py --build-type portable
+      # ─── Windows resources (.syso) ────────────────────────
+      - name: Generate syso
+        working-directory: build
+        run: wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
 
-      - name: Get version
-        id: version
+      # ─── Go binary ────────────────────────────────────────
+      - name: Build Go binary (production)
+        run: go build -tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui" -o bin/${{ env.APP_NAME }}.exe .
+
+      # ─── NSIS installer ───────────────────────────────────
+      - name: Generate WebView2 bootstrapper
+        run: wails3 generate webview2bootstrapper -dir build/windows/nsis
+
+      - name: Build NSIS installer
+        working-directory: build/windows/nsis
+        run: makensis -DARG_WAILS_AMD64_BINARY=../../../bin/${{ env.APP_NAME }}.exe project.nsi
+
+      # ─── Portable zip ─────────────────────────────────────
+      - name: Package portable zip
         shell: powershell
         run: |
-          $content = Get-Content -Path "data/constants.py" -Raw
-          if ($content -match 'VERSION\s*=\s*"([^"]+)"') {
-            $version = $matches[1]
-            Write-Host "Version: $version"
-            echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8
-          } else {
-            Write-Error "Failed to extract version from data/constants.py"
-            exit 1
-          }
+          $releaseDir = "release/Xlchemy-${{ github.ref_name }}-portable"
+          New-Item -ItemType Directory -Force -Path $releaseDir
+          Copy-Item "bin/${{ env.APP_NAME }}.exe" $releaseDir
+          Copy-Item -Recurse "bin/win" "$releaseDir/bin/win"
+          Compress-Archive -Path "$releaseDir/*" -DestinationPath "release/Xlchemy-${{ github.ref_name }}-portable-win-x64.zip"
 
-      - name: Create ZIP archive
+      # ─── Collect & Release ────────────────────────────────
+      - name: Collect release files
         shell: powershell
         run: |
-          $version = "${{ steps.version.outputs.version }}"
-          $portableDir = "dist\xlchemy-win-$version-x86_64-portable"
-          $zipName = "xlchemy-win-$version-x86_64-portable.zip"
+          New-Item -ItemType Directory -Force dist
+          Copy-Item "bin/${{ env.APP_NAME }}-amd64-installer.exe" "dist/Xlchemy-${{ github.ref_name }}-setup-win-x64.exe"
+          Copy-Item "release/Xlchemy-${{ github.ref_name }}-portable-win-x64.zip" "dist/"
+          Get-ChildItem dist/ | Format-Table Name, Length
 
-          if (Test-Path $portableDir) {
-            Compress-Archive -Path $portableDir -DestinationPath $zipName -Force
-            Write-Host "Created: $zipName"
-          } else {
-            Write-Error "Portable directory not found: $portableDir"
-            Get-ChildItem dist -Recurse | Select-Object FullName
-            exit 1
-          }
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: windows-portable
-          path: "*.zip"
-
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          tag_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+          files: |
+            dist/Xlchemy-${{ github.ref_name }}-setup-win-x64.exe
+            dist/Xlchemy-${{ github.ref_name }}-portable-win-x64.zip
           generate_release_notes: true
-          files: "*.zip"
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

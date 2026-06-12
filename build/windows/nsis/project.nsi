@@ -88,6 +88,11 @@ Section
     
     !insertmacro wails.files
 
+    # Bundle external tools (libjxl, imagemagick, libavif, etc.)
+    SetOutPath "$INSTDIR\bin\win"
+    File /r "..\..\..\bin\win\*"
+    SetOutPath $INSTDIR
+
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
