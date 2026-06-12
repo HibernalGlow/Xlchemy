@@ -124,9 +124,8 @@
     {disabled}
     onclick={toggleOpen}
     class={cn(
-      'flex h-8 w-full items-center justify-between gap-1.5 rounded-gb border border-[color-mix(in_oklch,var(--border-2)_72%,transparent)] bg-[linear-gradient(180deg,color-mix(in_oklch,var(--bg-1)_94%,transparent),color-mix(in_oklch,var(--bg-1)_84%,var(--surface-ornament)))] px-2.5 text-[11px] text-text-1',
-      'backdrop-blur-sm shadow-[inset_0_1px_0_var(--highlight)]',
-      'transition-[color,border-color,box-shadow] duration-50 ease-in-out',
+      'flex h-7 w-full items-center justify-between gap-1.5 rounded-gb border border-border-2 bg-bg-1 px-2.5 text-[11px] text-text-1',
+      'transition-colors duration-50 ease-in-out',
       'focus:outline-none focus:ring-2 focus:ring-fill-pop focus:ring-offset-1 focus:ring-offset-bg-1',
       'disabled:cursor-not-allowed disabled:opacity-50',
       '[&>span]:truncate',
@@ -141,7 +140,7 @@
       bind:this={panelEl}
       use:portal
       role="presentation"
-      class="overflow-hidden rounded-[16px] border border-[color-mix(in_oklch,var(--border-2)_72%,transparent)] bg-[color-mix(in_oklch,var(--bg-1)_94%,transparent)] shadow-[0_20px_40px_rgba(var(--shadow-color-rgb),0.18)] backdrop-blur-xl"
+      class="overflow-hidden rounded-gb border border-border-2 bg-bg-1 shadow-md"
       style={panelStyle}
       onmouseleave={() => (hoveredValue = null)}
     >
@@ -153,10 +152,10 @@
             onmouseenter={() => (hoveredValue = option.value)}
             onfocus={() => (hoveredValue = option.value)}
             class={cn(
-              'relative flex h-8 w-full cursor-default select-none items-center rounded-[10px] pr-8 pl-2.5 text-[11px] text-text-1 outline-none',
+              'relative flex h-7 w-full cursor-default select-none items-center rounded-[6px] pr-8 pl-2.5 text-[11px] text-text-1 outline-none',
               'transition-colors duration-50',
               hoveredValue === option.value && 'bg-secondary text-secondary-foreground',
-              hoveredValue !== option.value && option.value === value && 'bg-[color-mix(in_oklch,var(--fill-pop-bg)_14%,transparent)]',
+              hoveredValue !== option.value && option.value === value && 'bg-fill-pop/10',
             )}
           >
             <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">

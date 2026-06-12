@@ -110,14 +110,10 @@
     z-index: var(--z-dropdown, 1000);
     min-width: 160px;
     padding: 4px;
-    background: color-mix(in oklch, var(--bg-1) 96%, transparent);
-    border: 1px solid color-mix(in oklch, var(--border-2) 70%, transparent);
-    border-radius: 10px;
-    backdrop-filter: blur(18px);
-    box-shadow:
-      inset 0 1px 0 var(--highlight),
-      0 8px 24px rgba(0, 0, 0, 0.16),
-      0 2px 8px rgba(0, 0, 0, 0.1);
+    background: var(--bg-1);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-m);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     animation: ctx-menu-in 0.12s ease;
   }
 
@@ -152,7 +148,7 @@
   }
 
   .ctx-menu__item:hover {
-    background: color-mix(in oklch, var(--fill-pop-bg) 14%, transparent);
+    background: var(--bg-2);
   }
 
   .ctx-menu__item--disabled {
@@ -176,6 +172,6 @@
   .ctx-menu__separator {
     height: 1px;
     margin: 3px 6px;
-    background: color-mix(in oklch, var(--border-2) 50%, transparent);
+    background: var(--border-2);
   }
 </style>

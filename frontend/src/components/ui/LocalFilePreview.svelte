@@ -58,7 +58,7 @@
 
 <div
   class={cn(
-    'overflow-hidden rounded-[inherit] bg-[color-mix(in_oklch,var(--bg-1)_76%,transparent)]',
+    'overflow-hidden rounded-[inherit] bg-bg-2',
     className,
   )}
 >
