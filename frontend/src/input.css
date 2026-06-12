@@ -69,6 +69,9 @@
 
     /* ─── shadcn compatibility layer ─── */
     --radius: 0.85rem;
+    --radius-s: 0.35rem;
+    --radius-m: 0.55rem;
+    --radius-l: 0.7rem;
     --background: var(--bg-2);
     --foreground: var(--text-1);
     --card: var(--bg-1);
@@ -184,6 +187,9 @@
 
     /* ─── shadcn compatibility layer (dark) ─── */
     --radius: 0.85rem;
+    --radius-s: 0.35rem;
+    --radius-m: 0.55rem;
+    --radius-l: 0.7rem;
     --background: var(--bg-2);
     --foreground: var(--text-1);
     --card: var(--bg-1);
@@ -653,7 +659,7 @@
   border: 0;
   border-right: 1px solid var(--border-2);
   border-radius: 0;
-  overflow: hidden;
+  overflow: visible;
   transition: background 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
 }
 
@@ -755,15 +761,15 @@
 
 /* ─── Lane Drag Handle (StackDragHandle) ─── */
 .lane-drag-handle {
-  display: flex;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
   align-items: center;
-  justify-content: space-between;
   height: 36px;
   margin: 0;
-  padding: 0 10px;
+  padding: 0 8px;
   color: var(--text-2);
   flex-shrink: 0;
-  gap: 4px;
+  gap: 8px;
   background: transparent;
   border-bottom: 1px solid var(--border-2);
   border-radius: 0;
@@ -773,9 +779,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
   gap: 8px;
   min-width: 0;
+  pointer-events: none;
 }
 
 .lane-drag-handle__collapse {
@@ -880,11 +886,20 @@
   flex-direction: column;
   width: 100%;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
   border-radius: var(--radius-m);
   background: var(--bg-1);
   border: 1px solid var(--border-2);
   box-shadow: none;
+}
+
+.drawer > *:not(.card-menu__panel) {
+  position: relative;
+  z-index: 1;
+}
+
+.drawer-scroll {
+  overflow: hidden;
 }
 
 .drawer::before {
@@ -1325,7 +1340,7 @@
   top: calc(100% + 6px);
   right: 0;
   z-index: var(--z-dropdown);
-  min-width: 160px;
+  min-width: 168px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1333,7 +1348,7 @@
   border: 1px solid var(--border-2);
   border-radius: var(--radius-m);
   background: var(--bg-1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 20px rgba(var(--shadow-color-rgb), 0.16);
 }
 
 .lane-card-menu button,
@@ -1346,8 +1361,10 @@
   background: transparent;
   color: var(--text-1);
   font-size: 12px;
-  padding: 6px 10px;
+  font-weight: 500;
+  padding: 7px 10px;
   border-radius: var(--radius-s);
+  transition: background 0.1s ease, color 0.1s ease;
 }
 
 .lane-card-menu button:hover,

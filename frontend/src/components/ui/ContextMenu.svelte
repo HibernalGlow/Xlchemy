@@ -108,12 +108,12 @@
   .ctx-menu {
     position: fixed;
     z-index: var(--z-dropdown, 1000);
-    min-width: 160px;
+    min-width: 168px;
     padding: 4px;
     background: var(--bg-1);
     border: 1px solid var(--border-2);
     border-radius: var(--radius-m);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 20px rgba(var(--shadow-color-rgb), 0.16);
     animation: ctx-menu-in 0.12s ease;
   }
 
@@ -134,15 +134,15 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 6px 10px;
+    padding: 7px 10px;
     font-size: 12px;
-    font-weight: 450;
+    font-weight: 500;
     color: var(--text-1);
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-s);
     cursor: pointer;
-    transition: background 0.1s ease;
+    transition: background 0.1s ease, color 0.1s ease;
     text-align: left;
     white-space: nowrap;
   }
@@ -157,7 +157,7 @@
     pointer-events: none;
   }
 
-  .ctx-menu__icon {
+  :global(.ctx-menu__icon) {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
