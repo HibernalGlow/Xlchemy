@@ -39,7 +39,12 @@ jobs:
           version: 11
 
       - name: Install NSIS
-        run: choco install nsis -y
+        shell: powershell
+        run: |
+          choco install nsis -y
+          $nsisDir = "C:\Program Files (x86)\NSIS"
+          echo $nsisDir >> $env:GITHUB_PATH
+          Write-Host "NSIS path: $( & "$nsisDir\makensis.exe" /VERSION )"
 
       - name: Install Wails 3 CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest

@@ -41,12 +41,10 @@ tasks:
     internal: true
     deps:
       - task: common:go:mod:tidy
-      - task: common:build:frontend
+      - task: '{{if eq .DEV "true"}}common:generate:bindings{{else}}common:build:frontend{{end}}'
         vars:
           BUILD_FLAGS:
             ref: .BUILD_FLAGS
-          DEV:
-            ref: .DEV
       - task: common:generate:icons
       - task: generate:dotdesktop
     cmds:

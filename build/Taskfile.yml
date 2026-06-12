@@ -4,6 +4,10 @@ tasks:
   go:mod:tidy:
     summary: Runs `go mod tidy`
     internal: true
+    sources:
+      - '{{.ROOT_DIR}}/go.mod'
+    generates:
+      - '{{.ROOT_DIR}}/go.sum'
     cmds:
       - go mod tidy
 
