@@ -129,22 +129,20 @@
     <div class="lane-popout">
       <button type="button" class="lane-popout__backdrop" aria-label={$_('lane_actions.close_popout')} onclick={() => (poppedOut = false)}></button>
       <div class="lane-popout__panel">
-        <div class="stack-view">
-          <LaneDragHandle
-            title={title}
-            {collapsed}
-            onToggleCollapse={onToggleCollapse}
-            {onRename}
-            {onDelete}
-            {onHide}
-            onPopout={() => (poppedOut = false)}
-            poppedOut={poppedOut}
-            widthRatio={widthRatio}
-            onWidthRatioChange={onWidthRatioChange}
-          />
-          <div class="lane-popout__body">
-            {@render children?.()}
-          </div>
+        <LaneDragHandle
+          title={title}
+          {collapsed}
+          onToggleCollapse={onToggleCollapse}
+          {onRename}
+          {onDelete}
+          {onHide}
+          onPopout={() => (poppedOut = false)}
+          poppedOut={poppedOut}
+          widthRatio={widthRatio}
+          onWidthRatioChange={onWidthRatioChange}
+        />
+        <div class="lane-popout__body">
+          {@render children?.()}
         </div>
       </div>
     </div>

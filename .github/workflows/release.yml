@@ -90,7 +90,7 @@ jobs:
 
       - name: Build NSIS installer
         working-directory: build/windows/nsis
-        run: makensis "/DARG_WAILS_AMD64_BINARY=../../../bin/${{ env.APP_NAME }}.exe" project.nsi
+        run: makensis "/DARG_WAILS_AMD64_BINARY=..\..\..\bin\${{ env.APP_NAME }}.exe" project.nsi
 
       # ─── Portable zip ─────────────────────────────────────
       - name: Package portable zip

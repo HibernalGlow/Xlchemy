@@ -1502,7 +1502,7 @@
 .card-popout__panel,
 .lane-popout__panel {
   position: absolute;
-  inset: 36px;
+  inset: 8px;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-2);
@@ -1515,8 +1515,10 @@
 .card-popout__body,
 .lane-popout__body {
   display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: auto;
   padding: 12px;
   background: var(--bg-2);
