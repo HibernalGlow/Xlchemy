@@ -1402,7 +1402,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 6px 8px;
-  border-top: 1px solid var(--border-3);
+  border-top: 1px solid var(--border-2);
   margin-top: 2px;
 }
 
@@ -1440,9 +1440,48 @@
 }
 
 .lane-menu__ratio-btn--active {
-  background: var(--fill-pop);
+  background: var(--fill-pop-bg);
+  color: var(--primary-foreground);
+  border-color: var(--fill-pop-bg);
+}
+
+.lane-menu__ratio-custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lane-menu__ratio-input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-s);
+  background: transparent;
   color: var(--text-1);
-  border-color: var(--fill-pop);
+  outline: none;
+  transition: border-color 0.1s ease;
+  -moz-appearance: textfield;
+}
+
+.lane-menu__ratio-input::-webkit-inner-spin-button,
+.lane-menu__ratio-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.lane-menu__ratio-input:focus {
+  border-color: var(--fill-pop-bg);
+}
+
+.lane-menu__ratio-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  flex-shrink: 0;
 }
 
 .card-popout,

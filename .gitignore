@@ -50,3 +50,4 @@ build_wails/
 frontend/.vite/
 frontend/bindings
 .task/*
+build/

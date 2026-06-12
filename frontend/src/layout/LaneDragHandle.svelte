@@ -23,6 +23,19 @@
 
   let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onHide, onPopout, poppedOut = false, widthRatio = 1, onWidthRatioChange }: Props = $props();
   let menuOpen = $state(false);
+  let ratioInput = $state(String(widthRatio));
+
+  function commitRatioInput() {
+    const val = parseFloat(ratioInput);
+    if (!isNaN(val) && val > 0) {
+      onWidthRatioChange?.(val);
+    }
+    ratioInput = String(widthRatio);
+  }
+
+  $effect(() => {
+    ratioInput = String(widthRatio);
+  });
 </script>
 
 <div class="lane-drag-handle">
@@ -67,16 +80,30 @@
             {collapsed ? $_('lane_actions.expand_lane') : $_('lane_actions.collapse_lane')}
           </button>
           {#if onWidthRatioChange}
-            <div class="lane-menu__ratio-group">
+            <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+            <div role="presentation" class="lane-menu__ratio-group" onclick={(e) => e.stopPropagation()}>
               <span class="lane-menu__ratio-label"><Columns3 class="w-3.5 h-3.5" />{$_('lane_actions.width_ratio')}</span>
               <div class="lane-menu__ratio-buttons">
                 {#each RATIO_PRESETS as preset}
                   <button
                     type="button"
                     class={cn('lane-menu__ratio-btn', Math.abs(widthRatio - preset) < 0.01 && 'lane-menu__ratio-btn--active')}
-                    onclick={(e) => { e.stopPropagation(); onWidthRatioChange(preset); }}
+                    onclick={() => { onWidthRatioChange(preset); }}
                   >{preset}</button>
                 {/each}
+              </div>
+              <div class="lane-menu__ratio-custom">
+                <input
+                  type="number"
+                  class="lane-menu__ratio-input"
+                  bind:value={ratioInput}
+                  min="0.25"
+                  max="4"
+                  step="0.1"
+                  onkeydown={(e) => { if (e.key === 'Enter') commitRatioInput(); }}
+                  onblur={commitRatioInput}
+                />
+                <span class="lane-menu__ratio-unit">×</span>
               </div>
             </div>
           {/if}
