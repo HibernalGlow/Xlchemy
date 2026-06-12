@@ -39,7 +39,7 @@
           <tbody>
             {#if appState.sortedItems.length === 0}
               <tr>
-                <td colspan="3" class="p-4 text-center text-text-2 text-xs">No files added</td>
+                <td colspan="3" class="p-4 text-center text-text-2 text-xs">{$_('layout_misc.no_files')}</td>
               </tr>
             {:else}
               {#each appState.sortedItems as item, i (item.absPath ?? i)}

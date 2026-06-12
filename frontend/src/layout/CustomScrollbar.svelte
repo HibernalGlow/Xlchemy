@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
+
   interface Props {
     viewport: { current?: HTMLDivElement | null } | HTMLDivElement | null;
   }
@@ -98,7 +100,7 @@
 <div bind:this={trackEl} class="custom-scrollbar" role="presentation">
   <button
     type="button"
-    aria-label="Scroll lanes"
+    aria-label={$_('layout_misc.scroll_lanes')}
     class:custom-scrollbar__thumb--active={isDragging}
     class="custom-scrollbar__thumb"
     style={Object.entries(thumbStyle).map(([k, v]) => `${k}:${v}`).join(';')}

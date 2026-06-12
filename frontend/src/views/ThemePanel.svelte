@@ -3,6 +3,7 @@
   import { Sun, Moon, Monitor, Image, CircleDot, Palette, Check, Upload, X } from '@lucide/svelte';
   import { applyThemeColors, getCustomThemes, getThemeMode, presetThemes } from '$lib/utils/themes';
   import type { BackgroundSettings, BackgroundMode } from '$lib/utils/backgroundSettings';
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     currentThemeName: string;
@@ -68,9 +69,9 @@
   }
 
   const bgModeOptions: { value: BackgroundMode; label: string; icon: typeof Image }[] = [
-    { value: 'dot-grid', label: 'Dot Grid', icon: CircleDot },
-    { value: 'image', label: 'Image', icon: Image },
-    { value: 'none', label: 'None', icon: Palette },
+    { value: 'dot-grid', label: $_('theme_panel.dot_grid'), icon: CircleDot },
+    { value: 'image', label: $_('theme_panel.image'), icon: Image },
+    { value: 'none', label: $_('theme_panel.none'), icon: Palette },
   ];
 </script>
 
@@ -84,7 +85,7 @@
       onclick={() => (activeTab = 'theme')}
     >
       <Palette class="w-3 h-3" />
-      Theme
+      {$_('theme_panel.theme_tab')}
     </button>
     <button
       type="button"
@@ -93,7 +94,7 @@
       onclick={() => (activeTab = 'background')}
     >
       <Image class="w-3 h-3" />
-      Background
+      {$_('theme_panel.background_tab')}
     </button>
   </div>
 
@@ -102,7 +103,7 @@
     <div class="theme-panel__content">
       <!-- Mode selection -->
       <div class="theme-panel__section">
-        <span class="theme-panel__label">Mode</span>
+        <span class="theme-panel__label">{$_('theme_panel.mode')}</span>
         <div class="theme-panel__mode-grid">
           <button
             type="button"
@@ -111,7 +112,7 @@
             onclick={() => onThemeModeChange('light')}
           >
             <Sun class="w-4 h-4" />
-            <span>Light</span>
+            <span>{$_('theme_panel.light')}</span>
             {#if getThemeMode() === 'light'}<span class="theme-panel__check"><Check class="w-3 h-3" /></span>{/if}
           </button>
           <button
@@ -121,7 +122,7 @@
             onclick={() => onThemeModeChange('dark')}
           >
             <Moon class="w-4 h-4" />
-            <span>Dark</span>
+            <span>{$_('theme_panel.dark')}</span>
             {#if getThemeMode() === 'dark'}<span class="theme-panel__check"><Check class="w-3 h-3" /></span>{/if}
           </button>
           <button
@@ -131,7 +132,7 @@
             onclick={() => onThemeModeChange('system')}
           >
             <Monitor class="w-4 h-4" />
-            <span>System</span>
+            <span>{$_('theme_panel.system')}</span>
             {#if getThemeMode() === 'system'}<span class="theme-panel__check"><Check class="w-3 h-3" /></span>{/if}
           </button>
         </div>
@@ -139,7 +140,7 @@
 
       <!-- Color schemes -->
       <div class="theme-panel__section">
-        <span class="theme-panel__label">Color Scheme</span>
+        <span class="theme-panel__label">{$_('theme_panel.color_scheme')}</span>
         <div class="theme-panel__theme-list">
           {#each themeNames() as name}
             <button
@@ -162,7 +163,7 @@
     <div class="theme-panel__content">
       <!-- Background mode -->
       <div class="theme-panel__section">
-        <span class="theme-panel__label">Mode</span>
+        <span class="theme-panel__label">{$_('theme_panel.mode')}</span>
         <div class="theme-panel__bg-modes">
           {#each bgModeOptions as option}
             <button
@@ -181,7 +182,7 @@
       {#if backgroundSettings.mode === 'image'}
         <!-- Upload local file -->
         <div class="theme-panel__section">
-          <span class="theme-panel__label">Upload Image</span>
+          <span class="theme-panel__label">{$_('theme_panel.upload_image')}</span>
           <div class="theme-panel__upload-row">
             <input
               type="file"
@@ -192,12 +193,12 @@
             />
             <Button kind="outline" variant="neutral" size="sm" onclick={() => fileInputRef?.click()}>
               <Upload class="w-3 h-3" />
-              Choose File
+              {$_('theme_panel.choose_file')}
             </Button>
             {#if backgroundSettings.imageUrl}
               <Button kind="outline" variant="neutral" size="sm" onclick={clearBackgroundImage}>
                 <X class="w-3 h-3" />
-                Clear
+                {$_('common.clear')}
               </Button>
             {/if}
           </div>
@@ -208,7 +209,7 @@
 
         <!-- Image URL -->
         <div class="theme-panel__section">
-          <span class="theme-panel__label">Or Image URL</span>
+          <span class="theme-panel__label">{$_('theme_panel.or_image_url')}</span>
           <div class="theme-panel__url-row">
             <input
               type="text"
@@ -217,14 +218,14 @@
               placeholder="https://example.com/bg.jpg"
               class="theme-panel__input"
             />
-            <Button kind="outline" variant="neutral" size="sm" onclick={handleBgUrlBlur}>Apply</Button>
+            <Button kind="outline" variant="neutral" size="sm" onclick={handleBgUrlBlur}>{$_('common.apply')}</Button>
           </div>
         </div>
 
         <!-- Opacity -->
         <div class="theme-panel__section">
           <div class="theme-panel__slider-header">
-            <span class="theme-panel__label">Opacity</span>
+            <span class="theme-panel__label">{$_('theme_panel.opacity')}</span>
             <span class="theme-panel__value">{backgroundSettings.opacity}%</span>
           </div>
           <input
@@ -241,7 +242,7 @@
         <!-- Blur -->
         <div class="theme-panel__section">
           <div class="theme-panel__slider-header">
-            <span class="theme-panel__label">Blur</span>
+            <span class="theme-panel__label">{$_('theme_panel.blur')}</span>
             <span class="theme-panel__value">{backgroundSettings.blur}px</span>
           </div>
           <input

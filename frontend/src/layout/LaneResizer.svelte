@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
+
   interface Props {
     onResize?: (delta: number) => void;
     onResizeEnd?: () => void;
@@ -38,4 +40,4 @@
   }
 </script>
 
-<button bind:this={resizerEl} type="button" aria-label="Resize lane" class="lane-resizer" onpointerdown={handlePointerDown}></button>
+<button bind:this={resizerEl} type="button" aria-label={$_('layout_misc.resize_lane')} class="lane-resizer" onpointerdown={handlePointerDown}></button>

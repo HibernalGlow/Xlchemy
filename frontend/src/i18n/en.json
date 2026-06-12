@@ -191,6 +191,116 @@
     "move_down": "Move down"
   },
   "common": {
-    "auto": "Auto"
+    "auto": "Auto",
+    "default": "Default",
+    "close": "Close",
+    "more_actions": "More actions",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "drag": "Drag",
+    "delete": "Delete",
+    "clear": "Clear",
+    "apply": "Apply",
+    "entries": "entries",
+    "no_entries": "No entries"
+  },
+  "system": {
+    "title": "System",
+    "cores": "cores",
+    "working": "Working",
+    "idle": "Idle",
+    "memory": "Memory",
+    "status": "Status",
+    "converting": "Converting",
+    "show_chart": "Show chart",
+    "log_entries": "log entries"
+  },
+  "log": {
+    "title": "Log",
+    "search_placeholder": "Search logs...",
+    "clear": "Clear logs",
+    "no_entries": "No log entries",
+    "no_matches": "No matching entries",
+    "auto_scroll": "Auto-scroll"
+  },
+  "lane_actions": {
+    "pop_out": "Pop out lane",
+    "close_pop_out": "Close pop out",
+    "rename": "Rename lane",
+    "expand_lane": "Expand lane",
+    "collapse_lane": "Collapse lane",
+    "hide_lane": "Hide lane",
+    "delete_lane": "Delete lane",
+    "close_popout": "Close popout"
+  },
+  "card_actions": {
+    "drag_to_other": "Drag to another lane",
+    "pop_out": "Pop out",
+    "close_popout": "Close popout",
+    "expand_card": "Expand card",
+    "collapse_card": "Collapse card",
+    "expand_detail": "Expand detail",
+    "collapse_detail": "Collapse detail",
+    "close_detail": "Close detail"
+  },
+  "theme_panel": {
+    "dot_grid": "Dot Grid",
+    "image": "Image",
+    "none": "None",
+    "theme_tab": "Theme",
+    "background_tab": "Background",
+    "mode": "Mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "color_scheme": "Color Scheme",
+    "upload_image": "Upload Image",
+    "choose_file": "Choose File",
+    "or_image_url": "Or Image URL",
+    "opacity": "Opacity",
+    "blur": "Blur"
+  },
+  "layout_misc": {
+    "scroll_lanes": "Scroll lanes",
+    "resize_lane": "Resize lane",
+    "expand_title": "Expand {title}",
+    "collapse_title": "Collapse {title}",
+    "drag_title": "Drag {title}",
+    "no_files": "No files added",
+    "lane_name_prompt": "Lane name",
+    "switch_to_multi": "Switch to multi-column",
+    "switch_to_single": "Switch to single column",
+    "single_column": "Single",
+    "multi_column": "Multi"
+  },
+  "progress": {
+    "status": "Status",
+    "converting": "Converting",
+    "completed": "Last conversion completed",
+    "waiting": "Waiting",
+    "running": "Running",
+    "done": "Done",
+    "standby": "Standby",
+    "progress": "Progress",
+    "elapsed": "Elapsed",
+    "hint": "Add files to see progress, elapsed time, ETA and output summary here.",
+    "counter": "Counter",
+    "summary": "Summary",
+    "format": "Format",
+    "encoder": "Encoder",
+    "raw_log": "Raw log"
+  },
+  "input_extra": {
+    "remove_selected": "Remove selected",
+    "hide_preview": "Hide preview",
+    "show_preview": "Show preview",
+    "items": "items",
+    "selected": "selected",
+    "descending": "Descending",
+    "ascending": "Ascending",
+    "add_images": "Add images to convert",
+    "drop_hint": "Drag & drop files or folders...",
+    "add_files": "Add files",
+    "add_folder": "Add folder"
   }
 }

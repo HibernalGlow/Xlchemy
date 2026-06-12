@@ -191,6 +191,116 @@
     "move_down": "下移"
   },
   "common": {
-    "auto": "自动"
+    "auto": "自动",
+    "default": "默认",
+    "close": "关闭",
+    "more_actions": "更多操作",
+    "expand": "展开",
+    "collapse": "收起",
+    "drag": "拖拽",
+    "delete": "删除",
+    "clear": "清除",
+    "apply": "应用",
+    "entries": "条目",
+    "no_entries": "暂无条目"
+  },
+  "system": {
+    "title": "系统",
+    "cores": "核",
+    "working": "工作中",
+    "idle": "空闲",
+    "memory": "内存",
+    "status": "状态",
+    "converting": "转换中",
+    "show_chart": "显示图表",
+    "log_entries": "日志条目"
+  },
+  "log": {
+    "title": "日志",
+    "search_placeholder": "搜索日志...",
+    "clear": "清除日志",
+    "no_entries": "暂无日志",
+    "no_matches": "无匹配条目",
+    "auto_scroll": "自动滚动"
+  },
+  "lane_actions": {
+    "pop_out": "弹出 lane",
+    "close_pop_out": "关闭弹出",
+    "rename": "重命名 lane",
+    "expand_lane": "展开 lane",
+    "collapse_lane": "收起 lane",
+    "hide_lane": "隐藏 lane",
+    "delete_lane": "删除 lane",
+    "close_popout": "关闭弹出"
+  },
+  "card_actions": {
+    "drag_to_other": "拖拽到其他 lane",
+    "pop_out": "弹出",
+    "close_popout": "关闭弹出",
+    "expand_card": "展开卡片",
+    "collapse_card": "收起卡片",
+    "expand_detail": "展开详情",
+    "collapse_detail": "收起详情",
+    "close_detail": "关闭详情"
+  },
+  "theme_panel": {
+    "dot_grid": "圆点网格",
+    "image": "图片",
+    "none": "无",
+    "theme_tab": "主题",
+    "background_tab": "背景",
+    "mode": "模式",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
+    "color_scheme": "配色方案",
+    "upload_image": "上传图片",
+    "choose_file": "选择文件",
+    "or_image_url": "或图片 URL",
+    "opacity": "不透明度",
+    "blur": "模糊"
+  },
+  "layout_misc": {
+    "scroll_lanes": "滚动 lanes",
+    "resize_lane": "调整 lane 宽度",
+    "expand_title": "展开 {title}",
+    "collapse_title": "收起 {title}",
+    "drag_title": "拖拽 {title}",
+    "no_files": "未添加文件",
+    "lane_name_prompt": "泳道名称",
+    "switch_to_multi": "切换到多列",
+    "switch_to_single": "切换到单列",
+    "single_column": "单列",
+    "multi_column": "多列"
+  },
+  "progress": {
+    "status": "运行状态",
+    "converting": "转换进行中",
+    "completed": "最近一次转换已完成",
+    "waiting": "等待开始",
+    "running": "运行中",
+    "done": "已完成",
+    "standby": "待机",
+    "progress": "进度",
+    "elapsed": "已用时间",
+    "hint": "添加文件后，这里会显示当前进度、耗时、ETA 和输出摘要。",
+    "counter": "计数",
+    "summary": "摘要",
+    "format": "格式",
+    "encoder": "编码器",
+    "raw_log": "原始日志"
+  },
+  "input_extra": {
+    "remove_selected": "删除已选",
+    "hide_preview": "隐藏预览",
+    "show_preview": "显示预览",
+    "items": "项",
+    "selected": "已选",
+    "descending": "降序",
+    "ascending": "升序",
+    "add_images": "添加待转换图片",
+    "drop_hint": "支持拖入文件或文件夹...",
+    "add_files": "添加文件",
+    "add_folder": "添加文件夹"
   }
 }

@@ -5,6 +5,7 @@
   import { appState } from '$lib/state/app.svelte';
   import { onMount } from 'svelte';
   import type { LaneId } from '$lib/cards/definitions';
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     laneId: LaneId;
@@ -66,15 +67,15 @@
   });
 </script>
 
-<LaneCard id="system-status" laneId={laneId} movable header="System">
+<LaneCard id="system-status" laneId={laneId} movable header={$_('system.title')}>
   <div class="flex flex-col gap-3">
     <!-- CPU -->
     <div class="flex items-center gap-2 text-xs">
       <Cpu class="h-3.5 w-3.5 text-text-2 shrink-0" />
       <span class="text-text-2 w-14">CPU</span>
-      <span class="text-text-1 font-medium">{cpuCount} cores</span>
+      <span class="text-text-1 font-medium">{cpuCount} {$_('system.cores')}</span>
       <span class="ml-auto text-[10px] text-text-2 tabular-nums">
-        {appState.isConverting ? 'Working' : 'Idle'}
+        {appState.isConverting ? $_('system.working') : $_('system.idle')}
       </span>
     </div>
 
@@ -82,7 +83,7 @@
     {#if memoryInfo.total > 0}
       <div class="flex items-center gap-2 text-xs">
         <MemoryStick class="h-3.5 w-3.5 text-text-2 shrink-0" />
-        <span class="text-text-2 w-14">Memory</span>
+        <span class="text-text-2 w-14">{$_('system.memory')}</span>
         <span class="text-text-1 font-medium">{formatBytes(memoryInfo.used)} / {formatBytes(memoryInfo.total)}</span>
         <span class="ml-auto text-[10px] text-text-2 tabular-nums">{memPercent}%</span>
       </div>
@@ -98,10 +99,10 @@
     <!-- Status -->
     <div class="flex items-center gap-2 text-xs">
       <Activity class="h-3.5 w-3.5 text-text-2 shrink-0" />
-      <span class="text-text-2 w-14">Status</span>
+      <span class="text-text-2 w-14">{$_('system.status')}</span>
       <span class="inline-flex items-center gap-1.5">
         <span class="h-1.5 w-1.5 rounded-full {appState.isConverting ? 'bg-success animate-pulse' : 'bg-text-2'}"></span>
-        <span class="text-text-1">{appState.isConverting ? 'Converting' : 'Idle'}</span>
+        <span class="text-text-1">{appState.isConverting ? $_('system.converting') : $_('system.idle')}</span>
       </span>
     </div>
 
@@ -109,10 +110,10 @@
     <div class="flex items-center justify-between">
       <label class="flex items-center gap-1.5 text-[11px] text-text-2 cursor-pointer">
         <input type="checkbox" bind:checked={showChart} class="h-3 w-3 accent-fill-pop-bg" />
-        Show chart
+        {$_('system.show_chart')}
       </label>
       {#if appState.logEntries.length > 0}
-        <span class="text-[10px] text-text-2">{appState.logEntries.length} log entries</span>
+        <span class="text-[10px] text-text-2">{appState.logEntries.length} {$_('system.log_entries')}</span>
       {/if}
     </div>
 

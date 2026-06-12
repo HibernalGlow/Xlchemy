@@ -16,7 +16,7 @@
 <Dialog bind:open onOpenChange={(v) => { open = v; onOpenChange?.(v); }}>
   <div class="flex flex-col gap-3 p-4">
     <h2 class="text-sm font-semibold text-text-1">{$_('theme.import')} {$_('nav.settings')}</h2>
-    <Textarea bind:value={appState.importSettingsJson} placeholder="Paste settings JSON here..." class="min-h-[200px] font-mono" />
+    <Textarea bind:value={appState.importSettingsJson} placeholder={$_('theme.paste_json')} class="min-h-[200px] font-mono" />
     <div class="flex justify-end gap-2">
       <Button kind="outline" variant="neutral" onclick={() => (open = false)}>{$_('dialog.cancel')}</Button>
       <Button kind="solid" variant="pop" onclick={() => appState.handleImportSettings()}>{$_('theme.import')}</Button>

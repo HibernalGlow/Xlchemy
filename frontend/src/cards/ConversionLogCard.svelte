@@ -4,6 +4,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import { appState } from '$lib/state/app.svelte';
   import type { LaneId } from '$lib/cards/definitions';
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     laneId: LaneId;
@@ -67,7 +68,7 @@
   });
 </script>
 
-<LaneCard id="conversion-log" laneId={laneId} movable header="Log">
+<LaneCard id="conversion-log" laneId={laneId} movable header={$_('log.title')}>
   <div class="flex flex-col gap-2">
     <!-- Toolbar -->
     <div class="flex items-center gap-1 flex-wrap">
@@ -77,7 +78,7 @@
         <input
           type="text"
           bind:value={searchQuery}
-          placeholder="Search logs..."
+          placeholder={$_('log.search_placeholder')}
           class="w-full pl-6 pr-2 py-1 text-[11px] rounded-md border border-border-2 bg-bg-2 text-text-1 placeholder:text-text-2 outline-none focus:border-fill-pop-bg"
         />
       </div>
@@ -98,7 +99,7 @@
       </div>
 
       <!-- Clear -->
-      <Button kind="ghost" variant="neutral" size="icon" class="h-6 w-6" title="Clear logs" onclick={clearLogs}>
+      <Button kind="ghost" variant="neutral" size="icon" class="h-6 w-6" title={$_('log.clear')} onclick={clearLogs}>
         <Trash2 class="h-3 w-3" />
       </Button>
     </div>
@@ -111,7 +112,7 @@
     >
       {#if filteredEntries().length === 0}
         <div class="flex items-center justify-center h-[80px] text-text-2">
-          {appState.logEntries.length === 0 ? 'No log entries' : 'No matching entries'}
+          {appState.logEntries.length === 0 ? $_('log.no_entries') : $_('log.no_matches')}
         </div>
       {:else}
         <div class="py-1">
@@ -128,10 +129,10 @@
 
     <!-- Status bar -->
     <div class="flex items-center justify-between text-[10px] text-text-2">
-      <span>{filteredEntries().length} / {appState.logEntries.length} entries</span>
+      <span>{filteredEntries().length} / {appState.logEntries.length} {$_('common.entries')}</span>
       <label class="flex items-center gap-1 cursor-pointer">
         <input type="checkbox" bind:checked={autoScroll} class="h-3 w-3 accent-fill-pop-bg" />
-        Auto-scroll
+        {$_('log.auto_scroll')}
       </label>
     </div>
   </div>

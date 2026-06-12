@@ -3,6 +3,7 @@
   import { X, GripVertical, ChevronRight, Ellipsis } from '@lucide/svelte';
   import { clearDrag, setCardDrag } from '$lib/state/dragState';
   import { canvasState } from '$lib/state/canvas.svelte';
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     id: string;
@@ -147,7 +148,7 @@
         <button
           type="button"
           class="card-grip"
-          title="Drag to another lane"
+          title={$_('card_actions.drag_to_other')}
           draggable="true"
           ondragstart={handleCardDragStart}
           ondragend={handleCardDragEnd}
@@ -160,14 +161,14 @@
       {/if}
 
       <div class="card-menu">
-        <button type="button" class="lane-drag-handle__menu" title="More actions" onclick={toggleMenu}>
+        <button type="button" class="lane-drag-handle__menu" title={$_('common.more_actions')} onclick={toggleMenu}>
           <Ellipsis class="w-3.5 h-3.5" />
         </button>
 
         {#if menuOpen}
           <div class="card-menu__panel">
-            <button type="button" class="card-menu__item" onclick={handlePopout}>{poppedOut ? 'Close popout' : 'Pop out'}</button>
-            <button type="button" class="card-menu__item" onclick={() => { handleToggle(); menuOpen = false; }}>{collapsed ? 'Expand card' : 'Collapse card'}</button>
+            <button type="button" class="card-menu__item" onclick={handlePopout}>{poppedOut ? $_('card_actions.close_popout') : $_('card_actions.pop_out')}</button>
+            <button type="button" class="card-menu__item" onclick={() => { handleToggle(); menuOpen = false; }}>{collapsed ? $_('card_actions.expand_card') : $_('card_actions.collapse_card')}</button>
           </div>
         {/if}
       </div>
@@ -178,7 +179,7 @@
         type="button"
         class="drawer-chevron"
         onclick={handleExpandToggle}
-        title={expanded ? 'Collapse detail' : 'Expand detail'}
+        title={expanded ? $_('card_actions.collapse_detail') : $_('card_actions.expand_detail')}
         style={`margin-left:auto;color:${expanded ? 'var(--fill-pop-bg)' : 'inherit'};transform:${expanded ? 'rotate(90deg)' : 'rotate(-90deg)'}`}
       >
         <ChevronRight class="w-3.5 h-3.5" />
@@ -196,7 +197,7 @@
 
   {#if detail && showDetail}
     <div class="drawer-detail">
-      <button type="button" class="drawer-detail__close" onclick={() => (expanded = false)} title="Close detail">
+      <button type="button" class="drawer-detail__close" onclick={() => (expanded = false)} title={$_('card_actions.close_detail')}>
         <X class="w-3.5 h-3.5" />
       </button>
       <div class="drawer-detail__inner">
@@ -207,13 +208,13 @@
 
   {#if poppedOut}
     <div class="card-popout">
-      <button type="button" class="card-popout__backdrop" aria-label="Close popout" onclick={() => (poppedOut = false)}></button>
+      <button type="button" class="card-popout__backdrop" aria-label={$_('card_actions.close_popout')} onclick={() => (poppedOut = false)}></button>
       <div class="card-popout__panel">
         <div class="drawer-header">
           <div class="drawer-header__title">
             <span class="drawer-header__text">{header}</span>
           </div>
-          <button type="button" class="drawer-detail__close" onclick={() => (poppedOut = false)} title="Close popout">
+          <button type="button" class="drawer-detail__close" onclick={() => (poppedOut = false)} title={$_('card_actions.close_popout')}>
             <X class="w-3.5 h-3.5" />
           </button>
         </div>

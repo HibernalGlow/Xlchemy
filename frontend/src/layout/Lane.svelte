@@ -4,6 +4,7 @@
   import CollapsedLane from './CollapsedLane.svelte';
   import LaneDragHandle from './LaneDragHandle.svelte';
   import LaneResizer from './LaneResizer.svelte';
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     id: string;
@@ -120,7 +121,7 @@
 
   {#if poppedOut}
     <div class="lane-popout">
-      <button type="button" class="lane-popout__backdrop" aria-label="Close lane popout" onclick={() => (poppedOut = false)}></button>
+      <button type="button" class="lane-popout__backdrop" aria-label={$_('lane_actions.close_popout')} onclick={() => (poppedOut = false)}></button>
       <div class="lane-popout__panel">
         <div class="stack-view">
           <LaneDragHandle

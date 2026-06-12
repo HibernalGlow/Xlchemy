@@ -16,7 +16,7 @@
     <h2 class="text-xl font-light text-text-1">{$_('about.title')}</h2>
     <Badge variant="secondary">v{appState.constants.version || '1.2.6'}</Badge>
     <p class="text-[11px] text-text-2">{$_('about.subtitle')}</p>
-    <p class="text-[10px] text-text-2">Built with Wails 3 + Svelte + Go</p>
+    <p class="text-[10px] text-text-2">{$_('about.built_with')}</p>
     <div class="flex gap-2 mt-2">
       <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://codepoems.eu', '_blank')}>{$_('about.website')}</Button>
       <Button kind="outline" variant="neutral" size="sm" onclick={() => window.open('https://github.com/nicjacek/xlchemy', '_blank')}>{$_('about.source')}</Button>
