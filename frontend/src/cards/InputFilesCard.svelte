@@ -543,7 +543,14 @@
   });
 </script>
 
-<LaneCard id="input-files" laneId={laneId} movable header={`${$_('nav.input')} (${appState.fileItems.length})`} class="drawer--input-files">
+<LaneCard
+  id="input-files"
+  laneId={laneId}
+  movable
+  header={`${$_('nav.input')} (${appState.fileItems.length})`}
+  class="drawer--input-files"
+  scrollable
+>
   <div class="input-files-card flex min-h-0 min-w-0 flex-col gap-2">
     <div class="input-files-card__toolbar flex flex-wrap items-center gap-2 rounded-[16px] border border-border/70 bg-[color-mix(in_oklch,var(--bg-1)_74%,transparent)] px-2.5 py-2 shadow-[inset_0_1px_0_var(--highlight)]">
       <div class="input-files-card__actions flex flex-wrap items-center gap-2">

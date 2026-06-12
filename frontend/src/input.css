@@ -652,7 +652,7 @@
   position: relative;
   height: 100%;
   min-width: 100%;
-  gap: 10px;
+  gap: 0;
   padding: 0;
 }
 
@@ -664,23 +664,41 @@
   height: 100%;
   position: relative;
   background:
-    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 84%, transparent), color-mix(in oklch, var(--bg-2) 72%, transparent));
-  border: 1px solid color-mix(in oklch, var(--border-2) 72%, transparent);
-  border-radius: 22px;
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 18%, transparent), color-mix(in oklch, var(--bg-2) 42%, transparent));
+  border: 0;
+  border-left: 1px solid color-mix(in oklch, var(--border-2) 34%, transparent);
+  border-right: 1px solid color-mix(in oklch, var(--border-2) 18%, transparent);
+  border-radius: 0;
   overflow: hidden;
-  backdrop-filter: blur(16px) saturate(1.06);
-  box-shadow:
-    inset 0 1px 0 var(--highlight),
-    0 16px 34px rgba(var(--shadow-color-rgb), 0.10);
-  transition: box-shadow 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(18px) saturate(1.04);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 3%, transparent);
+  transition: background 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.lane::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--fill-pop-bg) 4%, transparent), transparent 16%),
+    linear-gradient(90deg, color-mix(in oklch, black 10%, transparent), transparent 18%, transparent 82%, color-mix(in oklch, black 12%, transparent));
+  z-index: 0;
+}
+
+.lane > * {
+  position: relative;
+  z-index: 1;
 }
 
 .lane:first-child {
   margin-left: 0;
+  border-left-color: color-mix(in oklch, var(--border-2) 18%, transparent);
 }
 
 .lane:last-child {
   margin-right: 0;
+  border-right-color: color-mix(in oklch, var(--border-2) 28%, transparent);
 }
 
 .lane-resizer {
@@ -700,10 +718,9 @@
 }
 
 .lane:hover {
-  box-shadow:
-    inset 0 1px 0 var(--highlight),
-    0 20px 44px rgba(var(--shadow-color-rgb), 0.14),
-    0 0 0 1px color-mix(in oklch, var(--fill-pop-bg) 24%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 24%, transparent), color-mix(in oklch, var(--bg-2) 48%, transparent));
+  border-left-color: color-mix(in oklch, var(--fill-pop-bg) 18%, var(--border-2));
 }
 
 .lane--dragging {
@@ -722,10 +739,10 @@
 }
 
 .lane--drag-over {
-  box-shadow:
-    inset 0 1px 0 var(--highlight),
-    0 0 0 2px color-mix(in oklch, var(--fill-pop-bg) 88%, transparent),
-    0 16px 36px rgba(var(--shadow-color-rgb), 0.14);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--fill-pop-bg) 10%, transparent), color-mix(in oklch, var(--bg-2) 52%, transparent));
+  border-left-color: color-mix(in oklch, var(--fill-pop-bg) 48%, transparent);
+  border-right-color: color-mix(in oklch, var(--fill-pop-bg) 28%, transparent);
 }
 
 /* Lane resizer handle (inside floating panel) */
@@ -754,13 +771,12 @@
 .stack-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 8px;
+  gap: 12px;
+  padding: 0 10px 14px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  background:
-    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 24%, transparent), transparent 30%);
+  background: transparent;
 }
 
 /* ─── Lane Drag Handle (StackDragHandle) ─── */
@@ -768,17 +784,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 38px;
-  margin: 8px 8px 0;
-  padding: 0 10px;
+  height: 42px;
+  margin: 0;
+  padding: 0 12px;
   color: var(--text-2);
   flex-shrink: 0;
   gap: 4px;
   background:
-    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 96%, transparent), color-mix(in oklch, var(--bg-1) 82%, var(--surface-ornament)));
-  border: 1px solid color-mix(in oklch, var(--border-2) 76%, transparent);
-  border-radius: 16px;
-  box-shadow: inset 0 1px 0 var(--highlight);
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 16%, transparent), color-mix(in oklch, var(--bg-1) 4%, transparent));
+  border-bottom: 1px solid color-mix(in oklch, var(--border-2) 32%, transparent);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
 }
 
 .lane-drag-handle__center {
@@ -893,20 +909,20 @@
   width: 100%;
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 20px;
   background:
-    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 96%, transparent), color-mix(in oklch, var(--bg-1) 84%, var(--surface-ornament)));
-  border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 98%, transparent), color-mix(in oklch, var(--bg-1) 92%, var(--surface-ornament)));
+  border: 1px solid color-mix(in oklch, var(--border-2) 86%, transparent);
   box-shadow:
-    inset 0 1px 0 var(--highlight),
-    0 12px 24px rgba(var(--shadow-color-rgb), 0.06);
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 14px 28px rgba(var(--shadow-color-rgb), 0.10);
 }
 
 .drawer::before {
   content: '';
   position: absolute;
   inset: 0;
-  border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
+  border: 1px solid color-mix(in srgb, white 7%, transparent);
   border-radius: inherit;
   pointer-events: none;
   z-index: 2;
@@ -916,7 +932,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
+  border: 1px solid color-mix(in srgb, white 6%, transparent);
   border-bottom-color: transparent;
   border-radius: inherit;
   pointer-events: none;
@@ -1070,10 +1086,11 @@
   height: 36px;
   padding: 0 10px 0 12px;
   gap: 8px;
-  border-bottom: 1px solid color-mix(in oklch, var(--border-2) 62%, transparent);
-  background-color: color-mix(in oklch, var(--bg-1) 82%, transparent);
-  backdrop-filter: blur(12px);
-  border-radius: 18px 18px 0 0;
+  border-bottom: 1px solid color-mix(in oklch, var(--border-2) 72%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 100%, transparent), color-mix(in oklch, var(--bg-1) 92%, transparent));
+  backdrop-filter: blur(16px);
+  border-radius: 20px 20px 0 0;
   position: relative;
   z-index: 1;
 }
@@ -1131,7 +1148,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px;
+  padding: 10px 10px 12px;
 }
 
 .drawer__content {
@@ -1142,8 +1159,8 @@
   flex-grow: 1;
   flex-direction: column;
   padding: 12px;
-  background: color-mix(in oklch, var(--bg-2) 46%, transparent);
-  border-radius: 14px;
+  background: color-mix(in oklch, var(--bg-1) 16%, transparent);
+  border-radius: 16px;
   min-width: 0;
   overflow: hidden;
 }
@@ -1155,26 +1172,38 @@
 
 .drawer--input-files .input-files-card {
   gap: 10px;
+  min-height: 0;
+}
+
+.drawer--input-files .drawer-scroll {
+  padding: 0;
 }
 
 .drawer--input-files .input-files-card__toolbar {
   margin: 0;
-  padding: 10px 12px 8px;
+  padding: 12px 14px 10px;
   border-width: 0 0 1px;
   border-radius: 0;
-  border-color: color-mix(in oklch, var(--border-2) 64%, transparent);
+  border-color: color-mix(in oklch, var(--border-2) 74%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 96%, transparent), color-mix(in oklch, var(--bg-1) 86%, var(--surface-ornament)));
-  box-shadow: inset 0 1px 0 var(--highlight);
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 100%, transparent), color-mix(in oklch, var(--bg-1) 92%, var(--surface-ornament)));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
 }
 
 .drawer--input-files .input-files-card__surface,
 .drawer--input-files .input-files-card__footer {
-  margin: 0 12px;
+  margin: 0 14px;
+}
+
+.drawer--input-files .input-files-card__surface {
+  flex: 1;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 100%, transparent), color-mix(in oklch, var(--bg-1) 94%, var(--surface-ornament)));
 }
 
 .drawer--input-files .input-files-card__footer {
-  padding-bottom: 12px;
+  padding-bottom: 14px;
 }
 
 /* ─── Folded Lane (CollapsedLane) ─── */
@@ -1430,12 +1459,12 @@
   gap: 10px;
   padding: 10px 16px;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--bg-1) 80%, transparent);
-  backdrop-filter: blur(16px);
-  border: 1px solid color-mix(in oklch, var(--border-2) 74%, transparent);
+  background: color-mix(in oklch, var(--bg-1) 62%, transparent);
+  backdrop-filter: blur(20px) saturate(1.05);
+  border: 1px solid color-mix(in oklch, var(--border-2) 58%, transparent);
   box-shadow:
-    inset 0 1px 0 var(--highlight),
-    0 14px 32px rgba(var(--shadow-color-rgb), 0.12);
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    0 14px 32px rgba(var(--shadow-color-rgb), 0.16);
 }
 
 .page-control__lane,
@@ -1499,6 +1528,16 @@
     align-items: stretch;
   }
 
+  .drawer--input-files .input-files-card__surface,
+  .drawer--input-files .input-files-card__footer {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .drawer--input-files .input-files-card__footer {
+    padding-bottom: 10px;
+  }
+
   .input-files-card__actions,
   .input-files-card__filters {
     width: 100%;
@@ -1530,7 +1569,7 @@
 
   .input-files-card__actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .input-files-card__actions > button,
@@ -1555,6 +1594,12 @@
 
   .input-files-card__filters > * {
     min-width: 0;
+  }
+
+  .drawer--input-files .input-files-card__surface,
+  .drawer--input-files .input-files-card__footer {
+    margin-left: 8px;
+    margin-right: 8px;
   }
 
   .input-files-card__list table,
