@@ -13,6 +13,7 @@
     collapsed: boolean;
     onToggleCollapse: () => void;
     width: number;
+    widthRatio?: number;
     maxWidth?: number;
     fill?: boolean;
     autoFit?: boolean;
@@ -23,6 +24,7 @@
     onHide?: () => void;
     onResize?: (nextWidth: number) => void;
     onResizeEnd?: (nextWidth: number) => void;
+    onWidthRatioChange?: (ratio: number) => void;
   }
 
   let {
@@ -32,6 +34,7 @@
     collapsed,
     onToggleCollapse,
     width,
+    widthRatio = 1,
     maxWidth = 44,
     fill = false,
     autoFit = false,
@@ -42,6 +45,7 @@
     onHide,
     onResize,
     onResizeEnd,
+    onWidthRatioChange,
   }: Props = $props();
   let isDragging = $state(false);
   let isResizing = $state(false);
@@ -95,7 +99,7 @@
     bind:this={laneEl}
     class={cn('lane', fill && 'lane--fill', autoFit && !fill && 'lane--auto-fit', isDragging && 'lane--dragging', isDragOver && !isDragging && 'lane--drag-over')}
     data-lane-id={id}
-    style={fill ? 'width:100%;min-width:0;flex:1;' : autoFit ? `min-width:${MIN_LANE_WIDTH}rem;max-width:${maxWidth}rem;flex:1;` : `width:${liveWidth}rem;min-width:${MIN_LANE_WIDTH}rem;max-width:${maxWidth}rem;`}
+    style={fill ? 'width:100%;min-width:0;flex:1;' : autoFit ? `min-width:${MIN_LANE_WIDTH}rem;max-width:${maxWidth}rem;flex:${widthRatio};` : `width:${liveWidth}rem;min-width:${MIN_LANE_WIDTH}rem;max-width:${maxWidth}rem;`}
   >
     <div class="stack-view">
       <LaneDragHandle
@@ -109,6 +113,8 @@
         {onHide}
         onPopout={() => (poppedOut = true)}
         poppedOut={poppedOut}
+        widthRatio={widthRatio}
+        onWidthRatioChange={onWidthRatioChange}
       />
       <div class="stack-content">
         {@render children?.()}
@@ -133,6 +139,8 @@
             {onHide}
             onPopout={() => (poppedOut = false)}
             poppedOut={poppedOut}
+            widthRatio={widthRatio}
+            onWidthRatioChange={onWidthRatioChange}
           />
           <div class="lane-popout__body">
             {@render children?.()}

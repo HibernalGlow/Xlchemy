@@ -187,6 +187,7 @@ export function loadLegacyClientState(): {
       laneOrder: loadLaneOrder(),
       laneLabels: loadLaneLabels(),
       laneWidths: loadLaneWidths(),
+      laneWidthRatios: {},
       cardLayout: loadCardLayout(),
       singleLaneMode: loadSingleLaneMode(),
       activeLaneId: loadActiveLaneId(),

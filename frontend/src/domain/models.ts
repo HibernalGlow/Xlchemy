@@ -119,6 +119,7 @@ export interface AppStateSnapshot {
     laneOrder: string[];
     laneLabels: Record<string, string>;
     laneWidths: Record<string, number>;
+    laneWidthRatios: Record<string, number>;
     cardLayout: Record<string, string[]>;
     singleLaneMode: boolean;
     activeLaneId: string;

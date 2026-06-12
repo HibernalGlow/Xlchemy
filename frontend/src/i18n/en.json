@@ -231,7 +231,8 @@
     "collapse_lane": "Collapse lane",
     "hide_lane": "Hide lane",
     "delete_lane": "Delete lane",
-    "close_popout": "Close popout"
+    "close_popout": "Close popout",
+    "width_ratio": "Width ratio"
   },
   "card_actions": {
     "drag_to_other": "Drag to another lane",

@@ -111,6 +111,9 @@ export const DEFAULT_BACKGROUND_SETTINGS: BackgroundSettings = {
 
 export const DEFAULT_LANE_ORDER = ['input', 'output', 'modify', 'settings', 'about'];
 export const DEFAULT_LANE_WIDTH = 18;
+export const DEFAULT_LANE_WIDTH_RATIOS: Record<string, number> = {
+  input: 1.5,
+};
 export const DEFAULT_LANE_LABELS: Record<string, string> = {
   input: 'Input',
   output: 'Output',
@@ -141,6 +144,7 @@ export function createDefaultSnapshot(): AppStateSnapshot {
       laneOrder: [...DEFAULT_LANE_ORDER],
       laneLabels: { ...DEFAULT_LANE_LABELS },
       laneWidths: {},
+      laneWidthRatios: { ...DEFAULT_LANE_WIDTH_RATIOS },
       cardLayout: Object.fromEntries(
         Object.entries(DEFAULT_CARD_LAYOUT).map(([k, v]) => [k, [...v]])
       ),

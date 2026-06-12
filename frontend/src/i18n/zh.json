@@ -231,7 +231,8 @@
     "collapse_lane": "收起 lane",
     "hide_lane": "隐藏 lane",
     "delete_lane": "删除 lane",
-    "close_popout": "关闭弹出"
+    "close_popout": "关闭弹出",
+    "width_ratio": "宽度比例"
   },
   "card_actions": {
     "drag_to_other": "拖拽到其他 lane",

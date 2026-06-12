@@ -120,10 +120,12 @@
               collapsed={appState.collapsedLanes.has(lane.id)}
               onToggleCollapse={() => appState.toggleLaneCollapsed(lane.id)}
               width={appState.singleLaneMode ? 28 : appState.laneWidth(lane.id)}
+              widthRatio={appState.laneWidthRatio(lane.id as LaneId)}
               maxWidth={appState.appSettings.lane_max_width || 44}
               autoFit={appState.appSettings.lane_auto_fit}
               laneCount={visibleLanes().length}
               onResizeEnd={(nextWidth) => appState.setLaneWidth(lane.id, nextWidth)}
+              onWidthRatioChange={(ratio) => appState.setLaneWidthRatio(lane.id as LaneId, ratio)}
               dragOverId={canvasState.dragOverId}
               onRename={() => appState.renameLane(lane.id, prompt('泳道名称', appState.laneTitle(lane.id)) || appState.laneTitle(lane.id))}
               onDelete={['input', 'output', 'modify', 'settings', 'about'].includes(lane.id) ? undefined : () => appState.deleteLane(lane.id)}

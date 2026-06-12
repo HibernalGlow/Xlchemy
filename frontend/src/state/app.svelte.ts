@@ -28,6 +28,7 @@ import {
   normalizeAppSettings,
   createDefaultSnapshot,
   DEFAULT_LANE_WIDTH,
+  DEFAULT_LANE_WIDTH_RATIOS,
   DEFAULT_APP_CONSTANTS,
   mergeConstants,
 } from '$lib/domain';
@@ -98,6 +99,7 @@ export class AppState {
   laneOrder = $state<string[]>([...DEFAULT_SNAPSHOT.layout.laneOrder]);
   collapsedLanes = $state<Set<string>>(new Set(DEFAULT_SNAPSHOT.layout.collapsedLanes));
   laneWidths = $state<Record<string, number>>({ ...DEFAULT_SNAPSHOT.layout.laneWidths });
+  laneWidthRatios = $state<Record<string, number>>({ ...DEFAULT_SNAPSHOT.layout.laneWidthRatios });
   laneLabels = $state<Record<string, string>>({ ...DEFAULT_SNAPSHOT.layout.laneLabels });
   cardLayout = $state<CardLayout>(cloneCardLayout(DEFAULT_CARD_LAYOUT));
   singleLaneMode = $state<boolean>(DEFAULT_SNAPSHOT.layout.singleLaneMode);
@@ -182,6 +184,7 @@ export class AppState {
     this.laneLabels = { ...this.laneLabels, [id]: name.trim() || 'New Lane' };
     this.cardLayout = { ...this.cardLayout, [id]: [] };
     this.laneWidths = { ...this.laneWidths, [id]: DEFAULT_SNAPSHOT.layout.laneWidths[id] || DEFAULT_LANE_WIDTH };
+    this.laneWidthRatios = { ...this.laneWidthRatios, [id]: DEFAULT_LANE_WIDTH_RATIOS[id] || 1 };
     this.activeLaneId = id;
     this.queueSettingsSave();
   }
@@ -202,9 +205,11 @@ export class AppState {
     nextLayout.input = [...(nextLayout.input || []), ...cards];
     const { [laneId]: _removed, ...nextLabels } = this.laneLabels;
     const { [laneId]: _removedWidth, ...nextWidths } = this.laneWidths;
+    const { [laneId]: _removedRatio, ...nextRatios } = this.laneWidthRatios;
     this.cardLayout = nextLayout;
     this.laneLabels = nextLabels;
     this.laneWidths = nextWidths;
+    this.laneWidthRatios = nextRatios;
     this.laneOrder = this.laneOrder.filter((id) => id !== laneId);
     if (this.activeLaneId === laneId) this.activeLaneId = 'input';
     this.queueSettingsSave();
@@ -215,6 +220,7 @@ export class AppState {
       laneOrder: this.laneOrder,
       laneLabels: this.laneLabels,
       laneWidths: this.laneWidths,
+      laneWidthRatios: this.laneWidthRatios,
       cardLayout: this.cardLayout,
       singleLaneMode: this.singleLaneMode,
       activeLaneId: this.activeLaneId,
@@ -232,6 +238,9 @@ export class AppState {
       this.laneLabels = { ...DEFAULT_SNAPSHOT.layout.laneLabels, ...layout.laneLabels };
     }
     if (layout.laneWidths && typeof layout.laneWidths === 'object') this.laneWidths = layout.laneWidths;
+    if (layout.laneWidthRatios && typeof layout.laneWidthRatios === 'object') {
+      this.laneWidthRatios = { ...DEFAULT_LANE_WIDTH_RATIOS, ...layout.laneWidthRatios };
+    }
     if (layout.cardLayout && typeof layout.cardLayout === 'object') this.cardLayout = layout.cardLayout;
     if (typeof layout.singleLaneMode === 'boolean') this.singleLaneMode = layout.singleLaneMode;
     if (layout.activeLaneId) this.activeLaneId = layout.activeLaneId;
@@ -317,6 +326,17 @@ export class AppState {
   setLaneWidth(laneId: LaneId, width: number) {
     const next = { ...this.laneWidths, [laneId]: width };
     this.laneWidths = next;
+    this.queueSettingsSave();
+  }
+
+  laneWidthRatio(laneId: LaneId): number {
+    return this.laneWidthRatios[laneId] ?? DEFAULT_LANE_WIDTH_RATIOS[laneId] ?? 1;
+  }
+
+  setLaneWidthRatio(laneId: LaneId, ratio: number) {
+    const clamped = Math.max(0.25, Math.min(4, ratio));
+    const next = { ...this.laneWidthRatios, [laneId]: clamped };
+    this.laneWidthRatios = next;
     this.queueSettingsSave();
   }
 

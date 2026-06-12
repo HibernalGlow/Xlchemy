@@ -385,6 +385,7 @@ describe('WailsExecutor', () => {
         laneOrder: ['input', 'settings'],
         laneLabels: { input: 'Input', settings: 'Settings' },
         laneWidths: { input: 24 },
+        laneWidthRatios: {},
         cardLayout: { input: ['input-files'], settings: ['settings-general'] },
         singleLaneMode: false,
         activeLaneId: 'input',

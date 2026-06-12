@@ -1397,6 +1397,54 @@
   color: oklch(0.72 0.17 25);
 }
 
+.lane-menu__ratio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border-3);
+  margin-top: 2px;
+}
+
+.lane-menu__ratio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.lane-menu__ratio-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.lane-menu__ratio-btn {
+  flex: 1;
+  padding: 3px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+
+.lane-menu__ratio-btn:hover {
+  background: var(--bg-3);
+  color: var(--text-1);
+}
+
+.lane-menu__ratio-btn--active {
+  background: var(--fill-pop);
+  color: var(--text-1);
+  border-color: var(--fill-pop);
+}
+
 .card-popout,
 .lane-popout {
   position: fixed;

@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { Ellipsis, GripVertical, ExternalLink, X, Pencil, ChevronDown, ChevronUp, EyeOff, Trash2 } from '@lucide/svelte';
+  import { Ellipsis, GripVertical, ExternalLink, X, Pencil, ChevronDown, ChevronUp, EyeOff, Trash2, Columns3 } from '@lucide/svelte';
   import { cn } from '$lib/utils/cn';
   import { _ } from 'svelte-i18n';
+
+  const RATIO_PRESETS = [0.5, 1, 1.5, 2, 3];
 
   interface Props {
     title: string;
@@ -15,9 +17,11 @@
     onHide?: () => void;
     onPopout?: () => void;
     poppedOut?: boolean;
+    widthRatio?: number;
+    onWidthRatioChange?: (ratio: number) => void;
   }
 
-  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onHide, onPopout, poppedOut = false }: Props = $props();
+  let { title, collapsed, onToggleCollapse, onDragStart, onDragEnd, actions, onRename, onDelete, onHide, onPopout, poppedOut = false, widthRatio = 1, onWidthRatioChange }: Props = $props();
   let menuOpen = $state(false);
 </script>
 
@@ -62,6 +66,20 @@
             {#if collapsed}<ChevronDown class="w-3.5 h-3.5" />{:else}<ChevronUp class="w-3.5 h-3.5" />{/if}
             {collapsed ? $_('lane_actions.expand_lane') : $_('lane_actions.collapse_lane')}
           </button>
+          {#if onWidthRatioChange}
+            <div class="lane-menu__ratio-group">
+              <span class="lane-menu__ratio-label"><Columns3 class="w-3.5 h-3.5" />{$_('lane_actions.width_ratio')}</span>
+              <div class="lane-menu__ratio-buttons">
+                {#each RATIO_PRESETS as preset}
+                  <button
+                    type="button"
+                    class={cn('lane-menu__ratio-btn', Math.abs(widthRatio - preset) < 0.01 && 'lane-menu__ratio-btn--active')}
+                    onclick={(e) => { e.stopPropagation(); onWidthRatioChange(preset); }}
+                  >{preset}</button>
+                {/each}
+              </div>
+            </div>
+          {/if}
           {#if onHide}
             <button type="button" onclick={() => { menuOpen = false; onHide?.(); }}>
               <EyeOff class="w-3.5 h-3.5" />{$_('lane_actions.hide_lane')}
