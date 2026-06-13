@@ -99,6 +99,7 @@ func RunBinary(ctx context.Context, binPath string, args []string, srcPath strin
 	}
 
 	cmd := exec.CommandContext(ctx, binPath, cmdArgs...)
+	hideConsole(cmd)
 	GlobalProcessManager.Add(cmd)
 	defer GlobalProcessManager.Remove(cmd)
 
@@ -118,6 +119,7 @@ func RunBinary(ctx context.Context, binPath string, args []string, srcPath strin
 // RunBinaryOutput runs a binary and returns only stdout.
 func RunBinaryOutput(ctx context.Context, binPath string, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, binPath, args...)
+	hideConsole(cmd)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	err := cmd.Run()

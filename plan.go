@@ -287,6 +287,7 @@ func resolveCommandPath(cmd string, toolchain ToolchainPaths) string {
 
 func runTaskCommand(ctx context.Context, cmdPath string, args []string, env map[string]string) (string, string, error) {
 	cmd := exec.CommandContext(ctx, cmdPath, args...)
+	hideConsole(cmd)
 
 	if env != nil {
 		for k, v := range env {

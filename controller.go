@@ -142,7 +142,9 @@ func playCompletionSound(volume int) {
 		}
 		// Play a simple beep using PowerShell
 		psCmd := fmt.Sprintf("[console]::Beep(800, 200)")
-		exec.Command("powershell", "-Command", psCmd).Run()
+		cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psCmd)
+		hideConsole(cmd)
+		cmd.Run()
 	} else if runtime.GOOS == "darwin" {
 		// Use afplay on macOS
 		exec.Command("afplay", "/System/Library/Sounds/Ping.aiff").Run()
@@ -484,6 +486,7 @@ func runExifToolRaw(srcPath string, dstPath string, argsStr string) error {
 		}
 		cmd := exec.Command(exifToolCmd, "-charset", "filename=UTF8", "-@", filepath.Base(tmpPath))
 		cmd.Dir = filepath.Dir(tmpPath)
+		hideConsole(cmd)
 		_, err = cmd.CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("exiftool failed: %v", err)
@@ -764,6 +767,7 @@ func RunPowerShell(script string) (string, string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "powershell", "-NoProfile", "-NonInteractive", "-Command", script)
+	hideConsole(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -1170,6 +1174,7 @@ func runExifTool(srcPath string, dstPath string, mode string, exifToolArgs map[s
 		}
 		cmd := exec.Command(exifToolCmd, "-charset", "filename=UTF8", "-@", filepath.Base(tmpPath))
 		cmd.Dir = filepath.Dir(tmpPath)
+		hideConsole(cmd)
 		_, err = cmd.CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("exiftool failed: %v", err)
