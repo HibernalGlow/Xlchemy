@@ -21,7 +21,6 @@
 
   let visibilityMenuOpen = $state(false);
   let visibilityRoot = $state<HTMLDivElement | null>(null);
-  let expanded = $state(false);
 
   const visibleLanes = $derived(laneTabs.filter((l) => !l.hidden));
 
@@ -35,15 +34,6 @@
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   });
-
-  function handleMouseEnter() {
-    expanded = true;
-  }
-
-  function handleMouseLeave() {
-    expanded = false;
-    visibilityMenuOpen = false;
-  }
 
   function iconFor(id: string) {
     switch (id) {
@@ -63,19 +53,7 @@
   }
 </script>
 
-<div
-  class="page-control-dock"
-  class:expanded
-  onmouseenter={handleMouseEnter}
-  onmouseleave={handleMouseLeave}
->
-  <!-- Collapsed grip indicator (two dots) -->
-  <div class="page-control-grip" aria-hidden="true">
-    <span class="page-control-grip__dot"></span>
-    <span class="page-control-grip__dot"></span>
-  </div>
-
-  <!-- Expandable toolbar -->
+<div class="page-control-dock">
   <div class="page-control">
     {#each visibleLanes as lane}
       {@const Icon = iconFor(lane.id)}
@@ -86,7 +64,6 @@
         title={lane.title}
         onclick={() => onSelect(lane.id)}
         aria-label={lane.title}
-        tabindex={expanded ? 0 : -1}
       >
         <Icon class="h-3.5 w-3.5" />
       </button>
@@ -99,7 +76,6 @@
       title={singleLaneMode ? $_('layout_misc.multi_column') : $_('layout_misc.single_column')}
       onclick={() => onToggleSingleLaneMode?.()}
       aria-label={singleLaneMode ? $_('layout_misc.multi_column') : $_('layout_misc.single_column')}
-      tabindex={expanded ? 0 : -1}
     >
       {#if singleLaneMode}
         <Columns2 class="h-3.5 w-3.5" />
@@ -115,7 +91,6 @@
         title={$_('lane_actions.hide_lane')}
         onclick={() => (visibilityMenuOpen = !visibilityMenuOpen)}
         aria-label={$_('lane_actions.hide_lane')}
-        tabindex={expanded ? 0 : -1}
       >
         <Eye class="h-3.5 w-3.5" />
       </button>

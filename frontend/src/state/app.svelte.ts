@@ -234,7 +234,16 @@ export class AppState {
 
   importLayoutSettings(layout: any) {
     if (!layout || typeof layout !== 'object') return;
-    if (Array.isArray(layout.laneOrder)) this.laneOrder = layout.laneOrder;
+    if (Array.isArray(layout.laneOrder)) {
+      // Merge: keep user's order, but append any new default lanes that are missing
+      const saved = layout.laneOrder as string[];
+      const defaultOrder = DEFAULT_SNAPSHOT.layout.laneOrder;
+      const merged = [...saved];
+      for (const laneId of defaultOrder) {
+        if (!merged.includes(laneId)) merged.push(laneId);
+      }
+      this.laneOrder = merged;
+    }
     if (layout.laneLabels && typeof layout.laneLabels === 'object') {
       this.laneLabels = { ...DEFAULT_SNAPSHOT.layout.laneLabels, ...layout.laneLabels };
     }
@@ -681,6 +690,8 @@ export class AppState {
 
       if (saved.layout && typeof saved.layout === 'object') {
         this.importLayoutSettings(saved.layout);
+        // Always re-save after merge to persist any newly added default lanes/cards
+        shouldMigrateLegacyState = true;
       } else if (LEGACY_CLIENT_STATE.hasLayoutState) {
         this.importLayoutSettings(LEGACY_CLIENT_STATE.layout);
         shouldMigrateLegacyState = true;

@@ -35,7 +35,14 @@ function loadLaneOrder(): string[] {
     const v = localStorage.getItem('xlchemy-lane-order');
     if (v) {
       const arr = JSON.parse(v);
-      if (Array.isArray(arr)) return arr;
+      if (Array.isArray(arr)) {
+        // Merge: keep user's order, append any new default lanes
+        const merged = [...arr];
+        for (const laneId of defaultSnapshot.layout.laneOrder) {
+          if (!merged.includes(laneId)) merged.push(laneId);
+        }
+        return merged;
+      }
     }
   } catch {}
   return [...defaultSnapshot.layout.laneOrder];

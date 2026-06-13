@@ -196,7 +196,15 @@ describe('AppState import/save', async () => {
     expect(state.backgroundSettings.mode).toBe('image');
     expect(state.backgroundSettings.imageUrl).toBe('file:///mock/bg.png');
     expect(state.currentLang).toBe('zh');
-    expect(mockExecutor.savedSnapshots).toHaveLength(0);
+    // init saves merged layout back when Go backend has layout data
+    expect(mockExecutor.savedSnapshots).toHaveLength(1);
+    // Merged laneOrder should include saved lanes + new default lanes (e.g. 'about')
+    expect(state.laneOrder).toContain('input');
+    expect(state.laneOrder).toContain('settings');
+    expect(state.laneOrder).toContain('about');
+    // Merged cardLayout should include new default cards
+    expect(state.cardLayout.about).toContain('conversion-log');
+    expect(state.cardLayout.about).toContain('system-status');
   });
 
   it('imports exported snapshot format and saves immediately', async () => {
@@ -241,8 +249,8 @@ describe('AppState import/save', async () => {
     expect(state.appSettings.theme).toBe('Ocean');
     expect(state.singleLaneMode).toBe(true);
     expect(state.activeLaneId).toBe('settings');
-    expect(mockExecutor.savedSnapshots).toHaveLength(1);
-    expect(mockExecutor.savedSnapshots[0].domain.output.format).toBe('JPEG');
+    expect(mockExecutor.savedSnapshots).toHaveLength(2);
+    expect(mockExecutor.savedSnapshots.at(-1)!.domain.output.format).toBe('JPEG');
   });
 
   it('queues save for layout and background changes after init', async () => {
