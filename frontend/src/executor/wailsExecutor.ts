@@ -123,12 +123,17 @@ export class WailsExecutor implements BackendExecutor {
   subscribeEvents(handler: (event: DomainEvent) => void): Unsubscribe {
     const unsubs: (() => void)[] = [];
     let active = true;
+    // Track counts for accurate run_finished reporting
+    let lastCompleted = 0;
+    let exceptionCount = 0;
 
     void loadRuntime().then((runtime) => {
       if (!active) return;
 
       unsubs.push(
         runtime.Events.On('conversion:started', () => {
+          lastCompleted = 0;
+          exceptionCount = 0;
           handler({ type: 'run_started', runId: 'current', totalTasks: 0 });
         })
       );
@@ -136,11 +141,13 @@ export class WailsExecutor implements BackendExecutor {
       unsubs.push(
         runtime.Events.On('conversion:progress', (wailsEvent: any) => {
           const data = wailsEvent?.data || wailsEvent;
+          const completed = data.completed || 0;
+          lastCompleted = completed;
           handler({
             type: 'task_progress',
             runId: 'current',
             taskId: '',
-            completed: data.completed || 0,
+            completed,
             total: data.total || 0,
             line1: data.line1 || '',
             line2: data.line2 || '',
@@ -151,6 +158,7 @@ export class WailsExecutor implements BackendExecutor {
       unsubs.push(
         runtime.Events.On('conversion:exception', (wailsEvent: any) => {
           const data = wailsEvent?.data || wailsEvent;
+          exceptionCount++;
           handler({
             type: 'task_failed',
             runId: 'current',
@@ -164,7 +172,12 @@ export class WailsExecutor implements BackendExecutor {
 
       unsubs.push(
         runtime.Events.On('conversion:finished', () => {
-          handler({ type: 'run_finished', runId: 'current', completedCount: 0, failedCount: 0 });
+          handler({
+            type: 'run_finished',
+            runId: 'current',
+            completedCount: lastCompleted,
+            failedCount: exceptionCount,
+          });
         })
       );
 

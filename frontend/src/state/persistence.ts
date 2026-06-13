@@ -2,7 +2,7 @@ import {
   cloneCardLayout,
   DEFAULT_CARD_LAYOUT,
   DEFAULT_PROGRESS_CARD_CONFIG,
-  type CardId,
+  mergeCardLayoutWithDefaults,
   type CardLayout,
   type LaneId,
   type ProgressCardConfig,
@@ -78,23 +78,10 @@ function loadCardLayout(): CardLayout {
     const raw = localStorage.getItem('xlchemy-card-layout');
     if (!raw) return cloneCardLayout(DEFAULT_CARD_LAYOUT);
     const parsed = JSON.parse(raw);
-    const next: CardLayout = cloneCardLayout(DEFAULT_CARD_LAYOUT);
     if (parsed && typeof parsed === 'object') {
-      for (const [laneId, cards] of Object.entries(parsed)) {
-        next[laneId] = Array.isArray(cards) ? (cards as CardId[]).filter(Boolean) : [];
-      }
+      return mergeCardLayoutWithDefaults(parsed as CardLayout);
     }
-    for (const laneId of Object.keys(DEFAULT_CARD_LAYOUT)) {
-      const defaultCards = DEFAULT_CARD_LAYOUT[laneId];
-      const existing = next[laneId] || [];
-      for (const cardId of defaultCards) {
-        if (!existing.includes(cardId)) {
-          existing.push(cardId);
-        }
-      }
-      next[laneId] = existing;
-    }
-    return next;
+    return cloneCardLayout(DEFAULT_CARD_LAYOUT);
   } catch {
     return cloneCardLayout(DEFAULT_CARD_LAYOUT);
   }

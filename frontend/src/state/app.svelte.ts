@@ -4,6 +4,7 @@ import {
   cloneCardLayout,
   DEFAULT_CARD_LAYOUT,
   DEFAULT_PROGRESS_CARD_CONFIG,
+  mergeCardLayoutWithDefaults,
   type CardId,
   type CardLayout,
   type LaneId,
@@ -241,7 +242,9 @@ export class AppState {
     if (layout.laneWidthRatios && typeof layout.laneWidthRatios === 'object') {
       this.laneWidthRatios = { ...DEFAULT_LANE_WIDTH_RATIOS, ...layout.laneWidthRatios };
     }
-    if (layout.cardLayout && typeof layout.cardLayout === 'object') this.cardLayout = layout.cardLayout;
+    if (layout.cardLayout && typeof layout.cardLayout === 'object') {
+      this.cardLayout = mergeCardLayoutWithDefaults(layout.cardLayout);
+    }
     if (typeof layout.singleLaneMode === 'boolean') this.singleLaneMode = layout.singleLaneMode;
     if (layout.activeLaneId) this.activeLaneId = layout.activeLaneId;
     if (layout.progressCardConfig && typeof layout.progressCardConfig === 'object') {

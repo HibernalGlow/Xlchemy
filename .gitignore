@@ -50,5 +50,5 @@ build_wails/
 frontend/.vite/
 frontend/bindings
 .task/*
-build/
 release/
+build/windows/nsis

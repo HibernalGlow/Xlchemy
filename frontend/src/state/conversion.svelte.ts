@@ -5,6 +5,7 @@ import type { DomainEvent } from '$lib/domain';
 export function initConversionEvents() {
   const executor = getExecutor();
   let elapsedTimer: ReturnType<typeof setInterval> | null = null;
+  let lastLoggedCompleted = 0;
 
   const unsubscribe = executor.subscribeEvents((event: DomainEvent) => {
     switch (event.type) {
@@ -14,6 +15,7 @@ export function initConversionEvents() {
         appState.progress = { completed: 0, total: event.totalTasks, line1: 'Starting...', line2: '' };
         appState.conversionStartTime = Date.now();
         appState.conversionElapsed = 0;
+        lastLoggedCompleted = 0;
         // Snapshot current file paths for clear-completed
         appState.conversionFilePaths = new Set(appState.fileItems.map((item) => item.absPath));
         appState.addLog('info', `Conversion started: ${event.totalTasks} tasks`);
@@ -33,6 +35,19 @@ export function initConversionEvents() {
           line1: event.line1,
           line2: event.line2,
         };
+        // Log each completed file (detected by completed count increase)
+        if (event.completed > lastLoggedCompleted && event.line1) {
+          const fileName = event.line1.includes(' : ')
+            ? event.line1.slice(0, event.line1.indexOf(' : '))
+            : event.line1;
+          const sizeInfo = event.line1.includes(' : ')
+            ? event.line1.slice(event.line1.indexOf(' : ') + 3)
+            : '';
+          if (!event.line1.startsWith('Converted ') && !event.line1.startsWith('Starting')) {
+            appState.addLog('success', `${fileName}${sizeInfo ? ` \u2014 ${sizeInfo}` : ''}`);
+          }
+          lastLoggedCompleted = event.completed;
+        }
         break;
 
       case 'task_succeeded':
@@ -44,7 +59,7 @@ export function initConversionEvents() {
           ...appState.exceptions,
           { id: event.errorId, msg: event.errorMsg, path: event.inputPath },
         ];
-        appState.addLog('error', `[${event.errorId}] ${event.errorMsg}`);
+        appState.addLog('error', `[${event.errorId}] ${event.inputPath ? event.inputPath.split(/[\\/]/).pop() + ' \u2014 ' : ''}${event.errorMsg}`);
         break;
 
       case 'run_finished':

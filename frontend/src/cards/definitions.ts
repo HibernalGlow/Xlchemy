@@ -61,3 +61,36 @@ export function cloneCardLayout(layout: CardLayout): CardLayout {
   }
   return next;
 }
+
+/**
+ * Merges a saved card layout with the current defaults.
+ * - Preserves user's card ordering within each lane.
+ * - Appends any new default cards that were added after the user saved.
+ * - Filters out card IDs that are no longer valid (removed from defaults).
+ * - Preserves user-created lanes that don't exist in defaults.
+ */
+export function mergeCardLayoutWithDefaults(saved: CardLayout): CardLayout {
+  const validIds = new Set(ALL_CARD_IDS);
+  const next: CardLayout = cloneCardLayout(DEFAULT_CARD_LAYOUT);
+
+  // For each default lane, overlay the user's saved ordering
+  for (const laneId of Object.keys(DEFAULT_CARD_LAYOUT)) {
+    const savedCards = saved[laneId];
+    if (!Array.isArray(savedCards)) continue;
+    // Keep only valid cards, preserve user's order
+    const filtered = savedCards.filter((id) => validIds.has(id));
+    // Append any new default cards not in the saved list
+    for (const cardId of DEFAULT_CARD_LAYOUT[laneId]) {
+      if (!filtered.includes(cardId)) filtered.push(cardId);
+    }
+    next[laneId] = filtered;
+  }
+
+  // Preserve user-created lanes (not in defaults)
+  for (const [laneId, cards] of Object.entries(saved)) {
+    if (laneId in DEFAULT_CARD_LAYOUT) continue;
+    next[laneId] = Array.isArray(cards) ? cards.filter((id) => validIds.has(id)) : [];
+  }
+
+  return next;
+}
