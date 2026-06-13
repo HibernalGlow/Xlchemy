@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Search, Filter, Trash2, ChevronDown } from '@lucide/svelte';
+  import { Search, Filter, Trash2, ChevronDown, Copy, Check } from '@lucide/svelte';
   import LaneCard from '$lib/layout/LaneCard.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import Checkbox from '$lib/components/ui/Checkbox.svelte';
   import { appState } from '$lib/state/app.svelte';
   import type { LaneId } from '$lib/cards/definitions';
   import { _ } from 'svelte-i18n';
@@ -15,6 +16,7 @@
   let searchQuery = $state('');
   let levelFilter = $state<Set<string>>(new Set(['info', 'warn', 'error', 'success']));
   let autoScroll = $state(true);
+  let copied = $state(false);
   let logContainer = $state<HTMLDivElement | null>(null);
 
   type LogLevel = 'info' | 'warn' | 'error' | 'success';
@@ -52,6 +54,26 @@
 
   function clearLogs() {
     appState.logEntries = [];
+  }
+
+  async function copyLogs() {
+    const entries = filteredEntries();
+    const text = entries.map((e) => `[${e.time}] [${levelBadges[e.level as LogLevel]}] ${e.message}`).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+      setTimeout(() => (copied = false), 2000);
+    } catch {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      copied = true;
+      setTimeout(() => (copied = false), 2000);
+    }
   }
 
   $effect(() => {
@@ -98,6 +120,15 @@
         {/each}
       </div>
 
+      <!-- Copy -->
+      <Button kind="ghost" variant="neutral" size="icon" class="h-6 w-6" title={$_('log.copy_all')} onclick={copyLogs}>
+        {#if copied}
+          <Check class="h-3 w-3 text-success" />
+        {:else}
+          <Copy class="h-3 w-3" />
+        {/if}
+      </Button>
+
       <!-- Clear -->
       <Button kind="ghost" variant="neutral" size="icon" class="h-6 w-6" title={$_('log.clear')} onclick={clearLogs}>
         <Trash2 class="h-3 w-3" />
@@ -131,7 +162,7 @@
     <div class="flex items-center justify-between text-[10px] text-text-2">
       <span>{filteredEntries().length} / {appState.logEntries.length} {$_('common.entries')}</span>
       <label class="flex items-center gap-1 cursor-pointer">
-        <input type="checkbox" bind:checked={autoScroll} class="h-3 w-3 accent-fill-pop-bg" />
+        <Checkbox checked={autoScroll} onCheckedChange={(v) => (autoScroll = v)} />
         {$_('log.auto_scroll')}
       </label>
     </div>

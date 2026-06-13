@@ -38,6 +38,9 @@ export interface BackendExecutor {
   // Event subscription
   subscribeEvents(handler: (event: DomainEvent) => void): Unsubscribe;
 
+  // Logging
+  writeLog?(level: string, message: string): Promise<void>;
+
   // System integration
   showFileInFolder?(path: string): Promise<void>;
 }

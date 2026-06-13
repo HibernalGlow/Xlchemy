@@ -116,6 +116,10 @@ export class WailsExecutor implements BackendExecutor {
     return callGo('DeletePreset', name);
   }
 
+  async writeLog(level: string, message: string): Promise<void> {
+    return callGo('WriteLog', level, message);
+  }
+
   async showFileInFolder(path: string): Promise<void> {
     return callGo('ShowFileInFolder', path);
   }

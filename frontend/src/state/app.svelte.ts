@@ -138,6 +138,8 @@ export class AppState {
     const now = new Date();
     const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     this.logEntries = [...this.logEntries.slice(-499), { time, level, message }];
+    // Persist to backend log file (fire-and-forget)
+    getExecutor().writeLog?.(level, message).catch(() => {});
   }
 
   excludedFormats = $state<Set<string>>(new Set(DEFAULT_EXCLUDED_FORMATS));

@@ -24,6 +24,7 @@ declare global {
         save_preset?: (name: string, snapshot: AppStateSnapshot) => Promise<void>;
         load_preset?: (name: string) => Promise<Partial<AppStateSnapshot>>;
         delete_preset?: (name: string) => Promise<void>;
+        write_log?: (level: string, message: string) => Promise<void>;
       };
     };
     __XLCHMY_DISPATCH_EVENT__?: (event: DomainEvent) => void;
@@ -99,6 +100,10 @@ export class PywebviewExecutor implements BackendExecutor {
 
   async deletePreset(name: string): Promise<void> {
     await requireApi().delete_preset?.(name);
+  }
+
+  async writeLog(level: string, message: string): Promise<void> {
+    await requireApi().write_log?.(level, message);
   }
 
   subscribeEvents(handler: (event: DomainEvent) => void): Unsubscribe {

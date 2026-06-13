@@ -20,12 +20,46 @@ type AppService struct {
 	converting bool
 	mu         sync.Mutex
 	cancelFunc context.CancelFunc
+	logFile    *os.File
+	logMu      sync.Mutex
 }
 
 func NewAppService() *AppService {
-	return &AppService{
+	s := &AppService{
 		config: NewConfigStore(),
 	}
+	s.initLogging()
+	return s
+}
+
+// initLogging creates the logs directory under the program folder and opens the log file.
+func (a *AppService) initLogging() {
+	logsDir := filepath.Join(ProgramFolder, "logs")
+	if err := os.MkdirAll(logsDir, 0o755); err != nil {
+		return
+	}
+	logPath := filepath.Join(logsDir, "xlchemy.log")
+	f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return
+	}
+	a.logFile = f
+}
+
+// WriteLog appends a log entry to the log file. Called from frontend.
+func (a *AppService) WriteLog(level string, message string) {
+	a.logMu.Lock()
+	defer a.logMu.Unlock()
+	if a.logFile == nil {
+		return
+	}
+	ts := time.Now().Format("15:04:05")
+	fmt.Fprintf(a.logFile, "[%s] [%s] %s\n", ts, strings.ToUpper(level), message)
+}
+
+// GetLogsDir returns the path to the logs directory.
+func (a *AppService) GetLogsDir() string {
+	return filepath.Join(ProgramFolder, "logs")
 }
 
 // GetConstants returns app constants (version, allowed inputs, etc.).

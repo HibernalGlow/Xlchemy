@@ -221,7 +221,9 @@
     "clear": "Clear logs",
     "no_entries": "No log entries",
     "no_matches": "No matching entries",
-    "auto_scroll": "Auto-scroll"
+    "auto_scroll": "Auto-scroll",
+    "copy_all": "Copy all",
+    "copied": "Copied"
   },
   "lane_actions": {
     "pop_out": "Pop out lane",

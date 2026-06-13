@@ -221,7 +221,9 @@
     "clear": "清除日志",
     "no_entries": "暂无日志",
     "no_matches": "无匹配条目",
-    "auto_scroll": "自动滚动"
+    "auto_scroll": "自动滚动",
+    "copy_all": "复制全部",
+    "copied": "已复制"
   },
   "lane_actions": {
     "pop_out": "弹出 lane",
