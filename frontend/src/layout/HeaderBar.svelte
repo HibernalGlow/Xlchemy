@@ -1,7 +1,7 @@
 <script lang="ts">
   import Badge from '$lib/components/ui/Badge.svelte';
   import ThemePanel from '$lib/views/ThemePanel.svelte';
-  import { Palette, ChevronDown, Minus, Maximize2, Minimize2, X } from '@lucide/svelte';
+  import { Palette, ChevronDown, Minus, Square, Minimize2, X } from '@lucide/svelte';
   import type { BackgroundSettings } from '$lib/utils/backgroundSettings';
 
   interface Props {
@@ -124,7 +124,7 @@
         {#if isMaximised}
           <Minimize2 class="w-3.5 h-3.5" />
         {:else}
-          <Maximize2 class="w-3.5 h-3.5" />
+          <Square class="w-3.5 h-3.5" />
         {/if}
       </button>
       <button type="button" class="window-controls__btn window-controls__btn--close" onclick={handleClose} aria-label="Close">
