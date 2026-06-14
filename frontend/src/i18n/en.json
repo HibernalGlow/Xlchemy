@@ -308,10 +308,10 @@
   },
   "duplicates": {
     "title": "Duplicate cards detected",
-    "description": "The following cards appear in more than one lane. Each card can only exist in a single lane. Click \"Auto-fix\" to keep the first occurrence and remove duplicates.",
+    "description": "The following cards appear in more than one lane. Choose which lane to keep each card in; duplicates will be removed.",
     "card": "Card",
     "lanes": "Lanes",
-    "fix": "Auto-fix",
+    "fix": "Apply",
     "dismiss": "Dismiss"
   },
   "card_names": {

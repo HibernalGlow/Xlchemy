@@ -6,7 +6,6 @@ import {
   DEFAULT_PROGRESS_CARD_CONFIG,
   mergeCardLayoutWithDefaults,
   findDuplicateCards,
-  deduplicateCards,
   type CardId,
   type CardLayout,
   type LaneId,
@@ -284,9 +283,16 @@ export class AppState {
     this.showDuplicateDialog = dupes.length > 0;
   }
 
-  /** Remove duplicates, keeping each card only in its first lane. */
-  resolveDuplicateCards() {
-    this.cardLayout = deduplicateCards(this.cardLayout, this.laneOrder);
+  /** Remove duplicates, keeping each card only in the chosen lane. */
+  resolveDuplicateCards(choices: Map<string, string>) {
+    const next = cloneCardLayout(this.cardLayout);
+    for (const [cardId, keepLane] of choices) {
+      for (const [laneId, cards] of Object.entries(next)) {
+        if (laneId === keepLane) continue;
+        next[laneId] = cards.filter((id) => id !== cardId);
+      }
+    }
+    this.cardLayout = next;
     this.duplicateCards = [];
     this.showDuplicateDialog = false;
     this.queueSettingsSave();
