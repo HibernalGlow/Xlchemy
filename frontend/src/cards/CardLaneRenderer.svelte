@@ -20,7 +20,7 @@
       <!-- hidden -->
     {:else if cardRegistry[cardId]}
       {@const CardComponent = cardRegistry[cardId]}
-      <svelte:component this={CardComponent} {laneId} />
+      <CardComponent {laneId} />
     {/if}
   {/each}
 </div>

@@ -109,7 +109,7 @@
   const maxFolderSize = $derived(Math.max(...inputStats.folders.map((f) => f.size), 1));
 </script>
 
-<LaneCard id="data-analysis" laneId={laneId} header={$_('analysis.title')}>
+<LaneCard id="data-analysis" laneId={laneId} movable header={$_('analysis.title')}>
   <div class="analysis">
     <!-- Tabs -->
     <div class="analysis__tabs">
