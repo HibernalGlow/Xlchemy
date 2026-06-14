@@ -15,6 +15,15 @@ type ExceptionEvent struct {
 	Path string `json:"path"`
 }
 
+// SuccessEvent is emitted when a single file conversion succeeds.
+type SuccessEvent struct {
+	InputPath  string `json:"inputPath"`
+	OutputPath string `json:"outputPath"`
+	SrcSize    int64  `json:"srcSize"`
+	DstSize    int64  `json:"dstSize"`
+	Ext        string `json:"ext"`
+}
+
 // FileDropEvent is emitted when the window receives external file drops.
 type FileDropEvent struct {
 	Files []string `json:"files"`

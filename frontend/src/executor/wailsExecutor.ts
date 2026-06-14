@@ -175,6 +175,21 @@ export class WailsExecutor implements BackendExecutor {
       );
 
       unsubs.push(
+        runtime.Events.On('conversion:success', (wailsEvent: any) => {
+          const data = wailsEvent?.data || wailsEvent;
+          handler({
+            type: 'task_succeeded',
+            runId: 'current',
+            taskId: '',
+            inputPath: data.inputPath || '',
+            outputPath: data.outputPath || '',
+            srcSize: data.srcSize || 0,
+            dstSize: data.dstSize || 0,
+          });
+        })
+      );
+
+      unsubs.push(
         runtime.Events.On('conversion:finished', () => {
           handler({
             type: 'run_finished',

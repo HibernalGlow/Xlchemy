@@ -86,6 +86,15 @@ func runConversion(ctx context.Context, items []FileItem, output OutputSettings,
 				})
 			}
 
+			if exc == nil && !skipped && srcSize > 0 && dstSize > 0 {
+				App.Event.Emit("conversion:success", SuccessEvent{
+					InputPath: fi.AbsPath,
+					SrcSize:   srcSize,
+					DstSize:   dstSize,
+					Ext:       fi.Ext,
+				})
+			}
+
 			n := completed.Add(1)
 
 			if !skipped {

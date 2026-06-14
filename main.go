@@ -18,6 +18,7 @@ func init() {
 	// Register conversion events
 	application.RegisterEvent[ProgressEvent]("conversion:progress")
 	application.RegisterEvent[ExceptionEvent]("conversion:exception")
+	application.RegisterEvent[SuccessEvent]("conversion:success")
 	application.RegisterEvent[struct{}]("conversion:finished")
 	application.RegisterEvent[struct{}]("conversion:canceled")
 	application.RegisterEvent[struct{}]("conversion:started")
