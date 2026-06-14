@@ -143,24 +143,23 @@
         </div>
       </div>
 
-      <!-- Color schemes — compact dot palette -->
+      <!-- Color schemes — compact dual-dot grid -->
       <div class="theme-panel__section">
         <span class="theme-panel__label">{$_('theme_panel.color_scheme')}</span>
-        <div class="theme-panel__dot-map">
+        <div class="theme-panel__hue-grid">
           {#each sortedThemes() as theme}
             {@const colors = getThemePreviewColors(theme, currentEffectiveMode())}
             <button
               type="button"
               onclick={() => handleSelectTheme(theme.name)}
-              class="theme-panel__dot-wrap"
-              class:theme-panel__dot-wrap--active={currentThemeName === theme.name}
-              data-theme={theme.name}
-              title={theme.name}
+              class="theme-panel__hue-item"
+              class:theme-panel__hue-item--active={currentThemeName === theme.name}
             >
-              <span
-                class="theme-panel__dot"
-                style="background: {colors.primary}"
-              ></span>
+              <span class="theme-panel__hue-dots">
+                <span class="theme-panel__hue-dot" style="background:{colors.primary}"></span>
+                <span class="theme-panel__hue-dot" style="background:{colors.accent}"></span>
+              </span>
+              <span class="theme-panel__hue-name">{theme.name}</span>
             </button>
           {/each}
         </div>
@@ -374,71 +373,60 @@
     right: 3px;
   }
 
-  .theme-panel__dot-map {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    align-items: center;
-    padding: 2px 0;
+  .theme-panel__hue-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
   }
 
-  .theme-panel__dot-wrap {
-    position: relative;
+  .theme-panel__hue-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    padding: 0;
-    background: transparent;
-    transition: all 0.12s ease;
-  }
-
-  .theme-panel__dot-wrap:hover {
-    border-color: color-mix(in oklch, var(--border-2) 70%, transparent);
-    transform: scale(1.25);
-    z-index: 1;
-  }
-
-  .theme-panel__dot-wrap--active {
-    border-color: var(--fill-pop-bg);
-    box-shadow: 0 0 0 1.5px var(--fill-pop-bg);
-  }
-
-  .theme-panel__dot {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.18);
-  }
-
-  /* Tooltip on hover */
-  .theme-panel__dot-wrap::after {
-    content: attr(data-theme);
-    position: absolute;
-    bottom: calc(100% + 5px);
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 3px 7px;
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--text-1);
-    background: var(--bg-1);
-    border: 1px solid var(--border-2);
+    gap: 5px;
+    padding: 3px 6px;
+    border: 1px solid transparent;
     border-radius: 5px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.12s ease;
-    z-index: 20;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    background: transparent;
+    min-width: 0;
   }
 
-  .theme-panel__dot-wrap:hover::after {
-    opacity: 1;
+  .theme-panel__hue-item:hover {
+    background: color-mix(in oklch, var(--bg-1) 70%, transparent);
+  }
+
+  .theme-panel__hue-item--active {
+    background: color-mix(in oklch, var(--fill-pop-bg) 8%, var(--bg-2));
+    border-color: color-mix(in oklch, var(--fill-pop-bg) 50%, transparent);
+  }
+
+  .theme-panel__hue-dots {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+
+  .theme-panel__hue-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.15);
+  }
+
+  .theme-panel__hue-name {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+
+  .theme-panel__hue-item--active .theme-panel__hue-name {
+    color: var(--fill-pop-bg);
+    font-weight: 600;
   }
 
   .theme-panel__bg-modes {
