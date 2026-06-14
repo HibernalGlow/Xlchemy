@@ -305,5 +305,33 @@
     "drop_hint": "支持拖入文件或文件夹...",
     "add_files": "添加文件",
     "add_folder": "添加文件夹"
+  },
+  "duplicates": {
+    "title": "检测到重复卡片",
+    "description": "以下卡片出现在多个泳道中，每个卡片只能存在于一个泳道。点击「自动修复」将保留首次出现的位置并移除其余副本。",
+    "card": "卡片",
+    "lanes": "所在泳道",
+    "fix": "自动修复",
+    "dismiss": "忽略"
+  },
+  "card_names": {
+    "input-files": "输入文件",
+    "input-filter": "输入过滤",
+    "progress-status": "运行状态",
+    "output-format": "输出格式",
+    "output-conversion": "转换设置",
+    "output-save": "保存设置",
+    "modify-downscaling": "缩小",
+    "modify-misc": "其他修改",
+    "settings-appearance": "外观",
+    "settings-general": "常规",
+    "settings-conversion": "转换",
+    "settings-exiftool": "ExifTool",
+    "settings-advanced": "高级",
+    "settings-frontend": "前端",
+    "layout-manager": "布局管理器",
+    "about-info": "关于",
+    "conversion-log": "日志",
+    "system-status": "系统"
   }
 }

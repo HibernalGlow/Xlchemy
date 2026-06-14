@@ -3,6 +3,7 @@
   import CardLaneRenderer from '$lib/cards/CardLaneRenderer.svelte';
   import ExceptionsDialog from '$lib/dialogs/ExceptionsDialog.svelte';
   import ImportSettingsDialog from '$lib/dialogs/ImportSettingsDialog.svelte';
+  import DuplicateCardsDialog from '$lib/dialogs/DuplicateCardsDialog.svelte';
 
   import CustomScrollbar from '$lib/layout/CustomScrollbar.svelte';
   import BottomLaneNav from '$lib/layout/BottomLaneNav.svelte';
@@ -154,4 +155,5 @@
 
   <ExceptionsDialog bind:open={appState.showExceptions} />
   <ImportSettingsDialog bind:open={appState.showImportDialog} />
+  <DuplicateCardsDialog bind:open={appState.showDuplicateDialog} />
 </div>

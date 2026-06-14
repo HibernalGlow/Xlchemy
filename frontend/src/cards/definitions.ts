@@ -94,3 +94,56 @@ export function mergeCardLayoutWithDefaults(saved: CardLayout): CardLayout {
 
   return next;
 }
+
+export interface DuplicateCardInfo {
+  cardId: CardId;
+  lanes: LaneId[];
+}
+
+/**
+ * Scans a card layout and returns cards that appear in more than one lane.
+ */
+export function findDuplicateCards(layout: CardLayout): DuplicateCardInfo[] {
+  const cardLanes = new Map<CardId, LaneId[]>();
+  for (const [laneId, cards] of Object.entries(layout)) {
+    for (const cardId of cards) {
+      const lanes = cardLanes.get(cardId) ?? [];
+      lanes.push(laneId);
+      cardLanes.set(cardId, lanes);
+    }
+  }
+  const dupes: DuplicateCardInfo[] = [];
+  for (const [cardId, lanes] of cardLanes) {
+    if (lanes.length > 1) {
+      dupes.push({ cardId, lanes });
+    }
+  }
+  return dupes;
+}
+
+/**
+ * Removes duplicate cards from the layout, keeping each card only in the
+ * first lane where it appears (based on the provided lane order).
+ */
+export function deduplicateCards(layout: CardLayout, laneOrder: LaneId[]): CardLayout {
+  const next = cloneCardLayout(layout);
+  const seen = new Set<CardId>();
+  for (const laneId of laneOrder) {
+    const cards = next[laneId];
+    if (!cards) continue;
+    next[laneId] = cards.filter((id) => {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+  for (const [laneId, cards] of Object.entries(next)) {
+    if (laneOrder.includes(laneId)) continue;
+    next[laneId] = cards.filter((id) => {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+  return next;
+}

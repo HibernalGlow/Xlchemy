@@ -5,10 +5,13 @@ import {
   DEFAULT_CARD_LAYOUT,
   DEFAULT_PROGRESS_CARD_CONFIG,
   mergeCardLayoutWithDefaults,
+  findDuplicateCards,
+  deduplicateCards,
   type CardId,
   type CardLayout,
   type LaneId,
   type ProgressCardConfig,
+  type DuplicateCardInfo,
 } from '$lib/cards/definitions';
 import { applyThemeColors, getCustomThemes, getThemeMode, loadThemeName, setCustomThemes, setThemeMode, watchSystemTheme } from '$lib/utils/themes';
 import {
@@ -108,6 +111,8 @@ export class AppState {
   progressCardConfig = $state<ProgressCardConfig>({ ...DEFAULT_PROGRESS_CARD_CONFIG });
   hiddenLanes = $state<Set<string>>(new Set(DEFAULT_SNAPSHOT.layout.hiddenLanes));
   hiddenCards = $state<Set<string>>(new Set(DEFAULT_SNAPSHOT.layout.hiddenCards));
+  duplicateCards = $state<DuplicateCardInfo[]>([]);
+  showDuplicateDialog = $state<boolean>(false);
 
   // Domain state
   fileItems = $state<FileItem[]>([]);
@@ -270,6 +275,21 @@ export class AppState {
     if (Array.isArray(layout.collapsedLanes)) {
       this.collapsedLanes = new Set(layout.collapsedLanes);
     }
+  }
+
+  /** Scan cardLayout for cards appearing in more than one lane. */
+  detectDuplicateCards() {
+    const dupes = findDuplicateCards(this.cardLayout);
+    this.duplicateCards = dupes;
+    this.showDuplicateDialog = dupes.length > 0;
+  }
+
+  /** Remove duplicates, keeping each card only in its first lane. */
+  resolveDuplicateCards() {
+    this.cardLayout = deduplicateCards(this.cardLayout, this.laneOrder);
+    this.duplicateCards = [];
+    this.showDuplicateDialog = false;
+    this.queueSettingsSave();
   }
 
   toggleLaneCollapsed(id: string) {
@@ -742,6 +762,7 @@ export class AppState {
         this.appSettings = { ...this.appSettings, excluded_formats: Array.from(this.excludedFormats) };
       }
       this.isInitialized = true;
+      this.detectDuplicateCards();
       if (shouldMigrateLegacyState) {
         await this.saveCurrentSettings();
       }

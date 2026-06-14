@@ -305,5 +305,33 @@
     "drop_hint": "Drag & drop files or folders...",
     "add_files": "Add files",
     "add_folder": "Add folder"
+  },
+  "duplicates": {
+    "title": "Duplicate cards detected",
+    "description": "The following cards appear in more than one lane. Each card can only exist in a single lane. Click \"Auto-fix\" to keep the first occurrence and remove duplicates.",
+    "card": "Card",
+    "lanes": "Lanes",
+    "fix": "Auto-fix",
+    "dismiss": "Dismiss"
+  },
+  "card_names": {
+    "input-files": "Input Files",
+    "input-filter": "Input Filter",
+    "progress-status": "Progress",
+    "output-format": "Output Format",
+    "output-conversion": "Conversion Settings",
+    "output-save": "Save Settings",
+    "modify-downscaling": "Downscaling",
+    "modify-misc": "Misc Modifications",
+    "settings-appearance": "Appearance",
+    "settings-general": "General",
+    "settings-conversion": "Conversion",
+    "settings-exiftool": "ExifTool",
+    "settings-advanced": "Advanced",
+    "settings-frontend": "Frontend",
+    "layout-manager": "Layout Manager",
+    "about-info": "About",
+    "conversion-log": "Log",
+    "system-status": "System"
   }
 }
