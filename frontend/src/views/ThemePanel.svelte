@@ -143,28 +143,24 @@
         </div>
       </div>
 
-      <!-- Color schemes -->
+      <!-- Color schemes — compact dot palette -->
       <div class="theme-panel__section">
         <span class="theme-panel__label">{$_('theme_panel.color_scheme')}</span>
-        <div class="theme-panel__palette-grid">
+        <div class="theme-panel__dot-map">
           {#each sortedThemes() as theme}
-            {@const mode = currentEffectiveMode()}
-            {@const colors = getThemePreviewColors(theme, mode)}
+            {@const colors = getThemePreviewColors(theme, currentEffectiveMode())}
             <button
               type="button"
               onclick={() => handleSelectTheme(theme.name)}
-              class="theme-panel__palette-card"
-              class:theme-panel__palette-card--active={currentThemeName === theme.name}
+              class="theme-panel__dot-wrap"
+              class:theme-panel__dot-wrap--active={currentThemeName === theme.name}
+              data-theme={theme.name}
+              title={theme.name}
             >
-              <div class="theme-panel__palette-swatches">
-                <span class="theme-panel__palette-swatch" style="background: {colors.primary}"></span>
-                <span class="theme-panel__palette-swatch" style="background: {colors.accent}"></span>
-                <span class="theme-panel__palette-swatch" style="background: {colors.background}"></span>
-              </div>
-              <span class="theme-panel__palette-name">{theme.name}</span>
-              {#if currentThemeName === theme.name}
-                <Check class="theme-panel__palette-check w-3 h-3" />
-              {/if}
+              <span
+                class="theme-panel__dot"
+                style="background: {colors.primary}"
+              ></span>
             </button>
           {/each}
         </div>
@@ -378,70 +374,71 @@
     right: 3px;
   }
 
-  .theme-panel__palette-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 5px;
+  .theme-panel__dot-map {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    padding: 2px 0;
   }
 
-  .theme-panel__palette-card {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 7px 8px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-1);
-    background: var(--bg-2);
-    border: 1.5px solid transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+  .theme-panel__dot-wrap {
     position: relative;
-  }
-
-  .theme-panel__palette-card:hover {
-    background: color-mix(in oklch, var(--bg-1) 80%, transparent);
-    border-color: color-mix(in oklch, var(--border-2) 60%, transparent);
-  }
-
-  .theme-panel__palette-card--active {
-    border-color: var(--fill-pop-bg);
-    background: color-mix(in oklch, var(--fill-pop-bg) 8%, var(--bg-2));
-  }
-
-  .theme-panel__palette-swatches {
     display: flex;
-    gap: 3px;
-    height: 14px;
-    border-radius: 4px;
-    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+    transition: all 0.12s ease;
   }
 
-  .theme-panel__palette-swatch {
-    flex: 1;
-    border-radius: 3px;
-    box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.2);
+  .theme-panel__dot-wrap:hover {
+    border-color: color-mix(in oklch, var(--border-2) 70%, transparent);
+    transform: scale(1.25);
+    z-index: 1;
   }
 
-  .theme-panel__palette-name {
+  .theme-panel__dot-wrap--active {
+    border-color: var(--fill-pop-bg);
+    box-shadow: 0 0 0 1.5px var(--fill-pop-bg);
+  }
+
+  .theme-panel__dot {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.18);
+  }
+
+  /* Tooltip on hover */
+  .theme-panel__dot-wrap::after {
+    content: attr(data-theme);
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 7px;
     font-size: 10px;
     font-weight: 500;
-    color: var(--text-2);
+    color: var(--text-1);
+    background: var(--bg-1);
+    border: 1px solid var(--border-2);
+    border-radius: 5px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    z-index: 20;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
   }
 
-  .theme-panel__palette-card--active .theme-panel__palette-name {
-    color: var(--fill-pop-bg);
-  }
-
-  .theme-panel__palette-check {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    color: var(--fill-pop-bg);
+  .theme-panel__dot-wrap:hover::after {
+    opacity: 1;
   }
 
   .theme-panel__bg-modes {
