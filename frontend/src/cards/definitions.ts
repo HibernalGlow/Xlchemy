@@ -73,15 +73,25 @@ export function mergeCardLayoutWithDefaults(saved: CardLayout): CardLayout {
   const validIds = new Set(ALL_CARD_IDS);
   const next: CardLayout = cloneCardLayout(DEFAULT_CARD_LAYOUT);
 
+  // Collect all cards the user has placed in any lane
+  const placedCards = new Set<string>();
+  for (const cards of Object.values(saved)) {
+    if (Array.isArray(cards)) {
+      for (const id of cards) placedCards.add(id);
+    }
+  }
+
   // For each default lane, overlay the user's saved ordering
   for (const laneId of Object.keys(DEFAULT_CARD_LAYOUT)) {
     const savedCards = saved[laneId];
     if (!Array.isArray(savedCards)) continue;
     // Keep only valid cards, preserve user's order
     const filtered = savedCards.filter((id) => validIds.has(id));
-    // Append any new default cards not in the saved list
+    // Append only new default cards that the user doesn't have anywhere
     for (const cardId of DEFAULT_CARD_LAYOUT[laneId]) {
-      if (!filtered.includes(cardId)) filtered.push(cardId);
+      if (!placedCards.has(cardId) && !filtered.includes(cardId)) {
+        filtered.push(cardId);
+      }
     }
     next[laneId] = filtered;
   }

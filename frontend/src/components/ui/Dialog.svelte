@@ -5,11 +5,12 @@
   interface Props {
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    dismissible?: boolean;
     class?: string;
     children?: import('svelte').Snippet;
   }
 
-  let { open = $bindable(false), onOpenChange, class: className = '', children }: Props = $props();
+  let { open = $bindable(false), onOpenChange, dismissible = true, class: className = '', children }: Props = $props();
 
   function handleClose() {
     open = false;
@@ -17,7 +18,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && open) {
+    if (e.key === 'Escape' && open && dismissible) {
       handleClose();
     }
   }
@@ -36,7 +37,7 @@
 
 {#if open}
   <div class="fixed inset-0 z-modal" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick={handleClose} aria-hidden="true"></div>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick={dismissible ? handleClose : undefined} aria-hidden="true"></div>
     <div class="fixed inset-0 flex items-center justify-center p-4">
       <div
         class={cn(
@@ -44,13 +45,15 @@
           className,
         )}
       >
-        <button
-          type="button"
-          onclick={handleClose}
-          class="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-[4px] text-text-2 transition-colors hover:bg-ntrl-30 hover:text-text-1"
-        >
-          <X class="h-3.5 w-3.5" />
-        </button>
+        {#if dismissible}
+          <button
+            type="button"
+            onclick={handleClose}
+            class="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-[4px] text-text-2 transition-colors hover:bg-ntrl-30 hover:text-text-1"
+          >
+            <X class="h-3.5 w-3.5" />
+          </button>
+        {/if}
         {@render children?.()}
       </div>
     </div>

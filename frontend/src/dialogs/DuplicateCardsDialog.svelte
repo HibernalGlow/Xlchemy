@@ -51,7 +51,7 @@
   }
 </script>
 
-<Dialog bind:open onOpenChange={(v) => { open = v; onOpenChange?.(v); }}>
+<Dialog bind:open dismissible={false} onOpenChange={(v) => { open = v; onOpenChange?.(v); }}>
   <div class="flex flex-col gap-3 p-4">
     <div class="flex items-center gap-2">
       <AlertTriangle class="h-4 w-4 text-yellow-400 flex-shrink-0" />
