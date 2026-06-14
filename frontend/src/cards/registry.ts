@@ -18,6 +18,7 @@ import SettingsFrontendCard from '$lib/cards/SettingsFrontendCard.svelte';
 import SettingsGeneralCard from '$lib/cards/SettingsGeneralCard.svelte';
 import ConversionLogCard from '$lib/cards/ConversionLogCard.svelte';
 import SystemStatusCard from '$lib/cards/SystemStatusCard.svelte';
+import DataAnalysisCard from '$lib/cards/DataAnalysisCard.svelte';
 
 export const cardRegistry: Record<CardId, Component<{ laneId: LaneId }>> = {
   'input-files': InputFilesCard,
@@ -38,4 +39,5 @@ export const cardRegistry: Record<CardId, Component<{ laneId: LaneId }>> = {
   'about-info': AboutInfoCard,
   'conversion-log': ConversionLogCard,
   'system-status': SystemStatusCard,
+  'data-analysis': DataAnalysisCard,
 };

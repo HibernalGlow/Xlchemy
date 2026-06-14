@@ -18,12 +18,13 @@ export type CardId =
   | 'layout-manager'
   | 'about-info'
   | 'conversion-log'
-  | 'system-status';
+  | 'system-status'
+  | 'data-analysis';
 
 export type CardLayout = Record<LaneId, CardId[]>;
 
 export const DEFAULT_CARD_LAYOUT: CardLayout = {
-  input: ['input-files', 'progress-status', 'input-filter'],
+  input: ['input-files', 'data-analysis', 'progress-status', 'input-filter'],
   output: ['output-format', 'output-conversion', 'output-save'],
   modify: ['modify-downscaling', 'modify-misc'],
   settings: ['settings-appearance', 'settings-general', 'settings-conversion', 'settings-exiftool', 'settings-advanced', 'settings-frontend', 'layout-manager'],

@@ -15,6 +15,7 @@ export function initConversionEvents() {
         appState.progress = { completed: 0, total: event.totalTasks, line1: 'Starting...', line2: '' };
         appState.conversionStartTime = Date.now();
         appState.conversionElapsed = 0;
+        appState.conversionResults = [];
         lastLoggedCompleted = 0;
         // Snapshot current file paths for clear-completed
         appState.conversionFilePaths = new Set(appState.fileItems.map((item) => item.absPath));
@@ -51,7 +52,14 @@ export function initConversionEvents() {
         break;
 
       case 'task_succeeded':
-        // Individual task success - progress already updated
+        // Track conversion result for analytics
+        {
+          const inputExt = event.inputPath?.split('.').pop()?.toLowerCase() || '';
+          appState.conversionResults = [
+            ...appState.conversionResults,
+            { inputExt, srcSize: event.srcSize, dstSize: event.dstSize },
+          ];
+        }
         break;
 
       case 'task_failed':

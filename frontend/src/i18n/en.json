@@ -332,6 +332,32 @@
     "layout-manager": "Layout Manager",
     "about-info": "About",
     "conversion-log": "Log",
-    "system-status": "System"
+    "system-status": "System",
+    "data-analysis": "Data Analysis"
+  },
+  "analysis": {
+    "title": "Data Analysis",
+    "input_tab": "Input Analysis",
+    "output_tab": "Output Analysis",
+    "no_files": "No input files",
+    "files": "Files",
+    "total_size": "Total Size",
+    "avg_size": "Avg Size",
+    "size_range": "Size Range",
+    "format_dist": "Format Distribution",
+    "folder_dist": "Folder Breakdown",
+    "no_results": "No conversion results yet",
+    "space_saved": "Space Saved",
+    "bytes_saved": "Bytes Saved",
+    "success_rate": "Success Rate",
+    "performance": "Performance",
+    "speed": "Speed",
+    "files_per_sec": "files/sec",
+    "avg_time": "Avg Time",
+    "total_time": "Total Time",
+    "format_breakdown": "Format Compression",
+    "size_comparison": "Size Comparison",
+    "before": "Before",
+    "after": "After"
   }
 }

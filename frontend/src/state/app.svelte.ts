@@ -138,6 +138,9 @@ export class AppState {
   // Log entries
   logEntries = $state<{ time: string; level: 'info' | 'warn' | 'error' | 'success'; message: string }[]>([]);
 
+  // Conversion analytics (accumulated per run, reset on new run)
+  conversionResults = $state<{ inputExt: string; srcSize: number; dstSize: number }[]>([]);
+
   addLog(level: 'info' | 'warn' | 'error' | 'success', message: string) {
     const now = new Date();
     const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });

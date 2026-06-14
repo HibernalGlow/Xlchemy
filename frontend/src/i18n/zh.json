@@ -332,6 +332,32 @@
     "layout-manager": "布局管理器",
     "about-info": "关于",
     "conversion-log": "日志",
-    "system-status": "系统"
+    "system-status": "系统",
+    "data-analysis": "数据分析"
+  },
+  "analysis": {
+    "title": "数据分析",
+    "input_tab": "输入分析",
+    "output_tab": "输出分析",
+    "no_files": "暂无输入文件",
+    "files": "文件数",
+    "total_size": "总大小",
+    "avg_size": "平均大小",
+    "size_range": "大小范围",
+    "format_dist": "格式分布",
+    "folder_dist": "文件夹占比",
+    "no_results": "暂无转换结果",
+    "space_saved": "节省空间",
+    "bytes_saved": "节省大小",
+    "success_rate": "成功率",
+    "performance": "性能",
+    "speed": "速度",
+    "files_per_sec": "文件/秒",
+    "avg_time": "平均耗时",
+    "total_time": "总耗时",
+    "format_breakdown": "格式压缩率",
+    "size_comparison": "大小对比",
+    "before": "转换前",
+    "after": "转换后"
   }
 }
