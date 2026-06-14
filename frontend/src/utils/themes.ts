@@ -361,6 +361,46 @@ export const presetThemes: ThemeConfig[] = [
 
 export const themeNames = presetThemes.map((t) => t.name);
 
+// --- Theme Preview Helpers ---
+
+/** Parse oklch color string → { l, c, h } */
+function parseOklch(color: string): { l: number; c: number; h: number } {
+  const match = color.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+  if (!match) return { l: 0.5, c: 0, h: 0 };
+  return { l: parseFloat(match[1]), c: parseFloat(match[2]), h: parseFloat(match[3]) };
+}
+
+/** Get a theme's representative colors (primary, accent, background) for preview */
+export function getThemePreviewColors(
+  theme: { colors: { light: ThemeColorsVariant; dark: ThemeColorsVariant } },
+  mode: 'light' | 'dark'
+): { primary: string; accent: string; background: string } {
+  const colors = theme.colors[mode];
+  return {
+    primary: colors.primary || '#888',
+    accent: colors.accent || '#888',
+    background: colors.background || '#888',
+  };
+}
+
+/** Get the primary color hue of a theme (for sorting / palette map) */
+export function getThemeHue(
+  theme: { colors: { light: ThemeColorsVariant; dark: ThemeColorsVariant } },
+  mode: 'light' | 'dark' = 'dark'
+): number {
+  const primary = theme.colors[mode].primary;
+  return primary ? parseOklch(primary).h : 0;
+}
+
+/** Get themes sorted by primary color hue */
+export function getThemesByHue(mode: 'light' | 'dark' = 'dark') {
+  const all: { name: string; colors: { light: ThemeColorsVariant; dark: ThemeColorsVariant } }[] = [
+    ...presetThemes.map((t) => ({ name: t.name, colors: t.colors })),
+    ...getCustomThemes().map((t) => ({ name: t.name, colors: t.colors })),
+  ];
+  return all.sort((a, b) => getThemeHue(a, mode) - getThemeHue(b, mode));
+}
+
 // --- Theme Mode ---
 
 export function getThemeMode(): ThemeMode {
