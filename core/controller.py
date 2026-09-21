@@ -20,6 +20,7 @@ from data.time_left import TimeLeft
 from data.thread_manager import ThreadManager
 from data.items import Items
 from data.process_manager import ProcessManager
+from data.run_records import RunRecords
 import data.task_status as task_status
 from core.worker import Worker, WorkerSignals
 from core.pathing import UniquePathStore
@@ -63,6 +64,7 @@ class Controller(QObject):
         self.time_left = TimeLeft()
         self.thread_manager = ThreadManager(self.threadpool)
         self.items = Items()
+        self.run_records = RunRecords()
         self.mutex = QMutex()
 
         # Flags
@@ -73,7 +75,7 @@ class Controller(QObject):
         self.worker_signals.started.connect(self.workerStarted, Qt.QueuedConnection)
         self.worker_signals.completed.connect(self.workerCompleted, Qt.QueuedConnection)
         self.worker_signals.canceled.connect(self.workerCanceled, Qt.QueuedConnection)
-        self.worker_signals.exception.connect(self.exception, Qt.QueuedConnection)
+        self.worker_signals.exception.connect(self._recordException, Qt.QueuedConnection)
         self.time_left.update_time_left.connect(self.update_progress_line2)
 
         # Misc.
@@ -204,6 +206,7 @@ class Controller(QObject):
         ProcessManager.clear()
         UniquePathStore.clear()
         self.finish_emitted = False
+        self.run_records.begin_run(self.items.getItemCount())
 
         # Loader
         workers = []
@@ -235,6 +238,7 @@ class Controller(QObject):
             return
         self.finish_emitted = True
         self.time_left.stopCounting()
+        self.run_records.note_run_finished()
         self.processing_finished.emit()
         ProcessManager.clear()
         if self.start_time is not None:
@@ -253,11 +257,13 @@ class Controller(QObject):
 
     @Slot(int)
     def workerStarted(self, n: int) -> None:
+        self.run_records.note_started(n)
         logging.debug(f"[Worker #{n}] Started")
 
     @Slot(int, bool, str, int, int)
     def workerCompleted(self, n: int, skipped: bool, file_path: str, src_size: int, dst_size: int) -> None:
         self.items.addCompletedItem()
+        self.run_records.note_completed(n, self._itemPath(n), skipped, src_size, dst_size)
         if not skipped:
             self.time_left.addCompletedItem()
         else:
@@ -294,5 +300,20 @@ class Controller(QObject):
 
     @Slot(int)
     def workerCanceled(self, n: int) -> None:
+        self.run_records.note_canceled(n, self._itemPath(n))
         self.finishProcessing()
         logging.debug(f"[Worker #{n}] Canceled")
+
+    def _recordException(self, id_str: str, msg: str, path: str) -> None:
+        self.run_records.note_exception(path, id_str, msg)
+        self.exception.emit(id_str, msg, path)
+
+    def _itemPath(self, n: int) -> str:
+        try:
+            return str(self.items.getItem(n)[0])
+        except IndexError:
+            return ""
+
+    def getRunSnapshot(self):
+        """Outcome of the last run, for the stats panel and 'remove completed'."""
+        return self.run_records.snapshot()
