@@ -1,9 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
+import platform
+from data.constants import VERSION
 
 import sys
 from pathlib import Path
 
 block_cipher = None
+
+target_arch = "universal2" if platform.system() == "Darwin" else None
 
 hiddenimports_list = [
     'xlchemy_rust', 
@@ -54,7 +58,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch=target_arch,
     codesign_identity=None,
     entitlements_file=None,
     icon=['./images/logo.ico'],
@@ -69,3 +73,25 @@ coll = COLLECT(
     upx_exclude=[],
     name='xlchemy',
 )
+if platform.system() == "Darwin":
+    app = BUNDLE(
+        coll,
+        name='Xlchemy.app',
+        icon='./images/logo.icns',
+        bundle_identifier='eu.codepoems.xl-converter',
+        version=VERSION,
+        info_plist={
+            'NSPrincipalClass': 'NSApplication',
+            'NSAppleScriptEnabled': False,
+            'CFBundleName': 'Xlchemy',
+            'CFBundleDisplayName': 'Xlchemy',
+            'CFBundleIdentifier': 'eu.codepoems.xl-converter',
+            'CFBundleExecutable': 'xlchemy',
+            'CFBundleVersion': VERSION,
+            'CFBundleShortVersionString': VERSION,
+            'LSMinimumSystemVersion': '11.0',
+            'CFBundlePackageType': 'APPL',
+            'NSHighResolutionCapable': True,
+        },
+    )
+

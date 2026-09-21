@@ -97,7 +97,7 @@ def test_getUniqueTmpFilePath_happy_path():
         patch("core.pathing.UniquePathStore.exists", return_value=False),
         patch("core.pathing.secrets.token_hex", return_value="abcdef12"),
     ):
-        pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_abcdef12.jpg"))
+        assert pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_abcdef12.jpg"))
 
 def test_getUniqueTmpFilePath_isfile_true():
     with (
@@ -105,7 +105,7 @@ def test_getUniqueTmpFilePath_isfile_true():
         patch("core.pathing.UniquePathStore.exists", return_value=False),
         patch("core.pathing.secrets.token_hex", side_effect=["1"*8, "2"*8]),
     ):
-        pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_{'2'*8}.jpg"))
+        assert pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_{'2'*8}.jpg"))
 
 def test_getUniqueTmpFilePath_path_store_exists():
     with (
@@ -113,7 +113,7 @@ def test_getUniqueTmpFilePath_path_store_exists():
         patch("core.pathing.UniquePathStore.exists", side_effect=[True, False]),
         patch("core.pathing.secrets.token_hex", side_effect=["1"*8, "2"*8]),
     ):
-        pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_{'2'*8}.jpg"))
+        assert pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_{'2'*8}.jpg"))
 
 def test_getUniqueTmpFilePath_path_store_exists_and_isfile_true():
     with (
@@ -121,7 +121,7 @@ def test_getUniqueTmpFilePath_path_store_exists_and_isfile_true():
         patch("core.pathing.UniquePathStore.exists", side_effect=[True, False]),
         patch("core.pathing.secrets.token_hex", side_effect=["1"*8, "2"*8, "3"*8]),
     ):
-        pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_{'3'*8}.jpg"))
+        assert pathing.getUniqueTmpFilePath(str(Path("/tmp")), "jpg") == str(Path("/tmp", f"tmp_{'3'*8}.jpg"))
 
 @pytest.mark.parametrize("file_format, extension", [
     ("JPEG XL", "jxl"),
@@ -224,3 +224,46 @@ def test_removeFile_ignore_missing_false(removeFile_patches):
         pathing.removeFile("/tmp/sample_file.jpg", ignore_missing=False)
 
     removeFile_patches["remove"].assert_called_once_with("/tmp/sample_file.jpg")
+
+def test_isSamePath_equivalent_paths():
+    path1 = "/tmp/image.png"
+    path2 = "/tmp/./image.png"
+    assert pathing.isSamePath(path1, path2) is True
+
+def test_isSamePath_different_paths():
+    path1 = "/tmp/image.png"
+    path2 = "/tmp/dir/image.png"
+    assert pathing.isSamePath(path1, path2) is False
+
+def test_isSamePath_fallback_abs_path():
+    path1 = "/tmp/image.png"
+    path2 = "/tmp/./image.png"
+    with (
+        patch("core.pathing.Path.resolve", side_effect=RuntimeError("virtual drive")) as mock_resolve,
+    ):
+        assert pathing.isSamePath(path1, path2) is True
+        assert mock_resolve.call_count == 2
+
+def test_isSamePath_fallback_str():
+    path1 = "/tmp/image.png"
+    path2 = "/tmp/./image.png"
+    path3 = "/tmp/dir/image.png"
+    with (
+        patch("core.pathing.Path.resolve", side_effect=RuntimeError("virtual drive")) as mock_resolve,
+        patch("core.pathing.os.path.abspath", side_effect=OSError("i/o failure")) as mock_abspath,
+    ):
+        assert pathing.isSamePath(path1, path1) is True
+        assert pathing.isSamePath(path1, path2) is False
+        assert pathing.isSamePath(path1, path3) is False
+        assert mock_resolve.call_count == 6
+        assert mock_abspath.call_count == 6
+
+def test_isSamePath_normcase():
+    path1 = "E:/image.png"
+    path2 = "E:/image.PNG"
+    with (
+        patch("core.pathing.Path.resolve", side_effect=[Path(path1), Path(path2)]),
+        patch("core.pathing.os.path.normcase", side_effect=lambda p: p.lower().replace("\\", "/")),
+    ):
+        assert pathing.isSamePath(path1, path2) is True
+

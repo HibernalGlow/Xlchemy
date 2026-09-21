@@ -9,11 +9,11 @@ from PySide6.QtCore import QThreadPool, Qt
 from PySide6.QtTest import QSignalSpy
 
 from core.controller import Controller
-from core.worker import Worker, Signals
+from core.worker import Worker, WorkerSignals
 
 
 def test_worker_signals_completed_emits_file_info():
-    signals = Signals()
+    signals = WorkerSignals()
     spy = QSignalSpy(signals.completed)
 
     signals.completed.emit(0, False, r"E:\test\image.jpg", 1024000, 512000)
@@ -27,7 +27,7 @@ def test_worker_signals_completed_emits_file_info():
 
 
 def test_worker_signals_completed_emits_empty_for_skip():
-    signals = Signals()
+    signals = WorkerSignals()
     spy = QSignalSpy(signals.completed)
 
     signals.completed.emit(0, True, "", 0, 0)
@@ -127,6 +127,7 @@ def test_worker_run_emits_completed_with_file_info():
             settings=settings,
             available_threads=1,
             mutex=mutex,
+            signals=WorkerSignals(),
         )
 
         spy_completed = QSignalSpy(worker.signals.completed)

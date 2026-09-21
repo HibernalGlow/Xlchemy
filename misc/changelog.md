@@ -1,3 +1,27 @@
+## 1.3.0 - 2026-09-06
+
+### Added
+
+- Add process priority option.
+- Add more resampling algorithms (#129).
+- Add PNG Optimization mode (#101).
+
+### Fixed
+
+- Fix performance issues on 128-thread CPUs (#122).
+- Clean up temp file if downscaling was canceled.
+- Fix Delete Original on virtual drives on Windows (#134).
+- Make extension filters in "Add Files" dialog case-insensitive on Linux (#148).
+
+### Changed
+
+- Improve conversion start and cancel times.
+- Speed up processing for JPEG and PNG sources below downscaling threshold (#141).
+- Limit AVIF tune scope to color only, leave alpha at default.
+- Update `libjxl` to `v0.12.0` (#152).
+- Update AOM AV1 to `v3.14.1` (#153).
+- Update Oxipng, ExifTool, and ImageMagick.
+
 ## 1.2.3 - 2025-10-02
 
 ### Added

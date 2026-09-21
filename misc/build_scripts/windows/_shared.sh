@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Checks if running on MSYS2.
 check_msys2() {
@@ -44,12 +44,12 @@ check_commands() {
 
     for cmd in "${required_commands[@]}"; do
         if ! command -v "${cmd}" &> /dev/null; then
-            missing_commands+=("${pkg}")
+            missing_commands+=("${cmd}")
         fi
     done
 
     if [[ ${#missing_commands[@]} -gt 0 ]]; then
-        echo -e "Missing command-line tools: ${required_commands[*]}\nInstall them and try again."
+        echo -e "Missing command-line tools: ${missing_commands[*]}\nInstall them and try again."
         exit 1
     fi
 }

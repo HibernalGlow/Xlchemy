@@ -8,7 +8,6 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout
 from PySide6.QtCore import QUrl, QObject
 from PySide6.QtGui import QDesktopServices
 
-from core.process import runProcess
 from data.tooltips import TOOLTIPS
 
 logger = logging.getLogger(__name__)
@@ -121,6 +120,8 @@ def blockSignals(*objects: QObject) -> None:
         if isinstance(obj, QObject):
             obj.blockSignals(True)
             blocked.append(obj)
-    yield
-    for obj in blocked:
-        obj.blockSignals(False)
+    try:
+        yield
+    finally:
+        for obj in blocked:
+            obj.blockSignals(False)

@@ -51,7 +51,7 @@ def test_setTheme_sad_path(caplog):
     ):
         theme.theme_manager.setTheme()
         mock_qapp_instance.setStyle.assert_not_called()
-        caplog.records[0].message == "QApplication not found."
+        assert caplog.records[0].message == "QApplication not found."
 
 # ---------------------- utils ----------------------
 
@@ -110,7 +110,7 @@ def test_getTheme_theme_available(available_theme, function_called):
     mock_theme = "theme"
 
     with patch(f"ui.theme.themes.{function_called}", return_value=mock_theme) as mock_theme_func:
-        theme.themes.getTheme(available_theme) == mock_theme
+        assert theme.themes.getTheme(available_theme) == mock_theme
         mock_theme_func.assert_called_once()
 
 def test_getTheme_theme_unavailable(caplog):
@@ -118,7 +118,7 @@ def test_getTheme_theme_unavailable(caplog):
     mock_theme = "theme"
 
     with patch(f"ui.theme.themes._getThemeMiku", return_value=mock_theme) as mock_theme_func:
-        theme.themes.getTheme("Undefined") == mock_theme
+        assert theme.themes.getTheme("Undefined") == mock_theme
         mock_theme_func.assert_called_once()
         assert "Theme \"Undefined\" not found" in caplog.text
 
