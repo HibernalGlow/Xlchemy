@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton
+from ui.fluent.qt import QWidget, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QInputDialog
+from ui.fluent.qt import QInputDialog
 
 from data.preset_manager import PresetManager
 from ui.lib.utils import createQHBoxLayout, blockSignals

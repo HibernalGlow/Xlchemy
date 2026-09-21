@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QProgressDialog
+from ui.fluent.qt import QProgressDialog
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal, QObject, QPoint, Qt
 

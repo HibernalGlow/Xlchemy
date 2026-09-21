@@ -2,7 +2,7 @@ import csv
 import platform
 import os
 
-from PySide6.QtWidgets import (
+from ui.fluent.qt import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,

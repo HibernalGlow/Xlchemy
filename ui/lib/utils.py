@@ -4,7 +4,7 @@ import logging
 from contextlib import contextmanager
 import traceback
 
-from PySide6.QtWidgets import QWidget, QHBoxLayout
+from ui.fluent.qt import QWidget, QHBoxLayout
 from PySide6.QtCore import QUrl, QObject
 from PySide6.QtGui import QDesktopServices
 

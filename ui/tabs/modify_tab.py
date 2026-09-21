@@ -3,7 +3,7 @@ from typing import Optional, Dict
 from copy import deepcopy
 from functools import partial
 
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QWidget,
     QGridLayout,
     QHBoxLayout,

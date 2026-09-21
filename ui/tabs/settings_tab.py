@@ -4,7 +4,7 @@ from typing import Optional, Dict
 from copy import deepcopy
 from dataclasses import dataclass
 
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QWidget,
     QGridLayout,
     QVBoxLayout,

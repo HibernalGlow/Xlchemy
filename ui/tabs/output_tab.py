@@ -2,7 +2,7 @@ from typing import Optional, Dict
 from copy import deepcopy
 import os
 
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QWidget,
     QGridLayout,
     QVBoxLayout,

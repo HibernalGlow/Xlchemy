@@ -1,6 +1,6 @@
 import time
 
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QScrollArea,
 )
 from PySide6.QtCore import(

@@ -1,6 +1,7 @@
 import logging
 
-from PySide6.QtWidgets import QApplication
+from ui.fluent.qt import QApplication
+from ui.fluent.theme import applyFluentTheme
 
 from ui.widgets.label import StyledLabel
 from .stylesheet import getStyleSheet
@@ -18,6 +19,10 @@ def setTheme(theme_name: str = "Miku") -> None:
     app = QApplication.instance()
     if app is None:
         logging.getLogger(__name__).error("QApplication not found.")
+        return
+
+    if applyFluentTheme(theme):
+        # Fluent 层已经接管：它自带样式表，再套上游的 QSS 会把两边规则搅在一起。
         return
 
     app.setStyle("Fusion")

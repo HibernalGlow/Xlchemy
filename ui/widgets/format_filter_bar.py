@@ -1,7 +1,7 @@
 import logging
 from typing import Set
 
-from PySide6.QtWidgets import (
+from ui.fluent.qt import (
     QWidget,
     QHBoxLayout,
     QLabel,

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QDialog,
     QPushButton,
     QVBoxLayout,

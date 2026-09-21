@@ -1,5 +1,5 @@
 from PySide6.QtGui import QWheelEvent
-from PySide6.QtWidgets import QComboBox, QWidget
+from ui.fluent.qt import QComboBox, QWidget
 
 class ComboBox(QComboBox):
     def __init__(self, items: tuple[str] | None = None, parent: QWidget | None = None):

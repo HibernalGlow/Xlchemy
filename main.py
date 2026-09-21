@@ -4,7 +4,7 @@ import sys
 import os
 import logging
 
-from PySide6.QtWidgets import (
+from ui.fluent.qt import (
     QApplication,
     QMainWindow,
     QTabWidget,

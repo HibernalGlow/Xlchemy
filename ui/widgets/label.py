@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLabel, QApplication
+from ui.fluent.qt import QLabel, QApplication
 from PySide6.QtCore import QEvent
 
 # This component addresses the lack of support for styling `QLabel a` in QSS.

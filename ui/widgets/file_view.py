@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 from typing import List, Tuple, Literal, Callable
 
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QTreeWidget,
     QAbstractItemView,
     QTreeWidgetItem,

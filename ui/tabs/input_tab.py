@@ -3,7 +3,7 @@ import logging
 from typing import List, Tuple, Literal
 import os
 
-from PySide6.QtWidgets import(
+from ui.fluent.qt import(
     QWidget,
     QGridLayout,
     QHBoxLayout,
@@ -24,7 +24,8 @@ from PySide6.QtGui import(
 
 from data.constants import ALLOWED_INPUT, ALLOWED_INPUT_FILTERS, FLATPAK
 from core.utils import scanDirFast
-from ui.widgets import FileView, FormatFilterBar
+from ui.fluent.views import FileView
+from ui.widgets import FormatFilterBar
 from ui.lib import WidgetManager
 from ui.lib.utils import isPathValidStr
 from ui.dialogs import message_box

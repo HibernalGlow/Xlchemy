@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Any
 
-from PySide6.QtWidgets import QWidget, QLineEdit, QComboBox, QTextEdit, QCheckBox, QRadioButton, QSlider, QSpinBox, QDoubleSpinBox
+from ui.fluent.qt import QWidget, QLineEdit, QComboBox, QTextEdit, QCheckBox, QRadioButton, QSlider, QSpinBox, QDoubleSpinBox
 
 from data.constants import CONFIG_LOCATION, VERSION
 
