@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 import platform
 from data.constants import VERSION
 
@@ -7,7 +8,9 @@ from pathlib import Path
 
 block_cipher = None
 
-target_arch = "universal2" if platform.system() == "Darwin" else None
+# universal2 requires every bundled native binary to be fat; Homebrew CPython and the
+# abi3 wheels (psutil, shiboken6) ship arm64-only slices, so opt in with XL_MAC_UNIVERSAL2.
+target_arch = "universal2" if platform.system() == "Darwin" and os.getenv("XL_MAC_UNIVERSAL2") else None
 
 hiddenimports_list = [
     'xlchemy_rust', 
