@@ -381,6 +381,19 @@ class Builder():
             dst = os.path.join(self.internal_dir, bin_dir)
 
         shutil.copytree(bin_path, dst)
+
+        if platform.system() == "Darwin":
+            # Encoder binaries may reference their dylibs through @loader_path/../lib,
+            # which stops resolving once they are copied into the bundle.
+            print("[Building] Staging @rpath dylibs for the bundled encoders")
+            subprocess.run(
+                [
+                    "bash",
+                    os.path.join(PROGRAM_FOLDER, "misc/build_scripts/macos/stage_dylibs.sh"),
+                    dst,
+                ],
+                check=True,
+            )
     
     def _appendInstaller(self):
         installer_dir = self.installer_path[platform.system()]
