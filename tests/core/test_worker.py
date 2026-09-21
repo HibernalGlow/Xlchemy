@@ -840,13 +840,13 @@ def test_postConversionRoutines_delete_failed(postConversionRoutines_patched):
 
     assert "Failed to delete original file" in exc.value.msg
 
-@pytest.mark.parametrize("copy_if_larger, samefile, expected_delete_result", [
+@pytest.mark.parametrize("copy_if_larger, same_path, expected_delete_result", [
     (False, False, True),
     (True, False, False),
     (False, True, False),
 ])
 def test_postConversionRoutines_keep_if_larger_delete_result(
-    copy_if_larger, samefile, expected_delete_result,
+    copy_if_larger, same_path, expected_delete_result,
     postConversionRoutines_patched
 ):
     worker, mocks = postConversionRoutines_patched
@@ -854,7 +854,7 @@ def test_postConversionRoutines_keep_if_larger_delete_result(
     worker.settings["copy_if_larger"] = copy_if_larger
     worker.final_output = "/tmp/result.jxl"
     mocks["getsize"].side_effect = lambda f: 200_000 if "result" in f else 100_000
-    mocks["samefile"].return_value = samefile
+    mocks["isSamePath"].return_value = same_path
 
     worker.postConversionRoutines()
 

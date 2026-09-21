@@ -33,7 +33,7 @@ def input_tab_patched(input_tab_widget):
         "_addItems": patch.object(input_tab_widget, "_addItems"),
         "FLATPAK": patch("ui.tabs.input_tab.FLATPAK", False),
         "ALLOWED_INPUT_FILTERS": patch("ui.tabs.input_tab.ALLOWED_INPUT_FILTERS", "All Files (*)"),
-        "scanDir": patch("ui.tabs.input_tab.scanDir"),
+        "scanDir": patch("ui.tabs.input_tab.scanDirFast"),
         "_createFileDialog": patch.object(input_tab_widget, "_createFileDialog", return_value=mock_file_dialog),
         "message_box.info": patch("ui.tabs.input_tab.message_box.info"),
     }

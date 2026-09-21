@@ -147,7 +147,7 @@ def test_drop_event_files(mock_isfile, mock_isdir, file_view):
 
 @patch("ui.widgets.file_view.os.path.isdir", return_value=True)
 @patch("ui.widgets.file_view.os.path.isfile", return_value=False)
-@patch("ui.widgets.file_view.scanDir")
+@patch("ui.widgets.file_view.scanDirFast")
 def test_drop_event_folders(mock_scanDir, mock_isfile, mock_isdir, file_view):
     sample_imgs = get_sample_img_paths(2)
     mock_scanDir.return_value = sample_imgs
@@ -164,7 +164,7 @@ def test_drop_event_folders(mock_scanDir, mock_isfile, mock_isdir, file_view):
 
 @patch("ui.widgets.file_view.os.path.isdir", side_effect=[False, True])
 @patch("ui.widgets.file_view.os.path.isfile", side_effect=[True, False])
-@patch("ui.widgets.file_view.scanDir")
+@patch("ui.widgets.file_view.scanDirFast")
 def test_drop_event_files_and_folders(mock_scanDir, mock_isfile, mock_isdir, file_view):
     sample_imgs = get_sample_img_paths(3)
     mock_scanDir.return_value = [sample_imgs[1], sample_imgs[2]]
@@ -193,7 +193,7 @@ def test_drop_event_flatpak_no_permissions(file_view):
     mock_event.mimeData.return_value = mime_data
     with (
         patch("ui.widgets.file_view.os.path.exists", return_value=False),
-        patch("ui.widgets.file_view.scanDir") as mock_scanDir,
+        patch("ui.widgets.file_view.scanDirFast") as mock_scanDir,
         patch("ui.widgets.file_view.FLATPAK", True),
         patch("ui.widgets.file_view.message_box.info") as mock_message_box_info,
     ):
@@ -216,7 +216,7 @@ def test_drop_event_flatpak_has_permissions(file_view):
         patch("ui.widgets.file_view.os.path.exists", return_value=True),
         patch("ui.widgets.file_view.os.path.isdir", side_effect=[False, True]),
         patch("ui.widgets.file_view.os.path.isfile", side_effect=[True, False]),
-        patch("ui.widgets.file_view.scanDir") as mock_scanDir,
+        patch("ui.widgets.file_view.scanDirFast") as mock_scanDir,
         patch("ui.widgets.file_view.FLATPAK", True),
         patch("ui.widgets.file_view.message_box.info") as mock_message_box_info,
     ):

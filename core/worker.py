@@ -630,7 +630,7 @@ class Worker(QRunnable):
             self.settings["keep_if_larger"] and
             not self.settings["copy_if_larger"] and
             os.path.getsize(self.org_item_abs_path) < os.path.getsize(self.final_output) and
-            not os.path.samefile(self.org_item_abs_path, self.final_output)
+            not isSamePath(self.org_item_abs_path, self.final_output)
         ):
             try:
                 removeFile(self.final_output)
