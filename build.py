@@ -272,7 +272,8 @@ class Builder():
                 "PySide6/Qt/lib/libswscale*",
                 "PySide6/Qt/lib/QtVirtualKeyboard*",
 
-                "PySide6/Qt/plugins/imageformats",
+                # imageformats stays: thumbnails need libqmacheif (AVIF/JXL via
+                # ImageIO) and libqjpeg, and Qt6 has no built-in JPEG handler.
                 "PySide6/Qt/plugins/multimedia",
                 "PySide6/Qt/translations",
             ]
