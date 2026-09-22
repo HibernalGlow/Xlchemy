@@ -30,7 +30,7 @@ import sys
 from enum import Enum
 from typing import Optional
 
-from PySide6.QtCore import QRect, QSize, Qt
+from PySide6.QtCore import QRect, QSize, Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     FluentIcon,
@@ -43,7 +43,8 @@ from qfluentwidgets import (
 from ui.i18n import onLanguageChanged, tr
 
 from . import theme as fluent_theme
-from .langmenu import LanguageButton, installSettingsRow
+from .runstats import RemoveCompletedButton, RunStatsButton
+from .settingsrows import LanguageRow, ShellModeRow, installSettingsRows
 
 logger = logging.getLogger(__name__)
 
@@ -264,12 +265,15 @@ class QTabWidget(QWidget):
 class QMainWindow(FluentWindow):
     """Fluent 窗口。``main.py`` 里的 ``class MainWindow(QMainWindow)`` 换成它。"""
 
+    #: 壳模式变了。参数是 :class:`ShellMode`。设置页那个开关靠它跟上「用顶部标签栏
+    #: 的按钮切壳」的情况 —— 反过来那一行并不认识 ``ShellMode``（见 settingsrows）。
+    shellModeChanged = Signal(object)
+
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
 
         self._pages_installed = False
         self._shell_mode = loadShellMode()
-        self.languageButton: Optional[LanguageButton] = None
         self._tabs: Optional[QTabWidget] = None
 
         # 主题桥需要在切主题时改窗口底色，所以窗口一建好就登记进去。
@@ -305,7 +309,7 @@ class QMainWindow(FluentWindow):
         self.shellToggle.clicked.connect(self.toggleShellMode)
         row.addWidget(self.shellToggle, 0, Qt.AlignTop)
 
-        self._installLanguageButton()
+        self._installRunButtons()
 
         # 把 Fluent 的 stackedWidget 收进一个容器：上面是标签栏行，下面是页面。
         # widgetLayout 已经带了 48px 的上边距（给标题栏让位），所以标签栏正好
@@ -318,25 +322,6 @@ class QMainWindow(FluentWindow):
         host.addWidget(self.tabRow)
         host.addWidget(self.stackedWidget, 1)
         self.widgetLayout.addWidget(self.contentHost)
-
-        # 左侧导航底部的壳切换入口。紧凑模式下导航整体隐藏，所以标签栏那一侧
-        # 也必须有一个入口。
-        #
-        # ``text`` / ``tooltip`` 一个用 ``tr()`` 一个不用，不是笔误：Fluent 的导航项
-        # 文字进的是 ``NavigationWidget``（非接缝控件，i18n 拦不到），必须自己翻；
-        # 而提示语最终走 ``QWidget.setToolTip``，那是被拦截的入口，给它**英文原文**
-        # 就行 —— 喂译文反而会把登记表写坏（见 ui/i18n/hooks.py 的 _record）。
-        #
-        # 文案写**字面量**而不是类常量：抽取工具按字面量找文案，写成常量它看不见，
-        # 这条就会永远停在英文（踩过一次）。
-        self.navigationInterface.addItem(
-            routeKey="xlchemyShellMode",
-            icon=FluentIcon.TILES,
-            text=tr("Compact mode"),
-            onClick=self.toggleShellMode,
-            position=NavigationItemPosition.BOTTOM,
-            tooltip="Use the top tab strip",
-        )
 
         self.stackedWidget.currentChanged.connect(self._syncTabBar)
         self._applyShellMode(resize=False)
@@ -357,17 +342,15 @@ class QMainWindow(FluentWindow):
             "Use the top tab strip" if nav_mode else "Use the side navigation"
         )
 
-    def _installLanguageButton(self) -> None:
-        """把语言按钮放进自绘标题栏。
+    def _installRunButtons(self) -> None:
+        """把「运行统计」与「移除已完成」放在标题文字之后、弹性空白之前。
 
-        位置：标题文字之后、弹性空白之前。右侧原本是 Fluent 的窗口按钮（macOS 上
-        已被系统交通灯取代、处于隐藏），左侧刚让给交通灯，所以贴着标题放最稳。
+        两者都只在点击时才去取 ``controller`` / ``input_tab``，所以装配期不需要
+        等页面建好（见 ``runstats`` 模块说明）。
         """
         layout = getattr(self.titleBar, "hBoxLayout", None)
         if layout is None:
             return
-
-        self.languageButton = LanguageButton(self.titleBar)
 
         index = layout.count()
         for position in range(layout.count()):
@@ -375,7 +358,10 @@ class QMainWindow(FluentWindow):
                 index = position
                 break
 
-        layout.insertWidget(index, self.languageButton, 0, Qt.AlignLeft)
+        self.runStatsButton = RunStatsButton(self, self.titleBar)
+        self.removeCompletedButton = RemoveCompletedButton(self, self.titleBar)
+        layout.insertWidget(index, self.runStatsButton, 0, Qt.AlignLeft)
+        layout.insertWidget(index + 1, self.removeCompletedButton, 0, Qt.AlignLeft)
 
     def applyTranslations(self) -> None:
         """重翻**壳自己画**的那几处文字。
@@ -400,28 +386,43 @@ class QMainWindow(FluentWindow):
                 # 导航项把 tooltip 也设成了同一句话；那条是被拦截的入口，登记的
                 # 是翻译前的原文，重翻由 i18n 的通用重翻负责，这里不用管。
 
-        shell_item = self.navigationInterface.widget("xlchemyShellMode")
-        if shell_item is not None and hasattr(shell_item, "setText"):
-            shell_item.setText(tr("Compact mode"))
-
         self._syncShellToggleToolTip(self._shell_mode is ShellMode.NAV)
 
     def notifyPagesInstalled(self) -> None:
         """Called once every page is registered; safe to size the window now."""
         self._pages_installed = True
-        self._installSettingsRow()
+        self._installSettingsRows()
         self._applyShellMode(resize=True)
 
-    def _installSettingsRow(self) -> None:
-        """把语言选择行注入设置页。
+    def _installSettingsRows(self) -> None:
+        """把我们自己的设置行注入设置页（语言 + 紧凑模式）。
 
         设置页是上游文件，一行都不改 —— 注入发生在运行时，找不到预期结构就静默
-        跳过（标题栏那个按钮仍然能切语言）。见 ui/fluent/langmenu.py。
+        跳过。见 ui/fluent/settingsrows.py。
+
+        ``ShellModeRow`` 需要「怎么读 / 怎么改壳模式」，那两件事只有窗口自己知道，
+        所以在**这里**建好行再交给注入器 —— 行本身不认识 ``ShellMode``。
         """
         for page in self.installedPages():
-            if hasattr(page, "settings_lt"):
-                installSettingsRow(page)
+            if not hasattr(page, "settings_lt"):
+                continue
+
+            theme = getattr(page, "theme_hb", None)
+            if theme is None:
                 return
+
+            language = LanguageRow(page)
+            compact = ShellModeRow(
+                is_compact=lambda: self._shell_mode is ShellMode.COMPACT,
+                set_compact=self._setCompactMode,
+                changed=self.shellModeChanged,
+                parent=page,
+            )
+            installSettingsRows(page, [(theme, language), (language, compact)])
+            return
+
+    def _setCompactMode(self, compact: bool) -> None:
+        self.setShellMode(ShellMode.COMPACT if compact else ShellMode.NAV)
 
     def releaseHeightCaps(self) -> None:
         """Lets pages grow past the height upstream pinned them to.
@@ -467,6 +468,8 @@ class QMainWindow(FluentWindow):
         self._applyShellMode(resize=False)
         if persist:
             saveShellMode(self._shell_mode)
+        # 通知设置页那个开关：用顶部标签栏的按钮切壳时，开关得跟着变。
+        self.shellModeChanged.emit(self._shell_mode)
 
     def _applyShellMode(self, resize: bool) -> None:
         nav_mode = self._shell_mode is ShellMode.NAV

@@ -30,12 +30,17 @@ def test_StyledLabel_updateStyleForAll(app):
 
 def test_StyledLabel_updateStyle(app):
     custom_qss = "<div><p>Sample text</p></div>"
-    with patch("ui.widgets.label.StyledLabel.setStyledText") as mock_setStyledText:
+    # autospec=True 必须加：StyledLabel 继承 fluent 接缝里的 qfluentwidgets label，
+    # 给它装**裸 MagicMock** 类属性后再构造实例会让进程段错误（崩在
+    # qfluentwidgets .../widgets/label.py 的 _init 里）；autospec 的替身不会。
+    # 注意 setStyledText 就定义在 StyledLabel 自己身上，autospec 不会替它绑定，
+    # 所以后面断言要把实例本身也数进去（继承来的 setText 则不需要，见下一个用例）。
+    with patch("ui.widgets.label.StyledLabel.setStyledText", autospec=True) as mock_setStyledText:
         label = StyledLabel(custom_qss)
-        mock_setStyledText.assert_called_once_with(custom_qss)
+        mock_setStyledText.assert_called_once_with(label, custom_qss)
 
 def test_StyledLabel_setStyledText(app):
-    with patch("ui.widgets.label.StyledLabel.setText") as mock_setText:
+    with patch("ui.widgets.label.StyledLabel.setText", autospec=True) as mock_setText:
         StyledLabel("").setStyledText("text")
         assert mock_setText.call_count == 2    # 1 in the __init__()
         assert "<style>" in mock_setText.call_args[0][0]

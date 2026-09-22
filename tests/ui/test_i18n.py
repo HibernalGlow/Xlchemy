@@ -289,34 +289,71 @@ def test_source_language_shows_its_display_name():
     assert names[SOURCE_TAG] == "English", names
 
 
-def test_language_row_is_injected_into_the_settings_page(app):
-    """设置页要有语言入口，且紧跟「主题」那一行、跟 General 分类一起显隐。
+def test_settings_rows_are_injected_into_the_settings_page(app):
+    """设置页要有**语言**与**紧凑模式**两行，紧跟「主题」之后、跟 General 分类一起显隐。
 
-    入口是**运行时注入**的（一行都不改上游 ``settings_tab.py``），所以最容易悄无声息
-    地失效：上游一改布局、注入时机不对，用户就「找不到切换语言的入口」。这条判据直接
-    盯住那件事。
+    两行都是**运行时注入**的（一行都不改上游 ``settings_tab.py``），所以最容易悄无声
+    息地失效：上游一改布局、注入时机不对，用户就「找不到入口」。标题栏那个语言按钮
+    改成不再放控件之后，设置页这一行就是**唯一**的语言入口，更得盯住。
     """
     import ui.fluent.qt  # noqa: F401 - 先装上接缝
-    from ui.fluent import langmenu
+    from ui.fluent import settingsrows
     from ui.tabs import SettingsTab
 
     page = SettingsTab()
-    assert langmenu.installSettingsRow(page) is True
+    language = settingsrows.LanguageRow(page)
+    compact = settingsrows.ShellModeRow(lambda: False, lambda _flag: None, parent=page)
+    installed = settingsrows.installSettingsRows(
+        page, [(page.theme_hb, language), (language, compact)]
+    )
+    assert installed == [language, compact]
 
-    theme_index = langmenu._layoutIndex(page.settings_lt, page.theme_hb)
+    theme_index = settingsrows.layoutIndexOf(page.settings_lt, page.theme_hb)
     assert theme_index is not None
-    row = page.settings_lt.itemAt(theme_index + 1).widget()
-    assert isinstance(row, langmenu.LanguageRow), "语言行要插在主题行之后"
+    assert page.settings_lt.itemAt(theme_index + 1).widget() is language, "语言行紧跟主题行"
+    assert page.settings_lt.itemAt(theme_index + 2).widget() is compact, "紧凑模式行在语言行之后"
 
     # 语言名用各自母语写法，英文那项是 English 而不是 en
-    labels = [row.combo.itemText(i) for i in range(row.combo.count())]
+    labels = [language.combo.itemText(i) for i in range(language.combo.count())]
     assert "English" in labels, labels
 
     # 属于 General 分类：切走要隐藏，切回来要显示
     page.changeCategory("Advanced")
-    assert row.isHidden()
+    assert language.isHidden() and compact.isHidden()
     page.changeCategory("General")
-    assert not row.isHidden()
+    assert not language.isHidden() and not compact.isHidden()
+
+
+def test_compact_switch_reflects_and_drives_the_shell_mode(app):
+    """紧凑模式那个开关：既显示当前壳模式，也真的去切壳。
+
+    只测「开关能拨」不够 —— 真正会坏的是它与壳模式**脱钩**（拨了不生效，或者切壳后
+    开关还是旧状态）。所以两条都断言。
+    """
+    import ui.fluent.qt  # noqa: F401 - 先装上接缝
+    from ui.fluent.settingsrows import ShellModeRow
+
+    state = {"compact": False}
+    applied: list[bool] = []
+
+    def setCompact(flag: bool) -> None:
+        applied.append(flag)
+        state["compact"] = flag
+
+    row = ShellModeRow(lambda: state["compact"], setCompact)
+
+    assert row.switch.isChecked() is False, "默认是导航壳，开关应该是关的"
+
+    # 拨开关 → 应该去切壳
+    row.switch.setChecked(True)
+    assert applied == [True], "拨开开关没去切壳"
+    assert state["compact"] is True
+
+    # 外部改壳（顶部标签栏那个按钮）后同步 → 开关要跟上，且不能回灌成一次新设置
+    state["compact"] = False
+    row._syncState()
+    assert row.switch.isChecked() is False, "切壳后开关没跟上"
+    assert applied == [True], "同步不该反过来又设一次壳模式"
 
 
 # --------------------------------------------------------------- 目录与抽取器

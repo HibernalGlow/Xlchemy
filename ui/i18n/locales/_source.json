@@ -1,7 +1,7 @@
 {
   "_meta": {
     "note": "由 python -m ui.i18n.extract 生成，是译者看的上下文清单，不参与运行",
-    "count": 236
+    "count": 243
   },
   "entries": [
     {
@@ -125,14 +125,14 @@
       "at": "ui/dialogs/exception_view.py:74"
     },
     {
-      "text": "Compact mode",
+      "text": "Close",
       "kind": "tr()",
-      "at": "ui/fluent/shell.py:335"
+      "at": "ui/fluent/runstats.py:94"
     },
     {
       "text": "Compact mode",
-      "kind": "tr()",
-      "at": "ui/fluent/shell.py:405"
+      "kind": "QLabel()",
+      "at": "ui/fluent/settingsrows.py:123"
     },
     {
       "text": "Configure format filter",
@@ -361,6 +361,11 @@
       "at": "data/tooltips.py:1[avif_encoder]"
     },
     {
+      "text": "Err Location",
+      "kind": "setHeaderLabels()",
+      "at": "ui/dialogs/exception_view.py:66"
+    },
+    {
       "text": "Error",
       "kind": "info()",
       "at": "ui/dialogs/exception_view.py:163"
@@ -369,6 +374,11 @@
       "text": "Error",
       "kind": "info()",
       "at": "ui/tabs/input_tab.py:174"
+    },
+    {
+      "text": "Exception",
+      "kind": "setHeaderLabels()",
+      "at": "ui/dialogs/exception_view.py:66"
     },
     {
       "text": "Exception list is empty, there is nothing to save.",
@@ -386,6 +396,11 @@
       "at": "ui/tabs/settings_tab.py:198"
     },
     {
+      "text": "Ext.",
+      "kind": "setHeaderLabels()",
+      "at": "ui/widgets/file_view.py:35"
+    },
+    {
       "text": "Failed to save file",
       "kind": "info()",
       "at": "ui/dialogs/exception_view.py:163"
@@ -394,6 +409,11 @@
       "text": "File Message",
       "kind": "info()",
       "at": "ui/tabs/settings_tab.py:539"
+    },
+    {
+      "text": "File Name",
+      "kind": "setHeaderLabels()",
+      "at": "ui/widgets/file_view.py:35"
     },
     {
       "text": "File Size",
@@ -557,18 +577,18 @@
     },
     {
       "text": "Language",
-      "kind": "setToolTip()",
-      "at": "ui/fluent/langmenu.py:56"
-    },
-    {
-      "text": "Language",
       "kind": "QLabel()",
-      "at": "ui/fluent/langmenu.py:82"
+      "at": "ui/fluent/settingsrows.py:60"
     },
     {
       "text": "Level",
       "kind": "setText()",
       "at": "ui/tabs/output_tab.py:377"
+    },
+    {
+      "text": "Location",
+      "kind": "setHeaderLabels()",
+      "at": "ui/widgets/file_view.py:35"
     },
     {
       "text": "Lossless",
@@ -669,6 +689,11 @@
       "text": "No",
       "kind": "tr()",
       "at": "ui/fluent/dialogs.py:227"
+    },
+    {
+      "text": "No conversion has run yet.",
+      "kind": "tr()",
+      "at": "ui/fluent/runstats.py:89"
     },
     {
       "text": "No logs",
@@ -862,6 +887,11 @@
       "at": "ui/tabs/settings_tab.py:681"
     },
     {
+      "text": "Remove Completed From List",
+      "kind": "setToolTip()",
+      "at": "ui/fluent/runstats.py:134"
+    },
+    {
       "text": "Replaces the original file with an optimized version.",
       "kind": "TOOLTIPS[]",
       "at": "data/tooltips.py:1[png_opt_inplace]"
@@ -910,6 +940,11 @@
       "text": "Results in a lower file size and slower transcoding.",
       "kind": "TOOLTIPS[]",
       "at": "data/tooltips.py:1[smallest_lossless_max_comp]"
+    },
+    {
+      "text": "Run Statistics",
+      "kind": "setToolTip()",
+      "at": "ui/fluent/runstats.py:120"
     },
     {
       "text": "Save",
@@ -1012,6 +1047,11 @@
       "at": "data/tooltips.py:1[jxl_lossy_modular]"
     },
     {
+      "text": "Source",
+      "kind": "setHeaderLabels()",
+      "at": "ui/dialogs/exception_view.py:66"
+    },
+    {
       "text": "Source Folder",
       "kind": "QRadioButton()",
       "at": "ui/tabs/output_tab.py:89"
@@ -1094,17 +1134,12 @@
     {
       "text": "Use the side navigation",
       "kind": "setToolTip()",
-      "at": "ui/fluent/shell.py:356"
-    },
-    {
-      "text": "Use the top tab strip",
-      "kind": "addItem(tooltip=)",
-      "at": "ui/fluent/shell.py:332"
+      "at": "ui/fluent/shell.py:341"
     },
     {
       "text": "Use the top tab strip",
       "kind": "setToolTip()",
-      "at": "ui/fluent/shell.py:356"
+      "at": "ui/fluent/shell.py:341"
     },
     {
       "text": "Uses IQ (image quality) tuning mode instead of SSIM.\n\nIQ is better for photographic or complex images, but worse for simple synthetic images.",
