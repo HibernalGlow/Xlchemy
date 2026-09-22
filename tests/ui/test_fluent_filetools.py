@@ -108,3 +108,98 @@ def test_reveal_success_passes_the_row_path(view, monkeypatch):
     monkeypatch.setattr(tools, "reveal", lambda path: (seen.setdefault("path", path), ""))
     view._revealFirst([view.invisibleRootItem().child(0)])
     assert seen["path"] == PATHS[0]
+
+
+# ------------------------------------------------------------------ 缩略图
+
+
+@pytest.fixture
+def realFiles(app, tmp_path):
+    """真写出几张 PNG，缩略图走的是磁盘解码。"""
+    from PIL import Image
+
+    paths = []
+    for n in range(3):
+        path = tmp_path / f"pic{n}.png"
+        Image.new("RGB", (300, 200), (n * 40, 120, 90)).save(path)
+        paths.append(str(path))
+    return paths
+
+
+def _drain(view, app):
+    from PySide6.QtWidgets import QApplication
+
+    assert view._thumbPool.waitForDone(5000)
+    QApplication.processEvents()
+
+
+def _hasIcon(view):
+    return [not view.invisibleRootItem().child(i).icon(0).isNull() for i in range(view.invisibleRootItem().childCount())]
+
+
+def test_thumbnails_off_by_default(app):
+    made = FluentFileView()
+    assert made.thumbnailsEnabled() is False
+
+
+def test_enabling_fills_the_first_column_icon(app, realFiles):
+    made = FluentFileView()
+    made.addItems([(os.path.basename(p), "png", p, "/x") for p in realFiles])
+    made.setThumbnailsEnabled(True)
+    _drain(made, app)
+
+    assert made.thumbnailsEnabled() is True
+    assert _hasIcon(made) == [True, True, True]
+    # 关键：没有加列，上游的三列假设不变。
+    assert made.columnCount() == 3
+    assert made.allPaths() == realFiles
+
+
+def test_enabling_before_adding_also_thumbs(app, realFiles):
+    made = FluentFileView()
+    made.setThumbnailsEnabled(True)
+    made.addItems([(os.path.basename(p), "png", p, "/x") for p in realFiles])
+    _drain(made, app)
+    assert _hasIcon(made) == [True, True, True]
+
+
+def test_disabling_clears_the_icons(app, realFiles):
+    made = FluentFileView()
+    made.addItems([(os.path.basename(p), "png", p, "/x") for p in realFiles])
+    made.setThumbnailsEnabled(True)
+    _drain(made, app)
+    made.setThumbnailsEnabled(False)
+    assert _hasIcon(made) == [False, False, False]
+
+
+def test_stale_generation_results_are_dropped(app, realFiles):
+    from PySide6.QtGui import QImage
+
+    made = FluentFileView()
+    made.addItems([(os.path.basename(p), "png", p, "/x") for p in realFiles])
+    made.setThumbnailsEnabled(True)
+    current = made._thumb_generation
+    made.setThumbnailsEnabled(False)
+
+    made._applyThumb(realFiles[0], QImage(8, 8, QImage.Format_ARGB32), current)
+    assert _hasIcon(made) == [False, False, False]
+
+
+def test_undecodable_file_leaves_the_row_intact(app, tmp_path):
+    bogus = tmp_path / "broken.png"
+    bogus.write_bytes(b"not an image")
+    made = FluentFileView()
+    made.addItems([("broken.png", "png", str(bogus), "/x")])
+    made.setThumbnailsEnabled(True)
+    _drain(made, app)
+
+    assert _hasIcon(made) == [False]
+    assert made.allPaths() == [str(bogus)]
+
+
+def test_thumbnail_size_is_clamped(app):
+    made = FluentFileView()
+    made.setThumbnailSize(1)
+    assert made.thumbnailSize() == 16
+    made.setThumbnailSize(96)
+    assert made.thumbnailSize() == 96
