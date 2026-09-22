@@ -156,7 +156,7 @@ class QComboBox(ClassMinWidthMixin, _QtComboBox):
 
         self._menu = menu
         menu.closedSignal.connect(self._onMenuClosed)
-        menu.exec(self._menuPosition(menu), aniType=self._animType(menu))
+        menu.exec(self._menuPosition(menu), aniType=self._menuAnimationType(menu))
 
     def hidePopup(self) -> None:
         if self._menu is not None:
@@ -201,11 +201,16 @@ class QComboBox(ClassMinWidthMixin, _QtComboBox):
         x = self.width() // 2 - menu.width() // 2 + inset
         return self.mapToGlobal(QPoint(x, self.height()))
 
-    def _animType(self) -> MenuAnimationType:
-        """Picks drop-down or pull-up depending on which shows more items."""
-        pos = self._menuPosition(self._menu)
-        down = self._menu.view.heightForAnimation(pos, MenuAnimationType.DROP_DOWN)
-        up = self._menu.view.heightForAnimation(
+    def _menuAnimationType(self, menu: RoundMenu) -> MenuAnimationType:
+        """Picks drop-down or pull-up depending on which shows more items.
+
+        注意名字里必须带 ``Menu``：这是本类的**自有**方法，不能叫 ``_animType``
+        —— 那是 qfluentwidgets 基类可能用到的名字，一旦重名就会把基类的实现顶掉，
+        表现为「下拉框点不开」这类只在运行到弹层时才暴露的故障。
+        """
+        pos = self._menuPosition(menu)
+        down = menu.view.heightForAnimation(pos, MenuAnimationType.DROP_DOWN)
+        up = menu.view.heightForAnimation(
             self.mapToGlobal(QPoint(pos.x(), 0)), MenuAnimationType.PULL_UP
         )
         return MenuAnimationType.DROP_DOWN if down >= up else MenuAnimationType.PULL_UP
@@ -264,7 +269,11 @@ class QGroupBox(QWidget):
 
     def __init__(self, title: str = "", parent: QWidget | None = None):
         super().__init__(parent)
-        self._title = title
+        # 走 ``setTitle`` 而不是直接写 ``_title``：i18n 的拦截挂在 ``setTitle`` 上，
+        # 上游的 ``QGroupBox("Conversion")`` 必须先经过它才会被翻译
+        # （见 ui/i18n/hooks.py 的 ``_TEXT_TARGETS``）。
+        self._title = ""
+        self.setTitle(title)
         self.setContentsMargins(0, 0, 0, 0)
         self.setAttribute(Qt.WA_StyledBackground, True)
         onThemeChanged(self.update)

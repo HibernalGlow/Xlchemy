@@ -40,7 +40,10 @@ from qfluentwidgets import (
     ToolButton,
 )
 
+from ui.i18n import onLanguageChanged, tr
+
 from . import theme as fluent_theme
+from .langmenu import LanguageButton, installSettingsRow
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +184,8 @@ class QTabWidget(QWidget):
         # Fluent 用 objectName 当路由键，必须非空且唯一。
         widget.setObjectName(f"xlchemyPage{len(self._pages)}")
         self._pages.append(widget)
+        # 标签存的是**英文原文**，显示时再翻。留着原文是为了切语言时能重翻 ——
+        # 存译文的话切回来就没救了。
         self._labels.append(label)
 
         if self._window is not None:
@@ -190,6 +195,14 @@ class QTabWidget(QWidget):
 
     def count(self) -> int:
         return len(self._pages)
+
+    def pages(self) -> list[QWidget]:
+        """按注册顺序返回页面控件。"""
+        return list(self._pages)
+
+    def pageLabels(self) -> list[str]:  # noqa: N802 - 与 Qt 命名风格一致
+        """按注册顺序返回页面标题的**英文原文**（切语言时要用它重翻）。"""
+        return list(self._labels)
 
     def setCurrentIndex(self, index: int) -> None:  # noqa: N802
         if not 0 <= index < len(self._pages):
@@ -256,11 +269,17 @@ class QMainWindow(FluentWindow):
 
         self._pages_installed = False
         self._shell_mode = loadShellMode()
+        self.languageButton: Optional[LanguageButton] = None
+        self._tabs: Optional[QTabWidget] = None
 
         # 主题桥需要在切主题时改窗口底色，所以窗口一建好就登记进去。
         fluent_theme.setWindow(self)
 
         self._setupShell()
+
+        # 切语言后要重翻壳自己画的那几处文字（导航项 / 标签栏）。页面里的普通控件
+        # 由 i18n 的通用重翻负责，这里补的是「不是普通控件」的部分。
+        onLanguageChanged(lambda _tag: self.applyTranslations())
 
     # ------------------------------------------------------------ 装配
 
@@ -286,6 +305,8 @@ class QMainWindow(FluentWindow):
         self.shellToggle.clicked.connect(self.toggleShellMode)
         row.addWidget(self.shellToggle, 0, Qt.AlignTop)
 
+        self._installLanguageButton()
+
         # 把 Fluent 的 stackedWidget 收进一个容器：上面是标签栏行，下面是页面。
         # widgetLayout 已经带了 48px 的上边距（给标题栏让位），所以标签栏正好
         # 落在标题栏下方。
@@ -300,10 +321,18 @@ class QMainWindow(FluentWindow):
 
         # 左侧导航底部的壳切换入口。紧凑模式下导航整体隐藏，所以标签栏那一侧
         # 也必须有一个入口。
+        #
+        # ``text`` / ``tooltip`` 一个用 ``tr()`` 一个不用，不是笔误：Fluent 的导航项
+        # 文字进的是 ``NavigationWidget``（非接缝控件，i18n 拦不到），必须自己翻；
+        # 而提示语最终走 ``QWidget.setToolTip``，那是被拦截的入口，给它**英文原文**
+        # 就行 —— 喂译文反而会把登记表写坏（见 ui/i18n/hooks.py 的 _record）。
+        #
+        # 文案写**字面量**而不是类常量：抽取工具按字面量找文案，写成常量它看不见，
+        # 这条就会永远停在英文（踩过一次）。
         self.navigationInterface.addItem(
             routeKey="xlchemyShellMode",
             icon=FluentIcon.TILES,
-            text="Compact mode",
+            text=tr("Compact mode"),
             onClick=self.toggleShellMode,
             position=NavigationItemPosition.BOTTOM,
             tooltip="Use the top tab strip",
@@ -318,10 +347,81 @@ class QMainWindow(FluentWindow):
             routeKey, label, icon, onClick=lambda: self._switchToRoute(routeKey)
         )
 
+    def _syncShellToggleToolTip(self, nav_mode: bool) -> None:
+        """设置壳切换按钮的提示语。
+
+        传的是**英文原文**：``setToolTip`` 是 i18n 拦得到的入口，它负责翻译并把
+        原文登记下来，切语言时自己会重翻。
+        """
+        self.shellToggle.setToolTip(
+            "Use the top tab strip" if nav_mode else "Use the side navigation"
+        )
+
+    def _installLanguageButton(self) -> None:
+        """把语言按钮放进自绘标题栏。
+
+        位置：标题文字之后、弹性空白之前。右侧原本是 Fluent 的窗口按钮（macOS 上
+        已被系统交通灯取代、处于隐藏），左侧刚让给交通灯，所以贴着标题放最稳。
+        """
+        layout = getattr(self.titleBar, "hBoxLayout", None)
+        if layout is None:
+            return
+
+        self.languageButton = LanguageButton(self.titleBar)
+
+        index = layout.count()
+        for position in range(layout.count()):
+            if layout.itemAt(position).spacerItem() is not None:
+                index = position
+                break
+
+        layout.insertWidget(index, self.languageButton, 0, Qt.AlignLeft)
+
+    def applyTranslations(self) -> None:
+        """重翻**壳自己画**的那几处文字。
+
+        页面里的普通控件由 ``ui.i18n.retranslateAll()`` 统一重翻（它们走接缝、登记
+        过原文）；这里补的是接缝拦不到的部分：Fluent 的导航项与顶部标签栏。
+
+        页面标题的原文存在 ``QTabWidget`` 上（``main.py`` 的 ``addTab()`` 给的），
+        所以要从容器取，而不是窗口自己 —— 窗口只持有容器的引用。
+        """
+        tabs = self._tabs
+        if tabs is None:
+            return
+
+        for index, source in enumerate(tabs.pageLabels()):
+            display = tr(source)
+            self.tabBar.setTabText(index, display)
+
+            item = self.navigationInterface.widget(tabs.pages()[index].objectName())
+            if item is not None and hasattr(item, "setText"):
+                item.setText(display)
+                # 导航项把 tooltip 也设成了同一句话；那条是被拦截的入口，登记的
+                # 是翻译前的原文，重翻由 i18n 的通用重翻负责，这里不用管。
+
+        shell_item = self.navigationInterface.widget("xlchemyShellMode")
+        if shell_item is not None and hasattr(shell_item, "setText"):
+            shell_item.setText(tr("Compact mode"))
+
+        self._syncShellToggleToolTip(self._shell_mode is ShellMode.NAV)
+
     def notifyPagesInstalled(self) -> None:
         """Called once every page is registered; safe to size the window now."""
         self._pages_installed = True
+        self._installSettingsRow()
         self._applyShellMode(resize=True)
+
+    def _installSettingsRow(self) -> None:
+        """把语言选择行注入设置页。
+
+        设置页是上游文件，一行都不改 —— 注入发生在运行时，找不到预期结构就静默
+        跳过（标题栏那个按钮仍然能切语言）。见 ui/fluent/langmenu.py。
+        """
+        for page in self.installedPages():
+            if hasattr(page, "settings_lt"):
+                installSettingsRow(page)
+                return
 
     def releaseHeightCaps(self) -> None:
         """Lets pages grow past the height upstream pinned them to.
@@ -347,6 +447,7 @@ class QMainWindow(FluentWindow):
     def setCentralWidget(self, widget) -> None:  # noqa: N802 - Qt 命名
         """``main.py`` 直接调用也能工作；正常路径走 ``QTabWidget.attachToWindow``。"""
         if isinstance(widget, QTabWidget):
+            self._tabs = widget
             widget.attachToWindow(self)
             return
         super().setCentralWidget(widget)
@@ -399,9 +500,7 @@ class QMainWindow(FluentWindow):
 
         if nav_mode:
             self.navigationInterface.expand(useAni=False)
-            self.shellToggle.setToolTip("Use the top tab strip")
-        else:
-            self.shellToggle.setToolTip("Use the side navigation")
+        self._syncShellToggleToolTip(nav_mode)
 
         self.setMinimumSize(target)
 

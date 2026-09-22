@@ -1,0 +1,1192 @@
+{
+  "_meta": {
+    "note": "由 python -m ui.i18n.extract 生成，是译者看的上下文清单，不参与运行",
+    "count": 236
+  },
+  "entries": [
+    {
+      "text": "AOM AV1 - Use IQ Tune",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:143"
+    },
+    {
+      "text": "AVIF - Bit Depth",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:137"
+    },
+    {
+      "text": "AVIF Encoder",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:139"
+    },
+    {
+      "text": "About",
+      "kind": "addTab()",
+      "at": "main.py:73"
+    },
+    {
+      "text": "Add Files",
+      "kind": "setText()",
+      "at": "ui/tabs/input_tab.py:64"
+    },
+    {
+      "text": "Add Folder",
+      "kind": "setText()",
+      "at": "ui/tabs/input_tab.py:66"
+    },
+    {
+      "text": "Additional Encoder Arguments",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:172"
+    },
+    {
+      "text": "Additional arguments for the encoders.\n\nAll arguments must be valid and can not conflict with already used ones. Inspect logs for more details.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[encoder_args]"
+    },
+    {
+      "text": "Advanced",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:199"
+    },
+    {
+      "text": "After \"Normalize\" is applied, JPEG images will have a different checksum, and get slightly larger once reconstructed. Learn more in the manual.",
+      "kind": "info()",
+      "at": "ui/tabs/output_tab.py:416"
+    },
+    {
+      "text": "After Conversion",
+      "kind": "QGroupBox()",
+      "at": "ui/tabs/output_tab.py:145"
+    },
+    {
+      "text": "Allows for processing high-resolution images without excessive RAM usage.\n\nOnly applicable to:\n\n- JPEG XL (with certain settings)\n\n- AVIF (SVT-AV1-PSY)\n\nModes:\n\n- Dynamic - medium RAM usage; only slower for big images.\n\n- Static - smallest RAM usage, but slowest.\n\n- Disabled - unpredictable RAM usage, but quickest.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[ram_optimizer]"
+    },
+    {
+      "text": "Allows for transcoding problematic JPEG images.\n\nRewrites image structure without affecting quality or metadata.\n\nDiscards unnecessary information, such as unused quantization tables or arbitrary tail data.\n\nWith this enabled, the checksum of a JPEG image you can reconstruct will change, and its file size will increase.\n\nEquivalent to `jpegtran -copy all -optimize`. Images will take longer to process if enabled.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_normalize_enable]"
+    },
+    {
+      "text": "Arguments used for handling metadata, correspond to the options is the modify tab.\n\nSupported variables:\n\n$src - source image path.\n\n$dst - destination image path.\n\nRemember to add \"-overwrite_original\" to avoid leftover files.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[exiftool_args]"
+    },
+    {
+      "text": "Cancel",
+      "kind": "tr()",
+      "at": "ui/fluent/dialogs.py:361"
+    },
+    {
+      "text": "Cancel",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/format_filter_bar.py:131"
+    },
+    {
+      "text": "Check for Updates",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/about_tab.py:49"
+    },
+    {
+      "text": "Checked - restricts height to a given amount of pixels.\n\nUnchecked - imposes no restrictions on height. Disables downscaling for this dimension.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_resolution_height_enabled]"
+    },
+    {
+      "text": "Checked - restricts width to a given amount of pixels.\n\nUnchecked - imposes no restrictions on width. Disables downscaling for this dimension.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_resolution_width_enabled]"
+    },
+    {
+      "text": "Chroma Subsampling",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:121"
+    },
+    {
+      "text": "Clear File List",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:84"
+    },
+    {
+      "text": "Clear List",
+      "kind": "setText()",
+      "at": "ui/tabs/input_tab.py:68"
+    },
+    {
+      "text": "Clear the file list (in the input tab) after conversion.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[clear_after_conv]"
+    },
+    {
+      "text": "Close",
+      "kind": "QPushButton()",
+      "at": "ui/dialogs/exception_view.py:74"
+    },
+    {
+      "text": "Compact mode",
+      "kind": "tr()",
+      "at": "ui/fluent/shell.py:335"
+    },
+    {
+      "text": "Compact mode",
+      "kind": "tr()",
+      "at": "ui/fluent/shell.py:405"
+    },
+    {
+      "text": "Configure format filter",
+      "kind": "setToolTip()",
+      "at": "ui/widgets/format_filter_bar.py:195"
+    },
+    {
+      "text": "Controls bit depth used for encoding AVIF.\n\n- Auto - uses source image bit depth.\n\n- 12 - the highest color fidelity. Can be smaller than 10-bit in certain cases.\n\n- 10 - reduces color banding, and improves fidelity at a cost of increased file size.\n\n- 8 - lowest file size, but does not handle color transitions smoothly.\n\nNote: 12-bit depth is only available in the AOM AV1 encoder.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[avif_bit_depth]"
+    },
+    {
+      "text": "Controls color compression. Lower number means less color information and smaller file size.\n\n4:2:0 - colors may appear overly-compressed\n\n4:2:0 is only recommended where low color fidelity is not a concern.\n\nSVT-AV1 in libavif only supports 4:2:0.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[chroma_subsampling_svt_av1_psy]"
+    },
+    {
+      "text": "Controls color compression. Lower number means less color information and smaller file size.\n\nDefault - matches the input or 4:4:4\n\n4:4:4 - full color, the highest quality and file size\n\n4:2:2 - less color (small visual difference) and significant space-saving\n\n4:2:0 - colors may appear washed out",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[chroma_subsampling_jpeg]"
+    },
+    {
+      "text": "Controls color compression. Lower number means less color information and smaller file size.\n\nDefault - matches the input or 4:4:4\n\n4:4:4 - full color, the highest quality and file size\n\n4:2:2 - less color (small visual difference) and significant space-saving\n\n4:2:0 - colors may appear washed out\n\n4:0:0 - grayscale",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[chroma_subsampling_aom_av1]"
+    },
+    {
+      "text": "Controls how metadata is handled.\n\nEncoder modes are faster and recommended. ExifTool is more thorough but more error-prone.\n\nEncoder - Wipe - wipes metadata. Works well for encoding everything except PNG, where it depends on the input format.\n\nEncoder - Preserve - preserves metadata. Works on common input formats, may not work for less popular ones.\n\nExifTool - Wipe - Deletes all metadata except orientation, and color profile.\n\nExifTool - Preserve - preserves all metadata.\n\nExifTool - Unsafe Wipe - deletes every last bit of metadata, including color profile. It can potentially alter the final image, but is the most effective.\n\nExifTool - Custom - empty. It allows you to specify custom behavior (in the settings).\n\nView and edit ExifTool commands in the settings (Settings -> ExifTool -> ExifTool Arguments).",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[metadata]"
+    },
+    {
+      "text": "Controls the priority of transcoding processes. Lower priority means slower transcoding, but more responsive system.\n\nNormal - system default.\n\nBelow Normal - delegates transcoding to the background.\n\nIdle - lowest priority.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[process_priority]"
+    },
+    {
+      "text": "Controls the processing order.\n\nOriginal - process in the order listed in the Input tab.\n\nRandom - random order; more accurate estimated time left.\n\nSequential - sorted by directory; less fragmentation on HDDs.\n\nPath Ascending/Descending - sorted by full file path.\n\nSize Ascending/Descending - sorted by file size.\n\nTotal processing time remains the same.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[processing_order]"
+    },
+    {
+      "text": "Controls the resampling method used for downscaling.\n\nDefault:\n\n  - Lanczos for images without transparency.\n\n  - Mitchell for colormapped images or images with transparency.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[modify_tab_resample]"
+    },
+    {
+      "text": "Controls when to perform \"Normalize\".\n\nOn Fail - will normalize only when transcoding fails then retry.\n\nAlways - all sources will be normalized.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_normalize_when]"
+    },
+    {
+      "text": "Conversion",
+      "kind": "QGroupBox()",
+      "at": "ui/tabs/output_tab.py:138"
+    },
+    {
+      "text": "Conversion",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:197"
+    },
+    {
+      "text": "Convert",
+      "kind": "setText()",
+      "at": "ui/tabs/input_tab.py:70"
+    },
+    {
+      "text": "Convert",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/modify_tab.py:131"
+    },
+    {
+      "text": "Convert",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/output_tab.py:134"
+    },
+    {
+      "text": "Converting...",
+      "kind": "ProgressDialog(title=)",
+      "at": "main.py:67"
+    },
+    {
+      "text": "Copy Original When Result is Larger",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:145"
+    },
+    {
+      "text": "Custom",
+      "kind": "QRadioButton()",
+      "at": "ui/tabs/output_tab.py:90"
+    },
+    {
+      "text": "Custom",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:154"
+    },
+    {
+      "text": "Delete",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/preset_widget.py:23"
+    },
+    {
+      "text": "Delete Original",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:85"
+    },
+    {
+      "text": "Delete Original",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:120"
+    },
+    {
+      "text": "Delete Preset",
+      "kind": "confirm()",
+      "at": "ui/widgets/preset_widget.py:99"
+    },
+    {
+      "text": "Delete preset \"{}\"?",
+      "kind": "confirm()",
+      "at": "ui/widgets/preset_widget.py:99",
+      "dynamic": true
+    },
+    {
+      "text": "Deletes the input image after conversion.\n\nDoes not execute if conversion fails.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[delete_original]"
+    },
+    {
+      "text": "Disable on Startup",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:118"
+    },
+    {
+      "text": "Disables \"delete original\" (output tab) when you launch the application.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[disable_delete_startup]"
+    },
+    {
+      "text": "Disables \"downscaling\" (modify tab) when you launch the application.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[disable_downscaling_startup]"
+    },
+    {
+      "text": "Disables file list sorting (input tab), has no impact on performance.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[sorting]"
+    },
+    {
+      "text": "Do Not Delete Original When Result is Larger",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:144"
+    },
+    {
+      "text": "Downscale",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/modify_tab.py:73"
+    },
+    {
+      "text": "Downscaling",
+      "kind": "QGroupBox()",
+      "at": "ui/tabs/modify_tab.py:137"
+    },
+    {
+      "text": "Downscaling",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:119"
+    },
+    {
+      "text": "Downscaling - Custom Resampling",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:170"
+    },
+    {
+      "text": "Effort",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:108"
+    },
+    {
+      "text": "Effort",
+      "kind": "setText()",
+      "at": "ui/tabs/output_tab.py:371"
+    },
+    {
+      "text": "Empty List",
+      "kind": "info()",
+      "at": "ui/dialogs/exception_view.py:118"
+    },
+    {
+      "text": "Enabled - \"Lossless JPEG Transcoding\" will be used instead of regular lossless compression when transcoding JPEG to JPEG XL.\n\nThis saves plenty of space but prevents metadata from being wiped.\n\nIt works with the following \"Format / Mode\" entries:\n\n - JPEG XL (with \"Lossless\" enabled).\n\n - Smallest Lossless (JPEG XL).\n\nDisabled - JPEG will be transcoded the same as any other file. That means a huge file size, but metadata can be stripped.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_auto_lossless_jpeg]"
+    },
+    {
+      "text": "Enabled - generated JPEG images will be compatible with very old devices, but their file size will increase.\n\nDisabled - generated JPEG images will be smaller and load faster.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[progressive_jpegli]"
+    },
+    {
+      "text": "Enabled - snaps to individual values.\n\nDisabled - snaps to intervals of every 5 points.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[quality_prec_snap]"
+    },
+    {
+      "text": "Enables changing bit depth and color type to increase compression.\n\nImages will remain visually lossless.\n\nColor palettes are never indexed regardless of this option's state.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[png_opt_pixel_format]"
+    },
+    {
+      "text": "Enables lossless compression.\n\nPixel data will stay the same if given bit depth is supported.\n\nIt does not perform Lossless JPEG Transcoding by default.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[lossless_jpeg_xl]"
+    },
+    {
+      "text": "Enables lossless compression.\n\nPixel data will stay the same.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[lossless]"
+    },
+    {
+      "text": "Enables resampling algorithm selection in the Modify tab.\n\nThe default lets ImageMagick choose -- using Lanczos for images without transparency and Mitchell for images with transparency.\n\nChanging resampling can worsen the quality. Make sure you know what you are doing.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[resample]"
+    },
+    {
+      "text": "Encoder used for encoding AVIF images.\n\n- AOM AV1 - stable and feature rich. Best for preserving high-quality.\n\n- SVT-AV1-PSY - a fork of SVT-AV1 with perceptual enhancements.\n\n- slimg - high-performance Rust-based encoder using ravif. Fast and efficient.\n\nNote: Each encoder interprets quality values differently.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[avif_encoder]"
+    },
+    {
+      "text": "Error",
+      "kind": "info()",
+      "at": "ui/dialogs/exception_view.py:163"
+    },
+    {
+      "text": "Error",
+      "kind": "info()",
+      "at": "ui/tabs/input_tab.py:174"
+    },
+    {
+      "text": "Exception list is empty, there is nothing to save.",
+      "kind": "info()",
+      "at": "ui/dialogs/exception_view.py:118"
+    },
+    {
+      "text": "Exceptions Occurred",
+      "kind": "setWindowTitle()",
+      "at": "ui/dialogs/exception_view.py:99"
+    },
+    {
+      "text": "ExifTool",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:198"
+    },
+    {
+      "text": "Failed to save file",
+      "kind": "info()",
+      "at": "ui/dialogs/exception_view.py:163"
+    },
+    {
+      "text": "File Message",
+      "kind": "info()",
+      "at": "ui/tabs/settings_tab.py:539"
+    },
+    {
+      "text": "File Size",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:95"
+    },
+    {
+      "text": "Filter:",
+      "kind": "QLabel()",
+      "at": "ui/widgets/format_filter_bar.py:166"
+    },
+    {
+      "text": "Format",
+      "kind": "QGroupBox()",
+      "at": "ui/tabs/output_tab.py:158"
+    },
+    {
+      "text": "Format / Mode",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:160"
+    },
+    {
+      "text": "Format Filter",
+      "kind": "setWindowTitle()",
+      "at": "ui/widgets/format_filter_bar.py:103"
+    },
+    {
+      "text": "General",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:196"
+    },
+    {
+      "text": "Higher levels offer better compression, but take longer.\n\n2 - fast, fair compression ratio.\n\n4 - slower, great compression ratio.\n\nLevels higher than 4 offer marginal returns.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[png_opt_level]"
+    },
+    {
+      "text": "Higher means better quality and/or smaller file size but slower.\n\nLossy: higher values result in higher quality. File size may end up larger, especially for non-photographic images.\n\nLossless and Lossy Modular: higher values always result in lower file size.\n\n7 - normal speed with a modest file size.\n\n9 - very slow, but the produces lowest file size or better quality.\n\nTip: Use Effort 7 for big images as it features streaming encoding.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[effort]"
+    },
+    {
+      "text": "Higher means better quality and/or smaller file size.\n\nLossless: higher values result in lower file size.\n\nLossy: higher value result in lower file size and typically higher quality. The latter can be subjective.\n\nTypical values: 4 - 6",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[method]"
+    },
+    {
+      "text": "Higher values result in higher quality and higher file size.\n\n90 - high quality and large file size\n\n80 - reasonable quality and file size\n\n60 - looks fine only from far away",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[quality_webp]"
+    },
+    {
+      "text": "Higher values result in higher quality and higher file size.\n\n90 - visually lossless\n\n80 - high quality and file size\n\n70 - good balance between quality and file size\n\n60 - space-saving",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[quality_avif]"
+    },
+    {
+      "text": "Higher values result in higher quality and higher file size.\n\n90 - visually lossless\n\n80 - high quality and reasonable file size\n\n70 - medium-high quality and small file size\n\n60 - space-saving, noticeable blurriness",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[quality_jpeg_xl]"
+    },
+    {
+      "text": "Higher values result in higher quality and higher file size.\n\n95 - high quality and very large file size\n\n90 - reasonably high quality and large file size\n\n80 - reasonable quality and file size\n\n60 - looks fine only from far away",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[quality_jpeg]"
+    },
+    {
+      "text": "Higher values result in lower file size and slower transcoding.\n\n7 - normal speed with a modest file size.\n\n9 - very slow, but produces the lowest file size.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[effort_jpeg_recomp]"
+    },
+    {
+      "text": "How many CPU threads to use for conversion.\n\nHigher means faster, but leaves less resources for other processes.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[threads]"
+    },
+    {
+      "text": "If Output Exists",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:140"
+    },
+    {
+      "text": "If the processed image is larger than the original, the result is discarded, and the original is copied instead.\n\nExcluded: Lossless JPEG Transcoding, JPEG Reconstruction, PNG",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[copy_if_larger]"
+    },
+    {
+      "text": "If the result is larger than the original, keeps the original and deletes the result.\n\nPrevents \"Delete Original\" and \"Replace\" options (output tab) from deleting the original image if the result is larger",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[keep_if_larger]"
+    },
+    {
+      "text": "Image will be decoded to PNG if reconstruction data is not found.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_png_fallback]"
+    },
+    {
+      "text": "In-place",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:130"
+    },
+    {
+      "text": "Input",
+      "kind": "addTab()",
+      "at": "main.py:69"
+    },
+    {
+      "text": "Input - Disable Sorting",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:123"
+    },
+    {
+      "text": "Intelligent",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:110"
+    },
+    {
+      "text": "JPEG Encoder",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:134"
+    },
+    {
+      "text": "JPEG XL",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:118"
+    },
+    {
+      "text": "JPEG XL - Allow Intelligent Effort (Deprecated)",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:169"
+    },
+    {
+      "text": "JPEG XL - Allow Lossy Modular",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:132"
+    },
+    {
+      "text": "JPEG XL - Automatic Lossless JPEG Transcoding",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:133"
+    },
+    {
+      "text": "JPEG XL - Enable Effort 10",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:168"
+    },
+    {
+      "text": "JPEGLI - Disable Progressive Scan",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:136"
+    },
+    {
+      "text": "JPEGLI - the new state of the art in JPEG encoding. Fast and high quality.\n\nlibjpeg - the original JPEG encoder. Well-tested, stable, and great at preserving noise. Use it when JPEGLI cannot transcode a particular image.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jpeg_encoder]"
+    },
+    {
+      "text": "Keep Folder Structure",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:93"
+    },
+    {
+      "text": "Language",
+      "kind": "setToolTip()",
+      "at": "ui/fluent/langmenu.py:56"
+    },
+    {
+      "text": "Language",
+      "kind": "QLabel()",
+      "at": "ui/fluent/langmenu.py:82"
+    },
+    {
+      "text": "Level",
+      "kind": "setText()",
+      "at": "ui/tabs/output_tab.py:377"
+    },
+    {
+      "text": "Lossless",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:114"
+    },
+    {
+      "text": "Lossy Modular",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:115"
+    },
+    {
+      "text": "Lower is better quality but slower.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[speed]"
+    },
+    {
+      "text": "Makes a particular side fit to the specified pixel count.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_sides]"
+    },
+    {
+      "text": "Manual",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/about_tab.py:51"
+    },
+    {
+      "text": "Max Bit Depth:",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:120"
+    },
+    {
+      "text": "Max Bit Depth: 16-bit",
+      "kind": "setText()",
+      "at": "ui/tabs/output_tab.py:423"
+    },
+    {
+      "text": "Max Bit Depth: 8-bit",
+      "kind": "setText()",
+      "at": "ui/tabs/output_tab.py:421"
+    },
+    {
+      "text": "Max Compression",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:119"
+    },
+    {
+      "text": "Max Height",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/modify_tab.py:91"
+    },
+    {
+      "text": "Max Size",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:99"
+    },
+    {
+      "text": "Max Size",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:103"
+    },
+    {
+      "text": "Max Width",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/modify_tab.py:87"
+    },
+    {
+      "text": "Megapixels",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:107"
+    },
+    {
+      "text": "Metadata",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:119"
+    },
+    {
+      "text": "Metadata",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/modify_tab.py:128"
+    },
+    {
+      "text": "Method",
+      "kind": "setText()",
+      "at": "ui/tabs/output_tab.py:374"
+    },
+    {
+      "text": "Misc.",
+      "kind": "QGroupBox()",
+      "at": "ui/tabs/modify_tab.py:151"
+    },
+    {
+      "text": "Modify",
+      "kind": "addTab()",
+      "at": "main.py:71"
+    },
+    {
+      "text": "No",
+      "kind": "tr()",
+      "at": "ui/fluent/dialogs.py:227"
+    },
+    {
+      "text": "No logs",
+      "kind": "info()",
+      "at": "ui/tabs/settings_tab.py:533"
+    },
+    {
+      "text": "No logs have been found.",
+      "kind": "info()",
+      "at": "ui/tabs/settings_tab.py:533"
+    },
+    {
+      "text": "Normalize",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:128"
+    },
+    {
+      "text": "OK",
+      "kind": "tr()",
+      "at": "ui/fluent/dialogs.py:362"
+    },
+    {
+      "text": "OK",
+      "kind": "tr()",
+      "at": "ui/fluent/dialogs.py:235"
+    },
+    {
+      "text": "OK",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/format_filter_bar.py:129"
+    },
+    {
+      "text": "Ok",
+      "kind": "QPushButton()",
+      "at": "ui/dialogs/update_checker.py:41"
+    },
+    {
+      "text": "Open Link",
+      "kind": "setText()",
+      "at": "ui/dialogs/update_checker.py:93"
+    },
+    {
+      "text": "Open Logs Folder",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:188"
+    },
+    {
+      "text": "Optimization Rules",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:165"
+    },
+    {
+      "text": "Output",
+      "kind": "addTab()",
+      "at": "main.py:70"
+    },
+    {
+      "text": "Overwrite preset \"{}\"?",
+      "kind": "confirm()",
+      "at": "ui/widgets/preset_widget.py:68",
+      "dynamic": true
+    },
+    {
+      "text": "PNG (Oxipng)",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:116"
+    },
+    {
+      "text": "PNG Fallback",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:126"
+    },
+    {
+      "text": "PNG Optimization - Optimize Pixel Format",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:171"
+    },
+    {
+      "text": "Percent",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:83"
+    },
+    {
+      "text": "Permission Error",
+      "kind": "info()",
+      "at": "ui/tabs/input_tab.py:158"
+    },
+    {
+      "text": "Permission Error",
+      "kind": "info()",
+      "at": "ui/widgets/file_view.py:212"
+    },
+    {
+      "text": "Placeholder",
+      "kind": "QLabel()",
+      "at": "ui/dialogs/update_checker.py:40"
+    },
+    {
+      "text": "Play Sound When Conversion Finishes",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:125"
+    },
+    {
+      "text": "Plays a sound when conversion finishes.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[play_sound_on_finish]"
+    },
+    {
+      "text": "Preserve",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:150"
+    },
+    {
+      "text": "Preserve Time Attributes",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/modify_tab.py:118"
+    },
+    {
+      "text": "Preserves folder hierarchy when saving images.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[keep_dir_struct]"
+    },
+    {
+      "text": "Preserves metadata chunks.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[png_opt_metadata]"
+    },
+    {
+      "text": "Preserves original date & time file attributes.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[keep_timestamps]"
+    },
+    {
+      "text": "Preset",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:195"
+    },
+    {
+      "text": "Preset",
+      "kind": "QLabel()",
+      "at": "ui/widgets/preset_widget.py:28"
+    },
+    {
+      "text": "Preset name:",
+      "kind": "getText()",
+      "at": "ui/widgets/preset_widget.py:63"
+    },
+    {
+      "text": "Prioritizes smaller file size.\n\nAlternates between Effort 7 and 9 based on context.\n\nLossless and Lossy (Modular) - Effort 9\n\nLossy (VarDCT) - smallest out of Effort 7 and 9.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[int_effort]"
+    },
+    {
+      "text": "Process Priority",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:191"
+    },
+    {
+      "text": "Processing Order",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:185"
+    },
+    {
+      "text": "Quality",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:111"
+    },
+    {
+      "text": "Quality Slider - Snap to Individual Values",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/settings_tab.py:124"
+    },
+    {
+      "text": "RAM Optimizer",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:163"
+    },
+    {
+      "text": "Raises Effort limit from 9 to 10. Effort 10 is experimental and very slow.\n\n- Lossy: provides a very small visual improvement.\n\n- Lossless: lowers file size.\n\n- Lossless JPEG Transcoding: has a tendency to increase file size. Not recommended.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_effort_10]"
+    },
+    {
+      "text": "Read More",
+      "kind": "QPushButton()",
+      "at": "ui/dialogs/update_checker.py:42"
+    },
+    {
+      "text": "Recommended ExifTool presets changed. Apply them?",
+      "kind": "confirm()",
+      "at": "ui/tabs/settings_tab.py:681"
+    },
+    {
+      "text": "Replaces the original file with an optimized version.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[png_opt_inplace]"
+    },
+    {
+      "text": "Report Bug",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/about_tab.py:52"
+    },
+    {
+      "text": "Resample",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:112"
+    },
+    {
+      "text": "Reset",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:156"
+    },
+    {
+      "text": "Reset",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:167"
+    },
+    {
+      "text": "Reset Defaults",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/format_filter_bar.py:127"
+    },
+    {
+      "text": "Reset to Defaults",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/modify_tab.py:130"
+    },
+    {
+      "text": "Reset to Defaults",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/output_tab.py:133"
+    },
+    {
+      "text": "Reset to Defaults",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:200"
+    },
+    {
+      "text": "Results in a lower file size and slower transcoding.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[smallest_lossless_max_comp]"
+    },
+    {
+      "text": "Save",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/preset_widget.py:21"
+    },
+    {
+      "text": "Save Preset",
+      "kind": "getText()",
+      "at": "ui/widgets/preset_widget.py:63"
+    },
+    {
+      "text": "Save Preset",
+      "kind": "confirm()",
+      "at": "ui/widgets/preset_widget.py:68"
+    },
+    {
+      "text": "Save To",
+      "kind": "QGroupBox()",
+      "at": "ui/tabs/output_tab.py:151"
+    },
+    {
+      "text": "Save to File",
+      "kind": "QPushButton()",
+      "at": "ui/dialogs/exception_view.py:75"
+    },
+    {
+      "text": "Saves images next to their sources.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[output_src]"
+    },
+    {
+      "text": "Saves images to the specified folder. Supported path types:\n\n- Absolute path (e.g. `C:\\Images\\Converted`) - all images will be saved the specified folder.\n\n- Relative path (e.g. `Converted`) - images will be saved to a folder with the specified name next to each source.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[output_ct]"
+    },
+    {
+      "text": "Scale to",
+      "kind": "QLabel()",
+      "at": "ui/tabs/modify_tab.py:82"
+    },
+    {
+      "text": "Scales down the resolution of your image.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling]"
+    },
+    {
+      "text": "Scales down to fit to a given height in pixels.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_resolution_height]"
+    },
+    {
+      "text": "Scales down to fit to a given width in pixels.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_resolution_width]"
+    },
+    {
+      "text": "Scales down to megapixel count.\n\nA megapixel is the total pixel count of an image divided by a million.\n\nFormula: (width * height) / 1 000 000\n\nReference (rounded):\n\n- 0.9 MP - 1280 x 720 (HD)\n\n- 2.1 MP - 1920 x 1080 (Full HD)\n\n- 8.3 MP - 3840 x 2160 (4K)\n\n- 33.2 MP - 7680 x 4320 (8K)",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_megapixels]"
+    },
+    {
+      "text": "Scales image to approximated file size in kibibytes.\n\nIt is much slower than other downscaling modes. Its accuracy and reliability varies.\n\nOther methods are recommended instead.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_file_size]"
+    },
+    {
+      "text": "Scales to the specified percentage of each dimension.\n\nFor example, 50% of 1920 x 1080 will result in 960 x 540.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[downscaling_percent]"
+    },
+    {
+      "text": "Set Default",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/preset_widget.py:24"
+    },
+    {
+      "text": "Settings",
+      "kind": "addTab()",
+      "at": "main.py:72"
+    },
+    {
+      "text": "Settings Migration",
+      "kind": "confirm()",
+      "at": "ui/tabs/settings_tab.py:681"
+    },
+    {
+      "text": "Settings Migration",
+      "kind": "info()",
+      "at": "ui/tabs/settings_tab.py:684"
+    },
+    {
+      "text": "Shows or hides the JPEG XL Intelligent Effort option in the Output tab.\n\nThis functionality picks Effort based on context.\n\nIt aimed at providing lower file size but made only a marginal difference.\n\nThis feature will be removed in the future.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_int_effort]"
+    },
+    {
+      "text": "Shows or hides the JPEG XL Lossy Modular option in the Output tab.\n\nThis mode is experimental.\n\n- Offers lower file size and better eligibility for non-photographic images.\n\n- Causes discoloration and additional artifacts around the edges.\n\nUse it sparingly.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_lossy_modular]"
+    },
+    {
+      "text": "Source Folder",
+      "kind": "QRadioButton()",
+      "at": "ui/tabs/output_tab.py:89"
+    },
+    {
+      "text": "Speed",
+      "kind": "setText()",
+      "at": "ui/tabs/output_tab.py:368"
+    },
+    {
+      "text": "Start Logging",
+      "kind": "setText()",
+      "at": "ui/tabs/settings_tab.py:521"
+    },
+    {
+      "text": "Start Logging",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:187"
+    },
+    {
+      "text": "Stop Logging",
+      "kind": "setText()",
+      "at": "ui/tabs/settings_tab.py:515"
+    },
+    {
+      "text": "Supported bit depth: 16",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[smallest_lossless_jpeg_xl]"
+    },
+    {
+      "text": "Supported bit depth: 8",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[smallest_lossless_webp]"
+    },
+    {
+      "text": "The directory was not found.",
+      "kind": "info()",
+      "at": "ui/tabs/input_tab.py:174"
+    },
+    {
+      "text": "Theme",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:121"
+    },
+    {
+      "text": "This change is highly recommended. To apply changes later, press \"Reset\" in Settings -> ExifTool.",
+      "kind": "info()",
+      "at": "ui/tabs/settings_tab.py:684"
+    },
+    {
+      "text": "Threads",
+      "kind": "QLabel()",
+      "at": "ui/tabs/output_tab.py:142"
+    },
+    {
+      "text": "Unchecked formats will be excluded from input.",
+      "kind": "QLabel()",
+      "at": "ui/widgets/format_filter_bar.py:109"
+    },
+    {
+      "text": "Unsafe Wipe",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:152"
+    },
+    {
+      "text": "Update",
+      "kind": "QPushButton()",
+      "at": "ui/widgets/preset_widget.py:22"
+    },
+    {
+      "text": "Update Checker",
+      "kind": "setWindowTitle()",
+      "at": "ui/dialogs/update_checker.py:45"
+    },
+    {
+      "text": "Usage Info",
+      "kind": "info()",
+      "at": "ui/tabs/output_tab.py:416"
+    },
+    {
+      "text": "Use the side navigation",
+      "kind": "setToolTip()",
+      "at": "ui/fluent/shell.py:356"
+    },
+    {
+      "text": "Use the top tab strip",
+      "kind": "addItem(tooltip=)",
+      "at": "ui/fluent/shell.py:332"
+    },
+    {
+      "text": "Use the top tab strip",
+      "kind": "setToolTip()",
+      "at": "ui/fluent/shell.py:356"
+    },
+    {
+      "text": "Uses IQ (image quality) tuning mode instead of SSIM.\n\nIQ is better for photographic or complex images, but worse for simple synthetic images.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[avif_aom_iq_tune]"
+    },
+    {
+      "text": "Uses Modular instead of VarDCT for lossy encoding.\n\nEnabled - reduces size and increases eligibility in non-photographic images.\n\nDisabled - uses VarDCT.\n\nThis mode is experimental.\n\nCauses discoloration and additional artifacts around the edges.\n\nUse it sparingly.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_modular]"
+    },
+    {
+      "text": "Uses OxiPNG.\n\nSupported bit depth: 16",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[smallest_lossless_png]"
+    },
+    {
+      "text": "Validates that a JPEG image can be reconstructed, and its checksum matches the original.\n\nAn exception will be displayed if any problems occur.\n\nEnabling this option is unnecessary because the transcoding is highly reliable.\n\nHowever, it does provide an additional reassurance.\n\nIf \"Normalize\" is enabled, the checksum of the normalized image will be used instead.\n\nImages will take slightly longer to process if enabled.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[jxl_verify]"
+    },
+    {
+      "text": "Verify",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:127"
+    },
+    {
+      "text": "Version {}",
+      "kind": "QLabel()",
+      "at": "ui/tabs/about_tab.py:32",
+      "dynamic": true
+    },
+    {
+      "text": "Visit the documentation to learn more...",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[ram_optimizer_rules]"
+    },
+    {
+      "text": "Volume",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:126"
+    },
+    {
+      "text": "WebP",
+      "kind": "QCheckBox()",
+      "at": "ui/tabs/output_tab.py:117"
+    },
+    {
+      "text": "What to do when an output image of the same name already exists.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[duplicates]"
+    },
+    {
+      "text": "Which format are you converting to.\n\nHow should the image be processed.",
+      "kind": "TOOLTIPS[]",
+      "at": "data/tooltips.py:1[format]"
+    },
+    {
+      "text": "Wipe",
+      "kind": "QLabel()",
+      "at": "ui/tabs/settings_tab.py:148"
+    },
+    {
+      "text": "Wipe Logs Folder",
+      "kind": "QPushButton()",
+      "at": "ui/tabs/settings_tab.py:189"
+    },
+    {
+      "text": "Xlchemy",
+      "kind": "QLabel()",
+      "at": "ui/tabs/about_tab.py:31",
+      "dynamic": true
+    },
+    {
+      "text": "Xlchemy",
+      "kind": "setWindowTitle()",
+      "at": "main.py:52"
+    },
+    {
+      "text": "Yes",
+      "kind": "tr()",
+      "at": "ui/fluent/dialogs.py:229"
+    }
+  ]
+}

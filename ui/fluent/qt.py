@@ -29,9 +29,15 @@
 少数类在这个文件里做了重命名映射（``QScrollArea`` / ``QTreeWidget`` /
 ``QStyledItemDelegate``）：qfluentwidgets 里对得上号的那个类名不同，但它们既不参与
 ``isinstance`` 判定、也不参与 ``__name__`` 查表，所以直接别名即可。
+
+**这个文件还负责装 i18n。** 见文件末尾那段：类交出去之前先给文字入口包一层拦截，
+于是上游几百处硬编码英文不需要改成 ``tr()``，合并上游时不会多出冲突点。
+``XLCHEMY_UI_I18N=0`` 可以关掉。
 """
 
 from __future__ import annotations
+
+import os
 
 # ---------------------------------------------------------------------------
 # 与视觉无关的类：两种模式下一律用原生实现。
@@ -104,6 +110,20 @@ else:
     from .dialogs import QInputDialog, QMessageBox, QProgressDialog
     from .shell import QMainWindow, QTabWidget
     from .widgets import QComboBox, QGroupBox, QTextEdit
+
+# ---------------------------------------------------------------------------
+# i18n：在把类交出去**之前**装好文字拦截。
+#
+# 位置很讲究。上游拿控件类的唯一入口就是这个接缝，所以在这里给 ``setText`` /
+# ``setToolTip`` / ``setWindowTitle`` 包一层，之后任何走接缝建出来的控件都自动
+# 经过翻译 —— 上游几百处硬编码英文一个字都不用改，也就不会多出合并冲突点。
+#
+# 传 ``globals()`` 而不是让 i18n 反向 import 本模块，是为了避免「接缝导入 i18n、
+# i18n 又导入接缝」的循环。具体拦截范围与**为什么不翻下拉框**，见 ui/i18n/hooks.py。
+if os.environ.get("XLCHEMY_UI_I18N", "1") not in ("0", "false", "no"):
+    from ui.i18n import install as _installI18n
+
+    _installI18n(globals())
 
 __all__ = [
     "CLASSIC",

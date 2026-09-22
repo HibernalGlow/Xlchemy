@@ -224,15 +224,15 @@ class QMessageBox(_CardDialog):
         self.buttonLayout.addStretch()
 
         if self._buttons & (StandardButton.Yes | StandardButton.No):
-            no_button = PushButton("No", self.buttonGroup)
+            no_button = PushButton(tr("No"), self.buttonGroup)
             no_button.clicked.connect(lambda: self._finish(StandardButton.No))
-            yes_button = PrimaryPushButton("Yes", self.buttonGroup)
+            yes_button = PrimaryPushButton(tr("Yes"), self.buttonGroup)
             yes_button.clicked.connect(lambda: self._finish(StandardButton.Yes))
             self.buttonLayout.addWidget(no_button)
             self.buttonLayout.addWidget(yes_button)
             yes_button.setFocus()
         else:
-            ok_button = PrimaryPushButton("OK", self.buttonGroup)
+            ok_button = PrimaryPushButton(tr("OK"), self.buttonGroup)
             ok_button.clicked.connect(lambda: self._finish(StandardButton.Ok))
             self.buttonLayout.addWidget(ok_button)
             ok_button.setFocus()
@@ -287,7 +287,7 @@ class QProgressDialog(QDialog):
         self.titleLabel = SubtitleLabel("", self.card)
         self.body.addWidget(self.titleLabel)
 
-        self.textLabel = BodyLabel(labelText or "", self.card)
+        self.textLabel = BodyLabel(tr(labelText) if labelText else "", self.card)
         self.textLabel.setWordWrap(True)
         self.body.addWidget(self.textLabel)
 
@@ -299,7 +299,7 @@ class QProgressDialog(QDialog):
         if self._cancelable:
             row = QHBoxLayout()
             row.addStretch()
-            self.cancelButton = PushButton(cancelButtonText, self.card)
+            self.cancelButton = PushButton(tr(cancelButtonText), self.card)
             self.cancelButton.clicked.connect(self._onCancel)
             row.addWidget(self.cancelButton)
             self.body.addLayout(row)
@@ -353,13 +353,13 @@ class QInputDialog:
         dialog.setWindowTitle(title)
         dialog.card.setMinimumWidth(360)
 
-        dialog.body.addWidget(BodyLabel(label, dialog.card))
+        dialog.body.addWidget(BodyLabel(tr(label), dialog.card))
         edit = LineEdit(dialog.card)
         edit.setText(text)
         dialog.body.addWidget(edit)
 
-        cancel = PushButton("Cancel", dialog.card)
-        ok = PrimaryPushButton("OK", dialog.card)
+        cancel = PushButton(tr("Cancel"), dialog.card)
+        ok = PrimaryPushButton(tr("OK"), dialog.card)
         dialog.addButtons(cancel, ok)
 
         accepted = {"value": False}

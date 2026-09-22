@@ -1,92 +1,274 @@
-version: "3"
+version: '3'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Xlchemy 开发 / 构建任务表
+#
+# 本文件是**本仓自有**的（上游 xl-converter 没有 Taskfile.yml），所以随意修改
+# 都不会给 `git merge upstream/stable` 添冲突。上游的构建入口是 Makefile + build.py。
+#
+# 环境约定
+#   虚拟环境固定用 env_build/（与 Makefile、README 一致，也是装好依赖的那一套）。
+#   不要换成 `uv run`：Rust 扩展是按解释器小版本编译的
+#   （xlchemy_rust/_lowlevel.cpython-312-darwin.so），`uv run` 会另建 .venv，
+#   一旦它选到别的小版本，`import xlchemy_rust._lowlevel` 会直接失败。
+#
+# 开工三步
+#   task setup    一次性：建环境 → 装依赖 → 编译 Rust 扩展 → 自检
+#   task run      启动应用
+#   task          查看全部任务
+# ─────────────────────────────────────────────────────────────────────────────
 
 vars:
-  VERSION_FILE: data/constants.py
+  VENV: env_build
+  # 解释器路径按平台分支，其它地方一律引用 {{.PY}}
+  PY: '{{if eq OS "windows"}}{{.VENV}}/Scripts/python.exe{{else}}{{.VENV}}/bin/python{{end}}'
+  # 建环境与装依赖一律走 uv，不用 pip：pip 替换旧版本时会递归删目录，在本机
+  # 受限环境下会被拦下，留下「装了一半」的 site-packages（PySide6 就这样坏过一次）。
+  PYTHON_SERIES: '3.12'
+  DEPS: '-r requirements.txt -r requirements_test.txt "PySide6-Fluent-Widgets>=1.11"'
 
 tasks:
   default:
-    desc: List all available tasks
+    desc: 列出所有任务
+    silent: true
     cmds:
       - task --list
 
-  build:
-    desc: Build the project
-    cmds:
-      - .venv/Scripts/python.exe build.py
+  # ─────────────────────────────── 环境 ───────────────────────────────
 
-  build:portable:
-    desc: Build portable package
+  setup:
+    desc: 一次性准备：建环境 → 装依赖 → 编译 Rust 扩展 → 自检
     cmds:
-      - uv run python build.py --build-type portable
+      - task: env:venv
+      - task: env:deps
+      - task: rust
+      - task: env:check
 
-  build:rust:
-    desc: Build Rust bindings
+  env:venv:
+    desc: 创建虚拟环境 {{.VENV}}（用 uv，已存在则跳过）
+    status:
+      - '"{{.PY}}" --version'
+    preconditions:
+      - sh: uv --version
+        msg: '没找到 uv。装法：brew install uv'
     cmds:
-      - uv run python build_rust.py
+      # 固定 Python {{.PYTHON_SERIES}}：和已编译的 Rust 扩展（cpython-312）对齐。
+      # 想换版本的话，改完记得跑 `task rust` 重编扩展。
+      - uv venv --python {{.PYTHON_SERIES}} {{.VENV}}
+
+  env:deps:
+    desc: 安装 Python 依赖（uv：应用 + 测试 + qfluentwidgets）
+    deps: [env:venv]
+    cmds:
+      # qfluentwidgets 是 ui/fluent/* 的硬依赖，却没写进任何 requirements 清单。
+      # 补在这里而不是改上游 requirements.txt，是为了不添合并冲突。
+      # 国内直连 files.pythonhosted.org 常超时，可临时换源：
+      #   UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple task env:deps
+      - >-
+        uv pip install --python "{{.PY}}" {{.DEPS}}
+
+  env:check:
+    desc: 自检：解释器、界面依赖与 Rust 扩展是否就绪
+    preconditions:
+      - sh: '"{{.PY}}" --version'
+        msg: '找不到解释器 {{.PY}} —— 先运行 `task setup`'
+      - sh: '"{{.PY}}" -c "import PySide6, qfluentwidgets, send2trash, psutil"'
+        msg: 'Python 依赖不全 —— 运行 `task env:deps`'
+      - sh: '"{{.PY}}" -c "import xlchemy_rust._lowlevel"'
+        msg: 'Rust 扩展未编译 —— 运行 `task rust`'
+    cmds:
+      # 同时打印「真正跑起来的 Qt 版本」和「发行版元数据版本」：
+      # 这两者不一致时（site-packages 里混装过多个 PySide6），只信前者。
+      - >-
+        "{{.PY}}" -c "import sys; import PySide6; import importlib.metadata as md;
+        from PySide6.QtCore import qVersion; import xlchemy_rust._lowlevel as ext;
+        print('  Python    ', sys.version.split()[0]);
+        print('  Qt        ', qVersion(), '(PySide6', PySide6.__version__ + ')');
+        print('  fluent    ', md.version('PySide6-Fluent-Widgets'));
+        print('  rust ext  ', ext.__file__)"
+
+  # 内部守卫：run / test 之类的任务靠它拦住「环境没准备好」的情况
+  guard:
+    internal: true
+    preconditions:
+      - sh: '"{{.PY}}" --version'
+        msg: '未找到解释器 {{.PY}}。先运行 `task setup`。'
+
+  # ─────────────────────────────── 运行 ───────────────────────────────
+
+  run:
+    desc: 启动应用（语言/主题沿用上次设置）
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" main.py {{.CLI_ARGS}}'
+
+  run:classic:
+    desc: 用经典 Qt 壳启动（XLCHEMY_UI=classic）
+    deps: [guard]
+    env:
+      XLCHEMY_UI: classic
+    cmds:
+      - '"{{.PY}}" main.py {{.CLI_ARGS}}'
+
+  run:zh:
+    desc: 以简体中文启动（只影响本次启动，不改持久设置）
+    deps: [guard]
+    env:
+      XLCHEMY_LANG: zh_CN
+    cmds:
+      - '"{{.PY}}" main.py {{.CLI_ARGS}}'
+
+  run:en:
+    desc: 以英文启动（只影响本次启动）
+    deps: [guard]
+    env:
+      XLCHEMY_LANG: en
+    cmds:
+      - '"{{.PY}}" main.py {{.CLI_ARGS}}'
+
+  # ─────────────────────────── Rust 扩展 ───────────────────────────
+
+  rust:
+    desc: 编译 Rust 扩展（改完 rust_bindings/ 后跑这个）
+    aliases: [build:rust]
+    deps: [guard]
+    env:
+      VIRTUAL_ENV: '{{.ROOT_DIR}}/{{.VENV}}'
+    cmds:
+      # --skip-install：maturin 只做「编译 + 就地放置扩展」，跳过 pip install。
+      # 本项目是 mixed layout（pyproject 里 python-source = "."），inplace 就够了；
+      # 而且能避开 pip 卸载/清理临时目录那一套（受限环境里会被拦）。
+      - '"{{.PY}}" -m maturin develop --release --skip-install {{.CLI_ARGS}}'
+
+  clean:rust:
+    desc: 清掉 Rust 编译缓存（下次 task rust 全量重编，约 1 分钟）
+    cmds:
+      - cargo clean --manifest-path rust_bindings/Cargo.toml
+
+  # ─────────────────────────────── 测试 ───────────────────────────────
 
   test:
-    desc: Run tests
+    desc: 跑全部测试（透传参数：task test -- -k theme）
+    deps: [guard]
     cmds:
-      - uv run pytest tests/
+      - '"{{.PY}}" -m pytest tests/ {{.CLI_ARGS}}'
+
+  test:ui:
+    desc: 只跑界面测试
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" -m pytest tests/ui {{.CLI_ARGS}}'
+
+  test:i18n:
+    desc: 只跑 i18n 接缝回归
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" -m pytest tests/ui/test_i18n.py {{.CLI_ARGS}}'
+
+  test:convert:
+    desc: 功能测试（真实转码，较慢）
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" test_convert.py {{.CLI_ARGS}}'
 
   test:gil:
-    desc: Test GIL release
+    desc: GIL 释放测试
+    deps: [guard]
     cmds:
-      - uv run python tests/test_gil_release.py
+      - '"{{.PY}}" tests/test_gil_release.py'
+
+  test:cov:
+    desc: 带覆盖率跑测试
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" -m pytest --cov=core --cov=ui --cov=data --cov=main tests/ {{.CLI_ARGS}}'
+
+  # ─────────────────────── 多语言（i18n 接缝） ───────────────────────
+
+  i18n:check:
+    desc: 校验覆盖率：还有多少面向用户的文案没翻
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" -m ui.i18n.extract --check'
+
+  i18n:
+    desc: 重新扫描源码，刷新译者用的原文清单
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" -m ui.i18n.extract'
+
+  # ─────────────────────────────── 打包 ───────────────────────────────
+
+  build:
+    desc: 打包（macOS → .app；Windows/Linux → 普通构建）
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" build.py {{.CLI_ARGS}}'
+
+  build:dmg:
+    desc: 打包成 dmg（仅 macOS）
+    platforms: [darwin]
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" build.py --build-type dmg {{.CLI_ARGS}}'
+
+  build:portable:
+    desc: 便携包（Windows 的 7z / Linux 的 sh 包）
+    deps: [guard]
+    cmds:
+      - '"{{.PY}}" build.py --build-type portable {{.CLI_ARGS}}'
+
+  deps:tools:
+    desc: 编译外部编码器（cjxl / avifenc / imagemagick / oxipng / jpegtran / exiftool）
+    cmds:
+      - make deps
+
+  clean:
+    desc: 清理打包产物
+    cmds:
+      - '{{if eq OS "windows"}}cmd /c "rmdir /s /q dist _pyinstaller build" 2>nul & exit /b 0{{else}}rm -rf dist/ _pyinstaller/ build/{{end}}'
+
+  # ───────────────────────────── 版本 / 发布 ─────────────────────────────
 
   prepare:
-    desc: Prepare a release with the given version (e.g., task prepare -- 1.2.4)
+    desc: 把版本号写进 data/constants.py（例：task prepare -- 1.2.4）
     cmds:
-      - python scripts/set_version.py {{.CLI_ARGS}} --constants-only
+      - '"{{.PY}}" scripts/set_version.py {{.CLI_ARGS}} --constants-only'
 
   push-tag:
-    desc: Push a tag to remote repository (e.g., task push-tag -- v1.2.4)
+    desc: 打 tag 并推送（例：task push-tag -- v1.2.4）
     cmds:
       - git tag {{.CLI_ARGS}}
       - git push origin {{.CLI_ARGS}}
 
   delete-tag:
-    desc: Delete a tag locally and remotely (e.g., task delete-tag -- v1.2.4)
+    desc: 删除本地与远端 tag（例：task delete-tag -- v1.2.4）
     cmds:
       - git tag -d {{.CLI_ARGS}}
       - git push origin --delete {{.CLI_ARGS}}
 
   release:
-    desc: Prepare and push a release tag (e.g., task release -- 1.2.4)
-    deps:
-      - task: prepare
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
+    desc: 改版本号并推 tag（例：task release -- 1.2.4）
+    # 注意：prepare 必须先跑完，push-tag 才能拿到新版本 —— 所以用 cmds 串行，
+    # 不能用 deps（deps 是并行执行的）。
     cmds:
+      - task: prepare
       - task: push-tag
         vars:
-          CLI_ARGS: "v{{.CLI_ARGS}}"
+          CLI_ARGS: 'v{{.CLI_ARGS}}'
 
-  clean:
-    desc: Clean build artifacts
-    cmds:
-      - rm -rf dist/
-      - rm -rf _pyinstaller/
-      - rm -rf build/
-
-  # Aliases
+  # ── 短别名 ──
   pr:
-    desc: Alias for prepare
+    desc: prepare 的别名
     cmds:
       - task: prepare
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
 
   pt:
-    desc: Alias for push-tag
+    desc: push-tag 的别名
     cmds:
       - task: push-tag
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"
 
   rel:
-    desc: Alias for release
+    desc: release 的别名
     cmds:
       - task: release
-        vars:
-          CLI_ARGS: "{{.CLI_ARGS}}"

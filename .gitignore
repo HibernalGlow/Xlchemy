@@ -23,9 +23,19 @@ ref/*
 rust_bindings/target/
 *.so
 *.pyd
-ui-web/*
-ui_web/node_modules/*
-/_pyinstaller_web
-/ui_web/dist
-/ui_web/node_modules
-/dist_web/*
+ui-web
+ui_web/node_modules
+_pyinstaller_web
+ui_web/dist
+/i_web/node_modules
+dist_web
+build_wails
+node_modules
+frontend
+.gitignore
+
+# 本地构建/工装产物（不进版本库）
+.task/
+.workbuddy/
+native/
+release
