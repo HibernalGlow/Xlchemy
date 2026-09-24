@@ -2,8 +2,8 @@
 
 上游 ``ui/tabs/settings_tab.py`` 的设置项布局是 ``settings_lt``（一个
 ``QVBoxLayout``），主题那一行是其中的 ``theme_hb``。我们的行插在主题行之后，
-顺序是 ``Theme → Language → Compact mode``。上游真把结构改了也不会有事 ——
-注入失败就静默跳过，不影响启动。
+顺序是 ``Theme → Follow system → Language → Compact mode``。上游真把结构改了也
+不会有事 —— 注入失败就静默跳过，不影响启动。
 
 **为什么放在这里而不是标题栏**：语言原先还有一个「标题栏地球按钮」入口，那个是
 「上游把设置页重排了就找不到入口」的兜底。现在标题栏不再放控件，设置页是唯一入口
@@ -19,9 +19,12 @@
 from __future__ import annotations
 
 import logging
+import platform
+import subprocess
 from typing import Any, Callable, Optional, Sequence
 
-from PySide6.QtWidgets import QHBoxLayout, QLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QLayout, QWidget
 from qfluentwidgets import SwitchButton
 
 from ui.i18n import (
@@ -38,6 +41,138 @@ logger = logging.getLogger(__name__)
 
 #: 注入的行归到设置页的哪个分类（取值与 ``settings_tab.changeCategory`` 一致）。
 GENERAL = "General"
+
+#: 「跟随系统」在两端的落点：深色沿用默认那套，浅色用上游唯一的亮色主题。
+AUTO_DARK_THEME = "Miku"
+AUTO_LIGHT_THEME = "Light Amber"
+
+
+def _systemSchemeFromPreferences() -> Optional[str]:
+    """macOS 的「外观」设置，走 ``defaults``。
+
+    Qt 的 ``colorScheme()`` 在 offscreen 平台上报 ``Unknown``（cocoa 上才报得出
+    深浅），所以留这一条兜底：认不出来就保持现状，而不是猜一个。
+    """
+    if platform.system() != "Darwin":
+        return None
+
+    try:
+        proc = subprocess.run(
+            ["defaults", "read", "-g", "AppleInterfaceStyle"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            text=True,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.debug(f"[settingsrows] Cannot read the macOS appearance. {e}")
+        return None
+
+    if proc.returncode != 0:
+        # 浅色模式下这个键压根不存在，read 会以非零码退出。
+        return "light"
+
+    value = proc.stdout.strip().lower()
+    if value == "dark":
+        return "dark"
+    if value == "light":
+        return "light"
+
+    return None
+
+
+def systemThemeName() -> Optional[str]:
+    """系统外观对应的主题名。
+
+    认不出深浅时返回 None：宁可保持用户当前那一套，也不要在没有依据的情况下
+    把窗口翻成另一种配色。
+    """
+    app = QApplication.instance()
+    scheme = app.styleHints().colorScheme() if app is not None else Qt.ColorScheme.Unknown
+
+    if scheme == Qt.ColorScheme.Dark:
+        return AUTO_DARK_THEME
+    if scheme == Qt.ColorScheme.Light:
+        return AUTO_LIGHT_THEME
+
+    return {"dark": AUTO_DARK_THEME, "light": AUTO_LIGHT_THEME}.get(_systemSchemeFromPreferences())
+
+
+class AutoThemeRow(QWidget):
+    """设置页里的「Follow system」一行：开着就按系统深浅在两套主题之间挑。
+
+    **为什么是开关，而不是给主题下拉框加第 5 个选项**：那个名字得让上游的
+    ``getTheme()`` 认识，要么改上游文件、要么运行时把它的函数换掉。开关只调
+    ``setTheme()``，两边都不碰。开着的时候把下拉框置灰，表示「现在不归它管」；
+    关掉时按下拉框里那套重新应用一次。
+
+    状态存在 ``SettingsTab.json`` 的 ``variables`` 里（键 ``auto_theme``），不进
+    预设：预设抓的是 ``getSettings()`` 那份字典，这里没它。
+    """
+
+    STATE_KEY = "auto_theme"
+
+    def __init__(self, page, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self._page = page
+
+        self.label = QLabel("Follow system", self)
+        self.switch = SwitchButton(self)
+        # 与 ShellModeRow 同理：Off/On 文字走 Fluent 自己的 tr()，接缝拦不到。
+        self.switch.setOnText("")
+        self.switch.setOffText("")
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.label)
+        layout.addWidget(self.switch)
+        layout.addStretch()
+
+        # 先摆正状态，再接信号，免得建行的过程本身触发一次换主题。
+        enabled = bool(page.wm.getVar(self.STATE_KEY))
+        self.switch.setChecked(enabled)
+        self._syncCombo()
+
+        self.switch.checkedChanged.connect(self._onToggled)
+        app = QApplication.instance()
+        if app is not None:
+            app.styleHints().colorSchemeChanged.connect(self._onSystemSchemeChanged)
+
+        if enabled:
+            self._apply()
+
+    # ------------------------------------------------------------------
+
+    def _onToggled(self, checked: bool) -> None:
+        self._page.wm.setVar(self.STATE_KEY, bool(checked))
+        self._syncCombo()
+
+        if checked:
+            self._apply()
+        else:
+            self._applyName(str(self._page.theme_cmb.currentText()))
+
+    def _onSystemSchemeChanged(self, *_args: object) -> None:
+        if self.switch.isChecked():
+            self._apply()
+
+    def _syncCombo(self) -> None:
+        combo = getattr(self._page, "theme_cmb", None)
+        if combo is not None:
+            combo.setEnabled(not self.switch.isChecked())
+
+    def _apply(self) -> None:
+        self._applyName(systemThemeName())
+
+    @staticmethod
+    def _applyName(name: Optional[str]) -> None:
+        if not name:
+            return
+
+        # 延迟导入：ui.theme 反过来要用 ui.fluent.*，模块级导入会成环。
+        from ui.theme import setTheme
+
+        setTheme(name)
 
 
 def _languageChoices() -> list[tuple[str, str]]:

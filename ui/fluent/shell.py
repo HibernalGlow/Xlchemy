@@ -44,7 +44,7 @@ from ui.i18n import onLanguageChanged, tr
 
 from . import theme as fluent_theme
 from .runstats import RemoveCompletedButton, RunStatsButton
-from .settingsrows import LanguageRow, ShellModeRow, installSettingsRows
+from .settingsrows import AutoThemeRow, LanguageRow, ShellModeRow, installSettingsRows
 
 logger = logging.getLogger(__name__)
 
@@ -395,7 +395,7 @@ class QMainWindow(FluentWindow):
         self._applyShellMode(resize=True)
 
     def _installSettingsRows(self) -> None:
-        """把我们自己的设置行注入设置页（语言 + 紧凑模式）。
+        """把我们自己的设置行注入设置页（跟随系统 + 语言 + 紧凑模式）。
 
         设置页是上游文件，一行都不改 —— 注入发生在运行时，找不到预期结构就静默
         跳过。见 ui/fluent/settingsrows.py。
@@ -418,7 +418,14 @@ class QMainWindow(FluentWindow):
                 changed=self.shellModeChanged,
                 parent=page,
             )
-            installSettingsRows(page, [(theme, language), (language, compact)])
+            rows = [(theme, language), (language, compact)]
+
+            # 「跟随系统」要读要写主题下拉框；上游哪天不叫这个名了就少这一行。
+            auto = AutoThemeRow(page, page) if hasattr(page, "theme_cmb") else None
+            if auto is not None:
+                rows = [(theme, auto), (auto, language), (language, compact)]
+
+            installSettingsRows(page, rows)
             return
 
     def _setCompactMode(self, compact: bool) -> None:
