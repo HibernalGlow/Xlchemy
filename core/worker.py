@@ -28,7 +28,7 @@ from data.constants import (
 
 from core.proxy import Proxy
 from core.pathing import getUniqueFilePath, getExtension, getOutputDir, getUniqueTmpFilePath, removeFile, isSamePath
-from core.convert import getDecoder, getDecoderArgs, runBinary, cleanUp, runOxipng
+from core.convert import getDecoder, getDecoderArgs, getImageResMp, runBinary, cleanUp, runOxipng
 from core.downscale import downscale, decodeAndDownscale
 import core.metadata as metadata
 import data.task_status as task_status
@@ -661,10 +661,15 @@ class Worker(QRunnable):
                 raise FileException("P0", f"Failed to apply timestamps. {err}")
 
     def runDynamicRamOptimizer(self) -> None:
-        with QMutexLocker(self.mutex):
-            if not RAMOptimizer.isEnabled():
-                return
+        if not RAMOptimizer.isEnabled():
+            return
 
+        # Pinging the source spawns ImageMagick. Every Worker shares one mutex,
+        # so probing under it serializes path allocation and renames across the
+        # whole batch for the duration of the probe.
+        res_in_mp = getImageResMp(self.org_item_abs_path)
+
+        with QMutexLocker(self.mutex):
             self.available_threads = RAMOptimizer.run(
                 self.available_threads,
                 self.org_item_abs_path,
@@ -674,6 +679,7 @@ class Worker(QRunnable):
                 self.params["jxl_modular"],
                 self.params["lossless"],
                 self.params["intelligent_effort"],
+                res_in_mp=res_in_mp,
             )
 
     def smallestLossless(self):

@@ -1374,10 +1374,12 @@ def test_reconstructJPEG_sad_path(worker_reconstructJPEG_patched):
 def test_runDynamicRamOptimizer_enabled(worker):
     org_available_threads = 4
     new_available_threads = 5
+    res_in_mp = 12.5
     worker.available_threads = org_available_threads
 
     with (
         patch("core.worker.RAMOptimizer.isEnabled", return_value=True),
+        patch("core.worker.getImageResMp", return_value=res_in_mp),
         patch("core.worker.RAMOptimizer.run", return_value=new_available_threads) as mock_run,
     ):
         worker.runDynamicRamOptimizer()
@@ -1390,16 +1392,51 @@ def test_runDynamicRamOptimizer_enabled(worker):
             worker.params["jxl_modular"],
             worker.params["lossless"],
             worker.params["intelligent_effort"],
+            res_in_mp=res_in_mp,
         )
         assert worker.available_threads == new_available_threads
+
+def test_runDynamicRamOptimizer_probes_outside_the_mutex(worker):
+    """Every Worker shares one mutex, so the identify ping must not hold it.
+
+    tryLock() on the real QMutex reports False whenever the mutex is taken - by
+    another Worker or, as verified separately, by this very thread through a
+    QMutexLocker. That makes it a live check rather than a mock's word.
+    """
+    order = []
+    mutexWasFree = []
+
+    def probe(path):
+        order.append("probe")
+        free = worker.mutex.tryLock()
+        mutexWasFree.append(free)
+        if free:
+            worker.mutex.unlock()
+        return 12.5
+
+    def run(*args, **kwargs):
+        order.append("run")
+        return 3
+
+    with (
+        patch("core.worker.RAMOptimizer.isEnabled", return_value=True),
+        patch("core.worker.getImageResMp", side_effect=probe),
+        patch("core.worker.RAMOptimizer.run", side_effect=run),
+    ):
+        worker.runDynamicRamOptimizer()
+
+    assert order == ["probe", "run"]
+    assert mutexWasFree == [True], "the probe ran while the shared mutex was held"
 
 def test_runDynamicRamOptimizer_disabled(worker):
     with (
         patch("core.worker.RAMOptimizer.isEnabled", return_value=False),
+        patch("core.worker.getImageResMp") as mock_getImageResMp,
         patch("core.worker.RAMOptimizer.run") as mock_run,
     ):
         worker.runDynamicRamOptimizer()
         mock_run.assert_not_called()
+        mock_getImageResMp.assert_not_called()
 
 @pytest.fixture
 def PNGOptimization_patches():

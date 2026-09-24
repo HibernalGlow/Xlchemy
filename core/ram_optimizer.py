@@ -153,8 +153,15 @@ class RAMOptimizer:
         jpeg_xl_lossy_modular: bool,
         jpeg_xl_lossless: bool,
         jpeg_xl_intelligent_effort: bool,
+        res_in_mp: Optional[float] = None,
     ) -> int:
-        """Sets maximum thread count in the global QThreadPool instance and returns recalculated thread_count_per_worker. Not thread safe."""
+        """Sets maximum thread count in the global QThreadPool instance and returns recalculated thread_count_per_worker. Not thread safe.
+
+        Args:
+            res_in_mp: precomputed source resolution in megapixels. Pass it when
+                the caller already knows it: probing spawns ImageMagick, and this
+                method is normally called under a lock.
+        """
         # Check if can run
         if cls.enabled == False:
             logging.error("[RAM Optimizer - run] Cannot run while disabled.")
@@ -170,7 +177,8 @@ class RAMOptimizer:
             return thread_count_per_worker
         
         # Get resolution
-        res_in_mp = convert.getImageResMp(src_image_path)
+        if res_in_mp is None:
+            res_in_mp = convert.getImageResMp(src_image_path)
 
         if res_in_mp < 0:     # Invalid
             cls.threadpool.setMaxThreadCount(1)
