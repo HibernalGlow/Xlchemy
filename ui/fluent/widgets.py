@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 
 from PySide6.QtCore import QEvent, QPoint, QRectF, Qt
-from PySide6.QtGui import QAction, QColor, QFont, QPainter
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter
 from PySide6.QtWidgets import QComboBox as _QtComboBox, QLabel, QListView, QWidget
 
 from qfluentwidgets import (
@@ -49,6 +49,28 @@ def onThemeChanged(callback) -> None:
     """Runs `callback` whenever the Fluent theme or accent color changes."""
     qconfig.themeChanged.connect(lambda *_: callback())
     qconfig.themeColorChanged.connect(lambda *_: callback())
+
+
+_ARROW_ICONS: dict[tuple[str, bool], QIcon] = {}
+
+
+def arrowIcon(color: QColor, enabled: bool) -> QIcon:
+    """`FluentIcon.ARROW_DOWN` tinted for the current palette, built once per look.
+
+    ``icon(color=...)`` re-reads and rewrites the SVG source on every call, and
+    this runs from ``paintEvent``.
+    """
+    key = (color.name(), enabled)
+    icon = _ARROW_ICONS.get(key)
+
+    if icon is None:
+        tinted = QColor(color)
+        if not enabled:
+            tinted.setAlpha(90)
+        icon = FluentIcon.ARROW_DOWN.icon(color=tinted)
+        _ARROW_ICONS[key] = icon
+
+    return icon
 
 
 def retargetQss(qss: str, names: set[str], target: str) -> str:
@@ -138,10 +160,7 @@ class QComboBox(ClassMinWidthMixin, _QtComboBox):
         y = (self.height() - size) / 2
 
         color = self.palette().color(self.foregroundRole())
-        if not self.isEnabled():
-            color.setAlpha(90)
-
-        drawIcon(FluentIcon.ARROW_DOWN.icon(color=color), painter, QRectF(x, y, size, size))
+        drawIcon(arrowIcon(color, self.isEnabled()), painter, QRectF(x, y, size, size))
         painter.end()
 
     # ------------------------------------------------------------------ 弹层

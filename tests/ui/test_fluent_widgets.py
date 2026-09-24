@@ -112,3 +112,44 @@ def test_seam_classes_do_not_shadow_baseclass_private_methods():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))
+
+
+# ------------------------------------------------- 箭头图标：别每次重绘都重建
+
+def test_arrowIcon_builds_once_per_appearance(app):
+    """``paintEvent`` 里现做 icon() 会重读并重写 SVG 源，每次重绘都付一遍。"""
+    from unittest.mock import MagicMock, patch
+    from PySide6.QtGui import QColor
+
+    import ui.fluent.widgets as widgets
+
+    widgets._ARROW_ICONS.clear()
+    fake = MagicMock(name="FluentIcon")
+    fake.ARROW_DOWN.icon.side_effect = lambda color: f"icon-{color.name()}-{color.alpha()}"
+
+    with patch.object(widgets, "FluentIcon", fake):
+        color = QColor(10, 20, 30)
+        first = widgets.arrowIcon(color, True)
+        second = widgets.arrowIcon(color, True)
+        disabled = widgets.arrowIcon(color, False)
+
+    assert first == second
+    assert fake.ARROW_DOWN.icon.call_count == 2, "同一副外观只应该造一次图标"
+    assert disabled != first
+    # 禁用态仍然是 90 alpha，和改动前 paintEvent 里的写法一致
+    assert fake.ARROW_DOWN.icon.call_args_list[1].kwargs["color"].alpha() == 90
+    assert fake.ARROW_DOWN.icon.call_args_list[0].kwargs["color"].alpha() == 255
+
+
+def test_arrowIcon_returns_a_real_qicon_per_color(app):
+    from PySide6.QtGui import QColor, QIcon
+
+    import ui.fluent.widgets as widgets
+
+    widgets._ARROW_ICONS.clear()
+    black = widgets.arrowIcon(QColor("black"), True)
+    white = widgets.arrowIcon(QColor("white"), True)
+
+    assert isinstance(black, QIcon)
+    assert black is widgets.arrowIcon(QColor("black"), True)
+    assert black is not white
