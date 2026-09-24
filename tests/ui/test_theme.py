@@ -26,6 +26,8 @@ def test_setTheme_happy_path(caplog):
         patch("ui.theme.theme_manager.getStyleSheet", return_value=mock_stylesheet) as mock_getStyleSheet,
         patch("ui.theme.theme_manager.QApplication.instance", return_value=mock_qapp_instance),
         patch("ui.theme.theme_manager.StyledLabel.updateStyleForAll") as mock_updateStyleForAll,
+        # 上游那套 QSS 只在 classic 壳下生效：fluent 壳会把主题交给 Fluent 层。
+        patch("ui.theme.theme_manager.applyFluentTheme", return_value=False),
     ):
         theme.theme_manager.setTheme(mock_theme_name)
 
@@ -35,6 +37,24 @@ def test_setTheme_happy_path(caplog):
         mock_qapp_instance.setStyleSheet.assert_called_once_with(mock_stylesheet)
         mock_updateStyleForAll.assert_called_once()
         assert mock_accent_big in mock_updateStyleForAll.call_args_list[0][0][0]
+
+def test_setTheme_skips_upstream_qss_under_fluent(caplog):
+    """Fluent 接管时不得再下发上游 QSS，否则两边规则互相污染。"""
+    caplog.set_level(logging.ERROR)
+    mock_qapp_instance = MagicMock()
+
+    with (
+        patch("ui.theme.theme_manager.getTheme", return_value=MagicMock()),
+        patch("ui.theme.theme_manager.getStyleSheet", return_value="sample stylesheet"),
+        patch("ui.theme.theme_manager.QApplication.instance", return_value=mock_qapp_instance),
+        patch("ui.theme.theme_manager.applyFluentTheme", return_value=True) as mock_applyFluentTheme,
+    ):
+        theme.theme_manager.setTheme("Miku")
+
+        mock_applyFluentTheme.assert_called_once()
+        mock_qapp_instance.setStyleSheet.assert_not_called()
+        mock_qapp_instance.setStyle.assert_not_called()
+        assert len(caplog.records) == 0
 
 def test_setTheme_sad_path(caplog):
     caplog.set_level(logging.ERROR)

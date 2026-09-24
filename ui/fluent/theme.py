@@ -15,6 +15,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication
+
 from . import mode
 
 if TYPE_CHECKING:  # pragma: no cover - 仅用于类型提示
@@ -113,6 +116,42 @@ def getWindow():
     return _window
 
 
+def _syncPalette(theme: "Theme") -> None:
+    """Pushes the theme into the application palette.
+
+    Fluent styles the widgets it knows about through QSS, and in this mode
+    upstream's own application stylesheet is deliberately skipped - which leaves
+    every plain ``QWidget`` (the settings scroll area's content widget, injected
+    rows, containers) painting from the **system** palette. On a light desktop
+    that put #efefef panels inside a dark window.
+    """
+    app = QApplication.instance()
+    if app is None:  # pragma: no cover - the theme bridge runs after the app exists
+        return
+
+    palette = QPalette()
+    canvas = QColor(theme.colors.canvas)
+    font = QColor(theme.colors.font)
+    disabled = QColor(theme.colors.font_disabled)
+
+    for role in (QPalette.Window, QPalette.Base, QPalette.Button, QPalette.ToolTipBase):
+        palette.setColor(role, canvas)
+    for role in (QPalette.WindowText, QPalette.Text, QPalette.ButtonText):
+        palette.setColor(role, font)
+
+    palette.setColor(QPalette.Highlight, QColor(theme.colors.accent_big))
+    palette.setColor(QPalette.HighlightedText, font)
+    palette.setColor(QPalette.PlaceholderText, disabled)
+
+    for role in (QPalette.WindowText, QPalette.Text, QPalette.ButtonText):
+        palette.setColor(QPalette.Disabled, role, disabled)
+
+    if palette == app.palette():
+        return
+
+    app.setPalette(palette)
+
+
 def applyFluentTheme(theme: "Theme") -> bool:
     """Applies `theme` to the Fluent layer.
 
@@ -127,6 +166,8 @@ def applyFluentTheme(theme: "Theme") -> bool:
     from qfluentwidgets import Theme, setTheme, setThemeColor
 
     _current_theme = theme
+
+    _syncPalette(theme)
 
     # Fluent 的 ``setTheme`` 会广播 ``qconfig.themeChanged``，所有注册过的控件都会把
     # 自己的样式表**重刷一遍**。上游有些控件是自带 ``setStyleSheet`` 的（比如
