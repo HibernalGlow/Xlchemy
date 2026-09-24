@@ -13,6 +13,7 @@ from data.constants import (
 )
 from core.process import runProcess2
 from core.exceptions import GenericException, CancellationException
+from core import image_probe
 import data.task_status as task_status
 
 logger = logging.getLogger(__name__)
@@ -160,29 +161,7 @@ def getImageRes(image_path: str) -> tuple[int, int]:
 
     Note: width and height might be returned flipped because Exif orientation is not followed. Adding -auto-orient works, but is too slow and too memory intensive.
     """
-    out, err = runBinary(
-        IMAGE_MAGICK_PATH,
-        ["identify", "-ping", "-format", "%[page]"],
-        f"{image_path}[0]",
-    )
-    res_match = re.match(r"^(\d+)x(\d+)(?=\D|$)", out)
-
-    if not res_match:
-        logging.error(f"[getImageRes] Cannot determine resolution. {err}")
-        return (-1, -1)
-
-    try:
-        width = int(res_match.group(1))
-        height = int(res_match.group(2))
-    except (AttributeError, ValueError):
-        logging.error(f"[getImageRes] Failed to parse resolution. {out}")
-        return (-1, -1)
-
-    if min(width, height) < 1:
-        logging.error(f"[getImageRes] Cannot determine resolution. {err}")
-        return (-1, -1)
-
-    return (width, height)
+    return image_probe.getResolution(image_path)
 
 def getImageResMp(image_path: str) -> float:
     """Returns resolution of an image or -1 if one cannot be determined. This is a wrapper around getImageRes."""
@@ -195,23 +174,7 @@ def getImageResMp(image_path: str) -> float:
 
 def getImageCount(image_path: str) -> tuple[int, str]:
     """Returns image count (frame or page count) and stderr. If it cannot be determined, returns -1."""
-    out, err = runBinary(
-        IMAGE_MAGICK_PATH,
-        ["identify", "-ping", "-format", "%n\n"],
-        image_path    # Do not specify index (e.g. image.webp[0]). Otherwise, it will return 1 regardless of page count.
-    )
-    pages_m = re.search(r"\d+", out)
-    if not pages_m:
-        logger.error(f"[getImageCount] Cannot determine image count. {err}")
-        return (-1, err)
-    
-    try:
-        pages_int = int(pages_m.group(0))
-    except (ValueError, AttributeError) as e:
-        logger.error(f"[getImageCount] Parsing failed. {e}")
-        return (-1, err)
-    
-    return (pages_int, err)
+    return image_probe.getPageCount(image_path)
 
 def cleanUp(file_paths: list[str]) -> None:
     """Deletes file(s). Does not raise an exception."""

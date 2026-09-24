@@ -279,61 +279,13 @@ def test_getDecoderArgs_known():
 def test_getDecoderArgs_unknown():
     assert convert.getDecoderArgs("unknown", 4) == []
 
-@pytest.fixture
-def getImageRes_patches():
-    mocks = {
-        "runBinary": patch("core.convert.runBinary", return_value=("1000x1000", "")),
-    }
+# getImageRes() and getImageCount() hand the spawning over to core.image_probe,
+# so their argv / parsing coverage lives in tests/core/test_image_probe.py.
 
-    variables = {
-        "IMAGE_MAGICK_PATH": patch("core.convert.IMAGE_MAGICK_PATH", "im_path"),
-    }
-
-    with ExitStack() as stack:
-        _mocks = {name: stack.enter_context(patcher) for name, patcher in mocks.items()}
-        _variables = {name: stack.enter_context(patcher) for name, patcher in variables.items()}
-        yield _mocks, _variables
-
-def test_getImageRes_happy_path(getImageRes_patches):
-    mocks, variables = getImageRes_patches
-    res = (2000, 3000)
-    image_path = "/tmp/file.jpg"
-    mocks["runBinary"].return_value = (f"{res[0]}x{res[1]}", "")
-
-    assert convert.getImageRes(image_path) == res
-    mocks["runBinary"].assert_called_once_with(
-        variables["IMAGE_MAGICK_PATH"],
-        ["identify", "-ping", "-format", "%[page]"],
-        f"{image_path}[0]",
-    )
-
-@pytest.mark.parametrize("invalid_process_output", [
-    "1a00x2000", "", "1000xa000", "x2000", "2000x", "1a00x2000a"
-])
-def test_getImageRes_invalid_process_output(invalid_process_output, getImageRes_patches, caplog):
-    mocks, variables = getImageRes_patches
-    mocks["runBinary"].return_value = (invalid_process_output, "")
-
-    assert convert.getImageRes("/tmp/file.jpg") == (-1, -1)
-    mocks["runBinary"].assert_called_once()
-    assert "Cannot determine resolution" in caplog.records[0].message
-
-def test_getImageRes_parsing_error(getImageRes_patches, caplog):
-    mocks, variables = getImageRes_patches
-    mock_re_output = MagicMock()
-    mock_re_output.group.side_effect = ("a", "b")
-
-    with patch("core.convert.re.match", return_value=mock_re_output) as mock_re:
-        assert convert.getImageRes("/tmp/file.jpg") == (-1, -1)
-
-    assert "Failed to parse resolution" in caplog.records[0].message
-
-def test_getImageRes_invalid_res(getImageRes_patches, caplog):
-    mocks, variables = getImageRes_patches
-    mocks["runBinary"].return_value = ("0x0", "")
-
-    assert convert.getImageRes("/tmp/file.jpg") == (-1, -1)
-    assert "Cannot determine resolution" in caplog.records[0].message
+def test_getImageRes_delegates():
+    with patch("core.convert.image_probe.getResolution", return_value=(2000, 3000)) as mock_getResolution:
+        assert convert.getImageRes("/tmp/file.jpg") == (2000, 3000)
+        mock_getResolution.assert_called_once_with("/tmp/file.jpg")
 
 def test_getImageResMp_happy_path():
     image_path = "/tmp/file.jpg"
@@ -347,50 +299,11 @@ def test_getImageResMp_sad_path():
     with patch("core.convert.getImageRes", return_value=(-1, -1)) as mock_getImageRes:
         assert convert.getImageResMp("/tmp/file.jpg") == -1
 
-def test_getImageCount_happy_path(caplog):
-    image_path = "/tmp/image.jpg"
+def test_getImageCount_delegates():
+    with patch("core.convert.image_probe.getPageCount", return_value=(5, "")) as mock_getPageCount:
+        assert convert.getImageCount("/tmp/image.jpg") == (5, "")
+        mock_getPageCount.assert_called_once_with("/tmp/image.jpg")
 
-    with (
-        patch("core.convert.runBinary", return_value=("5\n" * 5, "")) as mock_runBinary,      # typical IM output
-        patch("core.convert.IMAGE_MAGICK_PATH", "im_path") as var_IMAGE_MAGICK_PATH,
-    ):
-        assert convert.getImageCount(image_path) == (5, "")
-        mock_runBinary.assert_called_once_with(
-            var_IMAGE_MAGICK_PATH,
-            ["identify", "-ping", "-format", "%n\n"],
-            image_path
-        )
-        assert not caplog.records
-
-def test_getImageCount_image_count_not_available(caplog):
-    image_path = "/tmp/image.jpg"
-    stderr = "error"
-
-    with (
-        patch("core.convert.runBinary", return_value=("not found", stderr)) as mock_runBinary,
-        patch("core.convert.IMAGE_MAGICK_PATH", "im_path") as var_IMAGE_MAGICK_PATH,
-    ):
-        assert convert.getImageCount(image_path) == (-1, stderr)
-        mock_runBinary.assert_called_once_with(
-            var_IMAGE_MAGICK_PATH,
-            ["identify", "-ping", "-format", "%n\n"],
-            image_path
-        )
-        assert "Cannot determine image count" in caplog.records[0].message 
-        assert stderr in caplog.records[0].message 
-
-def test_getImageCount_parsing_failed(caplog):
-    mock_match = MagicMock()
-    mock_match.group.side_effect = ValueError("invalid literal for int()")
-
-    with (
-        patch("core.convert.runBinary", return_value=("5\n" * 5, "")) as mock_runBinary,
-        patch("core.convert.re.search", return_value=mock_match)
-    ):
-        assert convert.getImageCount("/tmp/image.jpg") == (-1, "")
-        mock_runBinary.assert_called_once()
-        assert "Parsing failed" in caplog.records[0].message 
-        assert "invalid literal for int()" in caplog.records[0].message
 
 def test_cleanUp_files_exist():
     tmp_files = ["/tmp/file1.jpg", "/tmp/file2.jpg", "/tmp/file3.jpg"]
