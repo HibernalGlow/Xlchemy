@@ -44,6 +44,8 @@ from qfluentwidgets import (
 )
 from qfluentwidgets.common.style_sheet import FluentStyleSheet
 
+from ui.i18n import tr
+
 from . import theme as fluent_theme
 
 # 卡片外围留出的透明边，用来落投影。
