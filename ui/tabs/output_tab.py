@@ -23,6 +23,7 @@ from PySide6.QtCore import(
     QDir,
 )
 
+from core.cpu_topology import coreCount
 from core.utils import dictToList
 from ui.lib import WidgetManager
 from ui.lib.utils import setToolTip, isPathValidStr, createQHBoxLayout, blockSignals
@@ -41,7 +42,7 @@ class OutputTab(QWidget):
 
         # Variables
         self.prev_format = None
-        self.MAX_THREAD_COUNT = os.cpu_count() or 1
+        self.MAX_THREAD_COUNT = coreCount()
         self.jpg_encoder = settings["jpg_encoder"]
         self.enable_jxl_effort_10 = settings["enable_jxl_effort_10"]
         self.jxl_lossy_modular_visible = settings["jxl_lossy_modular"]

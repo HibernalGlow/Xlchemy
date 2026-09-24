@@ -64,7 +64,9 @@ def controller_checkProcessingRequirements_patched(controller):
         "is_absolute": patch("core.controller.Path.is_absolute", return_value=True),
         "getItemCount": patch.object(controller.items, "getItemCount", return_value=100),
         "activeThreadCount": patch.object(controller.threadpool, "activeThreadCount", return_value=0),
-        "isExifToolAvailable": patch("core.controller.isExifToolAvailable", return_value=(True, ""),)
+        "isExifToolAvailable": patch("core.controller.isExifToolAvailable", return_value=(True, ""),),
+        # An existing file stands in for a bundled encoder.
+        "encoderPath": patch("core.controller.CJPEGLI_PATH", __file__),
     }
 
     with ExitStack() as stack:
@@ -201,6 +203,41 @@ def test_checkProcessingRequirements_jpegli_mode_unavailable(controller_checkPro
     assert not cs.allowed_to_proceed
     assert cs.display_error
     assert "The `Encoder - Preserve` metadata mode is unavailable for JPEGLI" in cs.error_description
+
+def test_checkProcessingRequirements_jpegli_binary_missing(controller_checkProcessingRequirements_patched, output_tab_settings, modify_tab_settings, settings_tab_settings):
+    controller, mocks = controller_checkProcessingRequirements_patched
+    output_tab_settings["format"] = "JPEG"
+    settings_tab_settings["jpg_encoder"] = "JPEGLI"
+    modify_tab_settings["misc"]["keep_metadata"] = "Encoder - Wipe"
+
+    with patch("core.controller.CJPEGLI_PATH", "/nonexistent/bin/macos/cjpegli"):
+        cs = controller.checkProcessingRequirements(100, False, output_tab_settings, modify_tab_settings, settings_tab_settings)
+
+    assert not cs.allowed_to_proceed
+    assert cs.error_title == "Encoder Unavailable"
+    assert "/nonexistent/bin/macos/cjpegli" in cs.error_description
+
+def test_checkProcessingRequirements_jpegli_binary_present(controller_checkProcessingRequirements_patched, output_tab_settings, modify_tab_settings, settings_tab_settings):
+    controller, mocks = controller_checkProcessingRequirements_patched
+    output_tab_settings["format"] = "JPEG"
+    settings_tab_settings["jpg_encoder"] = "JPEGLI"
+    modify_tab_settings["misc"]["keep_metadata"] = "Encoder - Wipe"
+
+    with patch("core.controller.CJPEGLI_PATH", __file__):
+        cs = controller.checkProcessingRequirements(100, False, output_tab_settings, modify_tab_settings, settings_tab_settings)
+
+    assert cs.allowed_to_proceed
+
+def test_checkProcessingRequirements_encoder_check_skipped_for_other_formats(controller_checkProcessingRequirements_patched, output_tab_settings, modify_tab_settings, settings_tab_settings):
+    """A missing cjpegli must not stop a JPEG XL batch."""
+    controller, mocks = controller_checkProcessingRequirements_patched
+    settings_tab_settings["jpg_encoder"] = "JPEGLI"
+    modify_tab_settings["misc"]["keep_metadata"] = "Encoder - Wipe"
+
+    with patch("core.controller.CJPEGLI_PATH", "/nonexistent/bin/macos/cjpegli"):
+        cs = controller.checkProcessingRequirements(100, False, output_tab_settings, modify_tab_settings, settings_tab_settings)
+
+    assert cs.allowed_to_proceed
 
 def test_parseData(controller):
     items = ["item0", "item1"]

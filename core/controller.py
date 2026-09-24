@@ -16,6 +16,7 @@ from PySide6.QtCore import (
     Qt,
 )
 
+from data.constants import CJPEGLI_PATH
 from data.time_left import TimeLeft
 from data.thread_manager import ThreadManager
 from data.items import Items
@@ -136,6 +137,19 @@ class Controller(QObject):
             output.setError(
                 "Still Processing",
                 f"{'A thread' if thread_count == 1 else str(thread_count) + ' threads'} from the last session {'is' if thread_count == 1 else 'are'} still finishing.\nWait a moment before trying again."
+            )
+            return output
+
+        if (
+            output_tab_settings["format"] == "JPEG" and
+            settings_tab_settings["jpg_encoder"] == "JPEGLI" and
+            os.path.isabs(CJPEGLI_PATH) and
+            not os.path.isfile(CJPEGLI_PATH)
+        ):
+            # Otherwise every file in the batch fails with a bare FileNotFoundError.
+            output.setError(
+                "Encoder Unavailable",
+                f"JPEG Encoder \"JPEGLI\" was selected, but cjpegli is missing:\n{CJPEGLI_PATH}\nInstall it, or switch to \"libjpeg\" in Settings."
             )
             return output
 
