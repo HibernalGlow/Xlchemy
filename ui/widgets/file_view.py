@@ -27,6 +27,12 @@ class ItemDelegate(QStyledItemDelegate):
         option.state &= ~QStyle.State_HasFocus
         super().paint(painter, option, index)
 
+def _fileSize(path: str) -> int:
+    try:
+        return os.stat(path).st_size
+    except OSError:
+        return 0
+
 class FileView(QTreeWidget):
     def __init__(self, parent=None):
         super(FileView, self).__init__(parent)
@@ -51,24 +57,39 @@ class FileView(QTreeWidget):
         for i in range(root.childCount()):
             items.append(root.takeChild(0))
 
-        match order:
-            case "Path Ascending":
-                items.sort(key=lambda item: item.text(2).casefold())
-            case "Path Descending":
-                items.sort(key=lambda item: item.text(2).casefold(), reverse=True)
-            case "Size Ascending":
-                items.sort(key=lambda item: os.path.getsize(item.text(2)) if os.path.isfile(item.text(2)) else 0)
-            case "Size Descending":
-                items.sort(key=lambda item: os.path.getsize(item.text(2)) if os.path.isfile(item.text(2)) else 0, reverse=True)
-            case "Random":
-                import random
-                random.shuffle(items)
-            case "Sequential":
-                items.sort(key=lambda item: (str(Path(item.text(2)).parent).casefold(), Path(item.text(2)).name.casefold()))
-            case _:
-                pass
+        sizes = None
+        if order.startswith("Size"):
+            # One stat per row. Sorting straight on os.path.getsize() would repeat
+            # it on every comparison.
+            sizes = {item: _fileSize(item.text(2)) for item in items}
 
-        root.addChildren(items)
+        updatesWereEnabled = self.updatesEnabled()
+        sortingWasEnabled = self.isSortingEnabled()
+
+        self.setUpdatesEnabled(False)
+        self.setSortingEnabled(False)     # otherwise addChildren() re-sorts on each insert
+        try:
+            match order:
+                case "Path Ascending":
+                    items.sort(key=lambda item: item.text(2).casefold())
+                case "Path Descending":
+                    items.sort(key=lambda item: item.text(2).casefold(), reverse=True)
+                case "Size Ascending":
+                    items.sort(key=lambda item: sizes[item])
+                case "Size Descending":
+                    items.sort(key=lambda item: sizes[item], reverse=True)
+                case "Random":
+                    import random
+                    random.shuffle(items)
+                case "Sequential":
+                    items.sort(key=lambda item: (str(Path(item.text(2)).parent).casefold(), Path(item.text(2)).name.casefold()))
+                case _:
+                    pass
+
+            root.addChildren(items)
+        finally:
+            self.setSortingEnabled(sortingWasEnabled)
+            self.setUpdatesEnabled(updatesWereEnabled)
 
     def setFormatFilter(self, filter_fn: Callable[[str], bool]):
         """Set a function to filter file formats during drag-and-drop.
@@ -178,18 +199,26 @@ class FileView(QTreeWidget):
                         logging.error(f"[FileView - scanDir()] Directory not found. {e}")
                         continue
 
+                    anchor_path = Path(path).parent if preserve_parent else Path(path)
                     for file in files:
-                        file_path = Path(file)
-                        ext = file_path.suffix[1:]
+                        # Slicing beats Path(): the scan returns every file in the
+                        # tree, most of which is not an image.
+                        dot = file.rfind(".")
+                        slash = max(file.rfind("/"), file.rfind(os.sep))
+
+                        if dot <= slash + 1:    # no extension, or a dotfile
+                            continue
+
+                        ext = file[dot + 1:]
                         ext_lower = ext.lower()
 
                         if ext_lower in _ALLOWED_INPUT_SET and self._isFormatAllowed(ext_lower):
                             items.append(
                                 (
-                                    file_path.stem,
+                                    file[slash + 1:dot],
                                     ext,
-                                    str(file_path),
-                                    Path(path).parent if preserve_parent else Path(path),
+                                    file,
+                                    anchor_path,
                                 )
                             )
 
