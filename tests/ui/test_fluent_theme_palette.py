@@ -23,6 +23,22 @@ def restorePalette(app):
     app.setPalette(before)
 
 
+@pytest.fixture(autouse=True)
+def noFluentRestyle():
+    """挡掉 Fluent 那轮全局重刷。
+
+    ``updateStyleSheet()`` 在 ``list(styleSheetManager.items())`` 上遍历弱登记表，
+    测试会话里前面几百个控件正在被回收 —— 回收回调删掉一项就会撞成
+    ``RuntimeError: dictionary changed size during iteration``。这跟 palette 无关
+    （关掉 palette 同步也一样撞），所以这里只把重刷挡开，palette 走的是真代码。
+    """
+    with (
+        patch("qfluentwidgets.setTheme"),
+        patch("qfluentwidgets.setThemeColor"),
+    ):
+        yield
+
+
 def test_dark_theme_repaints_plain_widgets(app):
     assert applyFluentTheme(getTheme("Miku")) is True
 

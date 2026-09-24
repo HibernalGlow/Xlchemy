@@ -35,6 +35,9 @@ _window = None  # 弱引用由 shell 负责，这里只存引用，窗口销毁�
 # 已经下发给 Fluent 的深浅模式，用来跳过重复的 ``setTheme``（见 applyFluentTheme）。
 _applied_mode = None
 
+# 同理，但管的是强调色：``setThemeColor`` 会遍历所有 Fluent 控件重设样式表。
+_applied_accent = None
+
 
 def _luminance(hex_color: str) -> float:
     """Returns the perceived brightness (0-1) of a #rrggbb color."""
@@ -163,11 +166,9 @@ def applyFluentTheme(theme: "Theme") -> bool:
     if not mode.isFluent():
         return False
 
-    from qfluentwidgets import Theme, setTheme, setThemeColor
+    from qfluentwidgets import Theme, setTheme
 
     _current_theme = theme
-
-    _syncPalette(theme)
 
     # Fluent 的 ``setTheme`` 会广播 ``qconfig.themeChanged``，所有注册过的控件都会把
     # 自己的样式表**重刷一遍**。上游有些控件是自带 ``setStyleSheet`` 的（比如
@@ -178,12 +179,34 @@ def applyFluentTheme(theme: "Theme") -> bool:
         _applied_mode = wanted
         setTheme(wanted)
 
-    setThemeColor(theme.colors.accent_big)
+    setThemeColorIfChanged(theme.colors.accent_big)
+
+    # 换 palette 会让 Qt 现场重抛光所有控件，所以必须排在 Fluent 自己那轮重刷
+    # **之后**：夹在中间的话，qfluentwidgets 遍历它的控件登记表时登记表会被这次
+    # 抛光改长度（RuntimeError: dictionary changed size during iteration）。
+    _syncPalette(theme)
 
     _restyleWindow(theme)
     _restyleLabels(theme)
 
     return True
+
+
+def setThemeColorIfChanged(color: str) -> None:
+    """只在实际换了强调色时才广播重刷。
+
+    ``setThemeColor`` 会遍历 qfluentwidgets 的控件登记表逐个重设样式表；上游每次
+    碰一下设置页都可能再调一次 ``setTheme``，同样的颜色没必要再惊动所有控件。
+    """
+    global _applied_accent
+
+    from qfluentwidgets import setThemeColor
+
+    if color == _applied_accent:
+        return
+
+    _applied_accent = color
+    setThemeColor(color)
 
 
 def _restyleWindow(theme: "Theme") -> None:
