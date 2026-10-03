@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="pipe-title pipe-desc">
+  <title id="pipe-title">Xlchemy 转码流水线</title>
+  <desc id="pipe-desc">输入文件按所选格式派发给对应的外部编码器（cjxl、cjpegli、avifenc、ImageMagick、oxipng、jpegtran），Rust 绑定层负责转换、优化与解码信息，输出五种格式，另有四种按策略选择的专门模式。</desc>
+
+  <defs>
+    <style>
+      .ui { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#39C5BB"/>
+    </marker>
+  </defs>
+
+  <rect x="0.75" y="0.75" width="1198.5" height="558.5" rx="26" fill="#141414" stroke="#404040" stroke-width="1.5"/>
+
+  <text class="mono" x="48" y="46" font-size="18" letter-spacing="2.2" fill="#9A9A9A">PIPELINE · 一张图看懂它怎么压</text>
+
+  <!-- input column -->
+  <g id="input" class="ui" transform="translate(48 70)">
+    <rect x="0" y="0" width="252" height="320" rx="14" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+    <rect x="16" y="-11" width="112" height="22" fill="#141414"/>
+    <text x="22" y="6" font-size="19" fill="#39C5BB">输入 Input</text>
+    <g class="mono" font-size="19" fill="#E9E9E9">
+      <text x="22" y="56">jpg · jpeg</text>
+      <text x="22" y="90">png · apng</text>
+      <text x="22" y="124">gif · webp</text>
+      <text x="22" y="158">tiff · tif</text>
+      <text x="22" y="192">bmp · ico · jp2</text>
+      <text x="22" y="226">jxl · avif</text>
+    </g>
+    <text x="22" y="286" font-size="18" fill="#6E6E6E">按编码器能力而定</text>
+  </g>
+
+  <!-- rust band -->
+  <g id="rust-layer" class="ui" transform="translate(336 70)">
+    <rect x="0" y="0" width="528" height="46" rx="10" fill="#181F1F" stroke="#39C5BB" stroke-width="1.5"/>
+    <text class="mono" x="18" y="29" font-size="19" fill="#39C5BB">xlchemy_rust</text>
+    <text x="172" y="29" font-size="19" fill="#E9E9E9">pyo3 加速层：转换 / 优化 / 解码信息</text>
+  </g>
+
+  <!-- encoder matrix -->
+  <g id="encoders" class="ui" transform="translate(336 134)">
+    <g>
+      <rect x="0" y="0" width="256" height="76" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="30" font-size="20" fill="#E9E9E9">cjxl</text>
+      <text x="16" y="56" font-size="19" fill="#9A9A9A">JPEG XL 编码</text>
+    </g>
+    <g transform="translate(272 0)">
+      <rect x="0" y="0" width="256" height="76" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="30" font-size="20" fill="#E9E9E9">cjpegli</text>
+      <text x="16" y="56" font-size="19" fill="#9A9A9A">JPEGli · 更高压缩</text>
+    </g>
+    <g transform="translate(0 90)">
+      <rect x="0" y="0" width="256" height="76" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="30" font-size="20" fill="#E9E9E9">avifenc</text>
+      <text x="16" y="56" font-size="19" fill="#9A9A9A">AVIF 编码</text>
+    </g>
+    <g transform="translate(272 90)">
+      <rect x="0" y="0" width="256" height="76" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="30" font-size="20" fill="#E9E9E9">ImageMagick</text>
+      <text x="16" y="56" font-size="19" fill="#9A9A9A">WebP 与其余格式</text>
+    </g>
+    <g transform="translate(0 180)">
+      <rect x="0" y="0" width="256" height="76" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="30" font-size="20" fill="#E9E9E9">oxipng</text>
+      <text x="16" y="56" font-size="19" fill="#9A9A9A">PNG 无损优化</text>
+    </g>
+    <g transform="translate(272 180)">
+      <rect x="0" y="0" width="256" height="76" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="30" font-size="20" fill="#E9E9E9">jpegtran</text>
+      <text x="16" y="56" font-size="19" fill="#9A9A9A">无损转码 · 可逆</text>
+    </g>
+  </g>
+
+  <!-- output column -->
+  <g id="output" class="ui" transform="translate(900 70)">
+    <rect x="0" y="0" width="252" height="320" rx="14" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+    <rect x="16" y="-11" width="116" height="22" fill="#141414"/>
+    <text x="22" y="6" font-size="19" fill="#39C5BB">输出 Output</text>
+    <g class="mono" font-size="20" fill="#E9E9E9">
+      <text x="22" y="58">JPEG XL</text>
+      <text x="22" y="92">AVIF</text>
+      <text x="22" y="126">WebP</text>
+      <text x="22" y="160">JPEG</text>
+      <text x="22" y="194">PNG</text>
+    </g>
+    <text x="22" y="286" font-size="18" fill="#6E6E6E">质量 / 努力值 / 无损</text>
+  </g>
+
+  <!-- connectors -->
+  <g id="flow" stroke="#39C5BB" stroke-width="1.5" fill="none">
+    <path d="M304 230 L330 230" marker-end="url(#arrow)"/>
+    <path d="M868 230 L894 230" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- specialized modes -->
+  <g id="modes" class="ui" transform="translate(48 432)">
+    <text x="0" y="0" font-size="19" fill="#9A9A9A">专门模式 Modes —— 先定策略，再定容器</text>
+    <g transform="translate(0 18)">
+      <rect x="0" y="0" width="270" height="62" rx="12" fill="#1B1B1B" stroke="#E12885" stroke-width="1.5"/>
+      <text class="mono" x="16" y="26" font-size="19" fill="#E9E9E9">Lossless JPEG</text>
+      <text class="mono" x="16" y="48" font-size="19" fill="#E12885">Transcoding</text>
+    </g>
+    <g transform="translate(286 18)">
+      <rect x="0" y="0" width="270" height="62" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="26" font-size="19" fill="#E9E9E9">JPEG</text>
+      <text class="mono" x="16" y="48" font-size="19" fill="#E9E9E9">Reconstruction</text>
+    </g>
+    <g transform="translate(572 18)">
+      <rect x="0" y="0" width="270" height="62" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="26" font-size="19" fill="#E9E9E9">Smallest Lossless</text>
+      <text x="16" y="48" font-size="18" fill="#9A9A9A">挑最小的无损结果</text>
+    </g>
+    <g transform="translate(858 18)">
+      <rect x="0" y="0" width="270" height="62" rx="12" fill="#1B1B1B" stroke="#404040" stroke-width="1.5"/>
+      <text class="mono" x="16" y="26" font-size="19" fill="#E9E9E9">PNG Optimization</text>
+      <text x="16" y="48" font-size="18" fill="#9A9A9A">可原地处理</text>
+    </g>
+  </g>
+
+  <text class="mono" x="48" y="540" font-size="17" fill="#6E6E6E">并行编码 · 线程上限按物理核计算 · 超过百万像素阈值可自动降低并发编码器数量</text>
+</svg>
