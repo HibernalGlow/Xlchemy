@@ -3,3 +3,6 @@ send2trash==1.8.3
 requests~=2.34.2
 dmgbuild==1.6.5 ; sys_platform == "darwin"
 psutil~=7.2.2
+# ui/fluent/* 的硬依赖。以前只写在 Taskfile 的 DEPS 里，而发布路径（Docker 镜像、
+# PyInstaller 打包）只装 requirements*.txt，结果构建出来的包缺 qfluentwidgets。
+PySide6-Fluent-Widgets>=1.11

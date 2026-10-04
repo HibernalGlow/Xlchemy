@@ -11,6 +11,17 @@ import glob
 import plistlib
 import tempfile
 import errno
+import sys
+
+# Windows 控制台默认 cp1252，而这里与 main.spec 都会打中文诊断行；打印失败会冒成
+# UnicodeEncodeError 把构建打死（CI 上表现为 [Error] 'charmap' codec can't encode）。
+for _stream_name in ("stdout", "stderr"):
+    _stream = getattr(sys, _stream_name, None)
+    if _stream is not None and hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
 
 import PyInstaller.__main__
 import requests

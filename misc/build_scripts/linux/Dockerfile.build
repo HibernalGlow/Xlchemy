@@ -96,6 +96,8 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
         . /build/env_dev/bin/activate && \
         pip install -r /build/requirements.txt -r /build/requirements_test.txt && \
         pip install /tmp/whl/*.whl && \
+        echo "--- 诊断：扩展能不能真的导入（test_gil_release.py 会把 ImportError 咽成 sys.exit(0)，日志里只剩 skipping，看不出是没装还是加载不了）---" && \
+        python -c "import xlchemy_rust; print('xlchemy_rust import OK')" 2>&1 | tail -4; \
         xvfb-run -a python test.py && \
         xvfb-run -a python test_convert.py; \
     fi

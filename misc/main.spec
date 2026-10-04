@@ -10,6 +10,17 @@ from pathlib import Path
 
 block_cipher = None
 
+# 本 spec 会打中文诊断行，而 Windows 控制台默认是 cp1252：打印时抛 UnicodeEncodeError
+# 会让 PyInstaller 阶段整个崩掉（CI 上就是 [Error] 'charmap' codec can't encode ...）。
+# 把 stdout/stderr 钉成 UTF-8 并允许替换，诊断照打，不再决定构建成败。
+for _stream_name in ("stdout", "stderr"):
+    _stream = getattr(sys, _stream_name, None)
+    if _stream is not None and hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
 # universal2 requires every bundled native binary to be fat; Homebrew CPython and the
 # abi3 wheels (psutil, shiboken6) ship arm64-only slices, so opt in with XL_MAC_UNIVERSAL2.
 target_arch = "universal2" if platform.system() == "Darwin" and os.getenv("XL_MAC_UNIVERSAL2") else None
