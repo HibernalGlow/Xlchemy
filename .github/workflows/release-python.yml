@@ -69,6 +69,13 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y
 
+      # dav1d-sys 要系统 dav1d>=1.3.0，runner 上没有；用 system-deps 的内部构建
+      # （自己 clone dav1d 1.5.0 走 meson/ninja/nasm 静态编），所以要把这三样备齐。
+      - name: Install dav1d build tools
+        run: |
+          choco install nasm -y
+          python -m pip install --quiet meson ninja
+
       # 编排脚本要求：uv/git/rustc/cargo 在 PATH、MSVC C++ 工具、7-Zip、ISCC。
       # windows-latest 自带 VS2022+C++ 与 7-Zip，rustc/cargo 也在镜像里。
       # 解释器与 ISCC 的路径显式量出来再传，别依赖 setup-python 的环境变量。
@@ -99,6 +106,13 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
+          # maturin 里的 dav1d 内部构建要 cl.exe 在 PATH 上，而 windows runner 默认
+          # 不进 VS 开发环境（pyinstaller.cmd 自己会 call vcvars，maturin 不会）。
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw "Visual Studio with VC tools not found" }
+          & "$vs\Common7\Tools\Launch-VsDevShell.ps1" -Arch amd64 -SkipAutomaticLocation
+          $env:SYSTEM_DEPS_DAV1D_BUILD_INTERNAL = "auto"
           & "${{ steps.tools.outputs.python-path }}" misc\build_scripts\windows\build.py --skip-tests `
             --python-path "${{ steps.tools.outputs.python-path }}" `
             --inno-path "${{ steps.tools.outputs.inno-path }}"
