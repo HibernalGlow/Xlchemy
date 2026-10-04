@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-const Version = "1.2.9"
+const Version = "1.2.10"
 const UpdateCheckerURL = "https://codepoems.eu/downloads/xl-converter/version.json"
 const UpdateCheckerEnabled = true
 
