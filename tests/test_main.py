@@ -28,6 +28,11 @@ class MockInputTab(MockTab):
         self.getItems = MagicMock()
         self.file_view = MagicMock()
         self.file_view.return_value.dropEvent.return_value = MagicMock()
+        # 真实 InputTab 的面：sort_requested = Signal(str)（input_tab.py:40）、
+        # setSortOrder()、self.format_filter = FormatFilterBar(self)（:61）。
+        self.sort_requested = MagicMock()
+        self.setSortOrder = MagicMock()
+        self.format_filter = MagicMock()
 
 class MockOutputTab(MockTab):
     def __init__(self, *args, **kwargs):
@@ -42,12 +47,14 @@ class MockOutputTab(MockTab):
         self.getUsedThreadCount = MagicMock()
         self.onAVIFEncoderChanged = MagicMock()
         self.file_format_changed = MagicMock()
+        self.applyPreset = MagicMock()     # output_tab.py: def applyPreset(self, data)
 
 class MockModifyTab(MockTab):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.setCustomResamplingEnabled = MagicMock()
         self.onFileFormatChanged = MagicMock()
+        self.applyPreset = MagicMock()     # modify_tab.py: def applyPreset(self, data)
 
 class MockSettingsTab(MockTab):
     """真实 SettingsTab 的公开面（main.py 会碰到的那几个）。
@@ -63,6 +70,7 @@ class MockSettingsTab(MockTab):
         self.preset_widget = MagicMock()
         self.applyPreset = MagicMock()
         self.enableLogging = MagicMock()
+        self.setProcessingOrder = MagicMock()     # settings_tab.py: def setProcessingOrder
 
 class MockTabWidget(QTabWidget):
     def __init__(self, *args, **kwargs):
