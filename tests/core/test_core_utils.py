@@ -7,13 +7,20 @@ import pytest
 from core.utils import scanDir, scanDirFast, dictToList, clip, getFreeSpaceLeft, b2sum, remove
 
 # scanDir
-@patch("core.utils.os.path.exists", return_value=True)
-@patch("core.utils.os.path.isdir", return_value=False)
-def test_scanDir(mock_isdir, mock_exists):
-    with patch("core.utils.Path") as mock_path:
-        mock_path.return_value.rglob.return_value = [Path("/tmp/image_0.jpg"), Path("/tmp/image_1.jpg")]
-        result = scanDir("/tmp")
-        assert result == [str(Path("/tmp/image_0.jpg").absolute()), str(Path("/tmp/image_1.jpg").absolute())]
+def test_scanDir(tmp_path):
+    """真实建一棵目录树来验。
+
+    旧写法 patch 的是 core.utils.Path + rglob，但 scanDir 早就换成 os.walk
+    （见 core/utils.py:16），patch 完全落不到实现上 —— 于是它真的去扫 /tmp，
+    再拿假想列表比，结果随机器上 /tmp 里有什么而变。
+    """
+    (tmp_path / "a.jpg").write_bytes(b"x")
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    (sub / "b.png").write_bytes(b"y")
+
+    result = scanDir(str(tmp_path))
+    assert sorted(result) == sorted([str(tmp_path / "a.jpg"), str(sub / "b.png")])
 
 def test_scanDir_not_found():
     with pytest.raises(FileNotFoundError):

@@ -1,7 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtWidgets import QProgressDialog
+# ProgressDialog 内部的 dlg 是接缝给的（ui/dialogs/progress_dlg.py 经 ui.fluent.qt），
+# Fluent 模式下它是 ui.fluent.dialogs.QProgressDialog，不是 Qt 的那个；
+# 从 PySide6 直接引来判 isinstance 会恒假。
+from ui.fluent.qt import QProgressDialog
 
 from ui.dialogs.progress_dlg import ProgressDialog
 

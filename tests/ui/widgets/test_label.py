@@ -43,5 +43,7 @@ def test_StyledLabel_setStyledText(app):
     with patch("ui.widgets.label.StyledLabel.setText", autospec=True) as mock_setText:
         StyledLabel("").setStyledText("text")
         assert mock_setText.call_count == 2    # 1 in the __init__()
-        assert "<style>" in mock_setText.call_args[0][0]
-        assert "text" in mock_setText.call_args[0][0]
+        # autospec=True 会把 self 一起记进 call_args，所以文本在 [0][1] 而不是 [0][0]
+        # （[0][0] 是 StyledLabel 实例，对它做 in 判断会抛 TypeError）。
+        assert "<style>" in mock_setText.call_args[0][1]
+        assert "text" in mock_setText.call_args[0][1]

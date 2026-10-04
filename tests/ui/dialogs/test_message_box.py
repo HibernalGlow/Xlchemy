@@ -3,7 +3,11 @@ from contextlib import ExitStack
 
 import pytest
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QMessageBox
+from PySide6.QtWidgets import QWidget
+# 产品侧的 QMessageBox 走接缝（ui/dialogs/message_box.py:1），接缝在 Fluent 模式下
+# 自带 StandardButton（Ok 的值是 1，见 ui/fluent/dialogs.py:55）。测试若从 PySide6
+# 直接引 Qt 的 QMessageBox（Ok=1024）来比，就会拿两个不同枚举互相断言。
+from ui.fluent.qt import QMessageBox
 
 import ui.dialogs.message_box as message_box
 

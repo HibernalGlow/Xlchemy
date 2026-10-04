@@ -327,6 +327,11 @@ class QProgressDialog(QDialog):
     def setValue(self, value: int) -> None:  # noqa: N802
         self.bar.setValue(value)
 
+    def value(self) -> int:
+        """``QProgressDialog.value()`` 的对应物：有 setValue 就得有读回，
+        否则调用方只能靠自己的副本猜进度。"""
+        return self.bar.value()
+
     def setRange(self, minimum: int, maximum: int) -> None:  # noqa: N802
         self.bar.setRange(minimum, maximum)
 

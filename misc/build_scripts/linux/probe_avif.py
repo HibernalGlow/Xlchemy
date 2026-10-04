@@ -23,15 +23,15 @@ def main() -> None:
         return
 
     try:
+        from data.constants import AVIFENC_PATH
         from core.convert import (
-            AVIFENC_PATH,
             getDecoder,
             getDecoderArgs,
             getImageRes,
             runBinary,
         )
     except Exception:
-        print("[probe] cannot import core.convert:")
+        print("[probe] cannot import the decode path:")
         traceback.print_exc()
         return
 
