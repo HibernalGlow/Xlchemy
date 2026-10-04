@@ -49,6 +49,21 @@ class MockModifyTab(MockTab):
         self.setCustomResamplingEnabled = MagicMock()
         self.onFileFormatChanged = MagicMock()
 
+class MockSettingsTab(MockTab):
+    """真实 SettingsTab 的公开面（main.py 会碰到的那几个）。
+
+    用裸 MockTab 当 SettingsTab 会让每条测试都死在 __init__ 里：
+    main.py:82/83/112 用 ``preset_widget``，:227 用 ``applyPreset``，
+    :227 附近还把 ``enableLogging`` 当回调传出去 —— 真实实现在
+    ui/tabs/settings_tab.py:209/686/512。
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.preset_widget = MagicMock()
+        self.applyPreset = MagicMock()
+        self.enableLogging = MagicMock()
+
 class MockTabWidget(QTabWidget):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -72,7 +87,7 @@ def main_window(qtbot):
             OutputTab=MockOutputTab,
             ModifyTab=MockModifyTab,
             AboutTab=MockTab,
-            SettingsTab=MockTab,
+            SettingsTab=MockSettingsTab,
             ExceptionView=MagicMock(),
             ProgressDialog=MagicMock(),
             QTabWidget=MockTabWidget,
