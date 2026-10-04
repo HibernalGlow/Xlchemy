@@ -39,8 +39,11 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Files]
-; 目录名必须跟 misc/main.spec 的 COLLECT(name='xlchemy') 一致 —— 这里写着上游的
-; xl-converter 时，ISCC 会从一个不存在的目录取文件，装出来是空包。
+; Keep this file ASCII-only: Inno Setup reads it as ANSI and build.py's replaceLine()
+; opens it with the platform default encoding, so non-ASCII bytes here raise
+; UnicodeDecodeError on Windows (cp1252) and silently skip the version/output-name rewrite.
+; The directory name must match COLLECT(name='xlchemy') in misc/main.spec; with the old
+; upstream "xl-converter" here ISCC takes files from a folder that does not exist.
 Source: "xlchemy\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs overwritereadonly uninsremovereadonly
 
 [Code]

@@ -84,20 +84,23 @@ COPY xlchemy_rust/__init__.py /build/xlchemy_rust/
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         | sh -s -- -y --profile minimal --default-toolchain stable
 ENV PATH="/root/.cargo/bin:${PATH}"
-# maturin build 不需要激活 venv；造一个 wheel，下面两个环境各自装。
+# maturin build 只出 wheel，而本仓的约定是扩展落在源码树 xlchemy_rust/ 里：
+# 从 /build 跑的时候本地目录会遮蔽 site-packages 里的同名包，wheel 装了也导不到
+# （CI 上就是 ModuleNotFoundError: No module named 'xlchemy_rust._lowlevel'）。
+# 所以用 maturin develop —— 它把 _lowlevel*.so 直接写进 /build/xlchemy_rust/，
+# 与 Windows 编排脚本的做法一致，env_dev 与后面的 env_build 共用这一份。
 # jammy 自带 dav1d 0.9.x，而 dav1d-sys 要求 >= 1.3.0 —— 让 system-deps 探测失败后
-# 自己 clone dav1d 1.5.0 用 meson/ninja/nasm 静态编（SYSTEM_DEPS_*_BUILD_INTERNAL=auto）。
+# 自己 clone dav1d 1.5.0 用 meson/ninja/nasm 静态编。
 ENV SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=auto
-RUN pip install maturin && maturin build --release --out /tmp/whl
+RUN pip install maturin
 
 # Run unit tests
 RUN if [ "${RUN_TESTS}" = "True" ]; then \
         python -m venv /build/env_dev && \
         . /build/env_dev/bin/activate && \
         pip install -r /build/requirements.txt -r /build/requirements_test.txt && \
-        pip install /tmp/whl/*.whl && \
-        echo "--- 诊断：扩展能不能真的导入（test_gil_release.py 会把 ImportError 咽成 sys.exit(0)，日志里只剩 skipping，看不出是没装还是加载不了）---" && \
-        python -c "import xlchemy_rust; print('xlchemy_rust import OK')" 2>&1 | tail -4; \
+        maturin develop --release && \
+        python -c "import xlchemy_rust; print('xlchemy_rust import OK', xlchemy_rust.__file__)" && \
         xvfb-run -a python test.py && \
         xvfb-run -a python test_convert.py; \
     fi
@@ -105,8 +108,7 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
 # Setup virtual environment
 RUN python -m venv /build/env_build && \
     . /build/env_build/bin/activate && \
-    pip install -r /build/requirements.txt && \
-    pip install /tmp/whl/*.whl
+    pip install -r /build/requirements.txt
 
 # Setup PyInstaller
 RUN cd /build && \
