@@ -209,7 +209,10 @@ class Builder():
         self.fonts_path = "fonts"
 
         # Linux
-        self.desktop_entry_path = "misc/xlchemy.desktop"
+        # 桌面标识仍然是上游那套（misc/install.sh 与 main.py 的 setDesktopFileName 都写
+        # xl-converter），只有产物文件名改成了 xlchemy-*；指向别的名字会让 AppImage 在
+        # appimagetool 那步才炸「Desktop file not found」。
+        self.desktop_entry_path = "misc/xl-converter.desktop"
         self.version_file_path = "misc/version.json"
         self.appimagetool_path = "misc/appimagetool"
 
