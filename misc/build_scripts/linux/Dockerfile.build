@@ -69,11 +69,26 @@ COPY tests /build/tests
 COPY LICENSE* main.py requirements* test.py test_convert.py build.py /build/
 RUN find /build/ -type d -name "__pycache__" -exec rm -rf {} +
 
+# tests/test_gil_release.py 直接 import xlchemy_rust，所以镜像里必须先有这个扩展，
+# 否则测试阶段 INTERNALERROR: No module named 'xlchemy_rust'。
+# 只拷清单与 src：本仓没有 .dockerignore，而 rust_bindings/target 是本地 488 MB 构建产物。
+# jammy 的 apt rustc 太旧（pyo3 0.22 + slimg-core 需要更新的稳定版），走 rustup minimal。
+COPY pyproject.toml /build/pyproject.toml
+COPY rust_bindings/Cargo.toml rust_bindings/Cargo.lock /build/rust_bindings/
+COPY rust_bindings/src /build/rust_bindings/src
+COPY xlchemy_rust/__init__.py /build/xlchemy_rust/
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --profile minimal --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+# maturin build 不需要激活 venv；造一个 wheel，下面两个环境各自装。
+RUN pip install maturin && maturin build --release --out /tmp/whl
+
 # Run unit tests
 RUN if [ "${RUN_TESTS}" = "True" ]; then \
         python -m venv /build/env_dev && \
         . /build/env_dev/bin/activate && \
         pip install -r /build/requirements.txt -r /build/requirements_test.txt && \
+        pip install --no-index /tmp/whl/*.whl && \
         xvfb-run -a python test.py && \
         xvfb-run -a python test_convert.py; \
     fi
@@ -81,7 +96,8 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
 # Setup virtual environment
 RUN python -m venv /build/env_build && \
     . /build/env_build/bin/activate && \
-    pip install -r /build/requirements.txt
+    pip install -r /build/requirements.txt && \
+    pip install --no-index /tmp/whl/*.whl
 
 # Setup PyInstaller
 RUN cd /build && \

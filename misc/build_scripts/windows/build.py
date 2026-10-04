@@ -116,6 +116,10 @@ def uv_pip_install(python_path: Path | str, *requirements_files: Path | str) -> 
 def build_rust_extension(python_path: Path | str) -> None:
     """Build the xlchemy_rust Rust extension using maturin. Required."""
     logger.info('Building xlchemy_rust Rust extension...')
+    # maturin develop 只认「已激活的虚拟环境」。这里是用绝对路径调 python、全程不
+    # activate，所以必须把 VIRTUAL_ENV 显式指过去，否则 maturin 直接报
+    # "Couldn't find a virtualenv or conda environment" 并让构建中止。
+    os.environ["VIRTUAL_ENV"] = str(Path(python_path).resolve().parent.parent)
     run(['uv', 'pip', 'install', '--python', str(python_path), 'maturin'])
     run([str(python_path), '-m', 'maturin', 'develop', '--release'], cwd=RUN_DIR)
     logger.info('xlchemy_rust built successfully')
