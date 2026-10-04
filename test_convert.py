@@ -182,6 +182,11 @@ class Interact:
         self.main_window.modify_tab.resetToDefault()
         self.main_window.settings_tab.resetToDefault()
         self.main_window.output_tab.wm.getWidget("threads_sl").setValue(self.main_window.output_tab.MAX_THREAD_COUNT)   # To speed up testing
+        # fork 的 FormatFilterBar 出厂就把 avif/jxl/webp/gif 列为排除（ui/widgets/
+        # format_filter_bar.py:22），而 input_tab._addItems 对显式添加的单文件也套用
+        # 它 —— 徽章没点亮时这些源会被静默丢掉，解码类用例于是变成「什么也没跑」。
+        # 这里等价于用户把徽章全点亮；断言本身一个都不改。
+        self.main_window.input_tab.format_filter.setExcludedFormats(set())
 
     def convert_preset(
         self,
