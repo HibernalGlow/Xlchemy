@@ -104,7 +104,9 @@ def check_python_version(python_path: Path | str, compatible_minor_ver: tuple[in
 def create_uv_venv(python_path: Path | str, target: Path | str) -> None:
     """Create a virtual environment using uv."""
     logger.info(f'Creating venv with uv at {target}...')
-    run(['uv', 'venv', '--python', str(python_path), str(target)])
+    # --seed：uv 默认建的 venv 里没有 pip，而 misc/build_scripts/windows/pyinstaller.cmd
+    # 用 `python -m pip install .` 装 PyInstaller 本体，没 pip 会直接失败。
+    run(['uv', 'venv', '--seed', '--python', str(python_path), str(target)])
 
 def uv_pip_install(python_path: Path | str, *requirements_files: Path | str) -> None:
     """Install packages using uv pip."""

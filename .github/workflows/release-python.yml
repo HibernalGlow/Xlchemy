@@ -103,9 +103,21 @@ jobs:
             --python-path "${{ steps.tools.outputs.python-path }}" `
             --inno-path "${{ steps.tools.outputs.inno-path }}"
 
-      - name: List artifacts
+      - name: Verify artifacts
         shell: pwsh
-        run: Get-ChildItem dist/ | Format-Table Name, Length
+        run: |
+          # 上游 Python 版 win 安装包 66 MB、portable 60 MB，所以 30 MB 以下是空壳
+          # （install.iss 的 Source 目录名写错时就是这种：能编出 exe，但里面没东西）。
+          $floor = 30MB
+          $fail = $false
+          foreach ($p in @("dist\xlchemy-win-*-x86_64.exe", "dist\xlchemy-win-*-x86_64-portable.7z")) {
+            $f = Get-Item $p -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $f) { "missing artifact matching $p"; $fail = $true; continue }
+            if ($f.Length -lt $floor) { "hollow bundle: $($f.Name) = $($f.Length) bytes"; $fail = $true; continue }
+            "OK $($f.Name) = $([math]::Round($f.Length/1MB,1)) MB"
+          }
+          Get-ChildItem dist | Format-Table Name, Length
+          if ($fail) { exit 1 }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -142,8 +154,19 @@ jobs:
       - name: Build
         run: make build-linux
 
-      - name: List artifacts
-        run: ls -l dist/
+      - name: Verify artifacts
+        run: |
+          # 上游 Python 版 linux .7z 85 MB、AppImage 117 MB；30 MB 以下判为空壳。
+          floor=$((30 * 1024 * 1024))
+          fail=0
+          for pat in dist/xlchemy-linux-*-x86_64.7z dist/xlchemy-linux-*-x86_64.AppImage; do
+            f=$(ls $pat 2>/dev/null | head -1)
+            if [ -z "$f" ]; then echo "missing artifact matching $pat"; ls -lR dist; fail=1; continue; fi
+            sz=$(stat -c%s "$f")
+            if [ "$sz" -lt "$floor" ]; then echo "hollow bundle: $f = $sz bytes"; fail=1; continue; fi
+            echo "OK $f = $((sz / 1024 / 1024)) MB"
+          done
+          exit $fail
 
       - uses: actions/upload-artifact@v4
         with:

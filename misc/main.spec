@@ -151,7 +151,7 @@ exe = EXE(
     target_arch=target_arch,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['./images/logo.ico'],
+    icon=[str(Path(SPECPATH) / "images" / "logo.ico")],
 )
 coll = COLLECT(
     exe,
@@ -167,7 +167,7 @@ if platform.system() == "Darwin":
     app = BUNDLE(
         coll,
         name='Xlchemy.app',
-        icon='./images/logo.icns',
+        icon=str(Path(SPECPATH) / "images" / "logo.icns"),
         bundle_identifier='eu.codepoems.xl-converter',
         version=VERSION,
         info_plist={
