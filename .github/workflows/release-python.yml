@@ -78,18 +78,23 @@ jobs:
         run: |
           $py = (& python -c "import sys; print(sys.executable)").Trim()
           "python-path=$py" >> $Env:GITHUB_OUTPUT
-          "Python: $py $($py --version)"
+          & $py --version
           $iscc = @(
             "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
             "C:\Program Files\Inno Setup 6\ISCC.exe"
           ) | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $iscc) { throw "ISCC.exe not found after choco install innosetup" }
           "inno-path=$iscc" >> $Env:GITHUB_OUTPUT
-          foreach ($t in @("uv","git","rustc","cargo","7z")) {
+          # 编排脚本按绝对路径找 7-Zip（它不在 PATH 上），其余按命令找。
+          $sevenzip = "C:\Program Files\7-Zip\7z.exe"
+          if (-not (Test-Path $sevenzip)) { throw "7-Zip not found at $sevenzip" }
+          foreach ($t in @("uv","git","rustc","cargo")) {
             $c = Get-Command $t -ErrorAction SilentlyContinue
             if (-not $c) { throw "$t not found in PATH" }
             "$t -> $($c.Source)"
           }
+          "ISCC -> $iscc"
+          "7z   -> $sevenzip"
 
       - name: Build
         shell: pwsh
