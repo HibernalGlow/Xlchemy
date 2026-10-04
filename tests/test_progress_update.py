@@ -4,8 +4,9 @@ import os
 import sys
 import tempfile
 import time
-from unittest.mock import MagicMock, patch
-from PySide6.QtCore import QCoreApplication, QThread, Signal, QObject
+from pathlib import Path
+from unittest.mock import patch
+from PySide6.QtCore import QCoreApplication
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -25,74 +26,50 @@ def create_test_image(output_path: str, size: int = 512):
     return output_path
 
 
-def test_process_events_called_during_conversion():
-    """Test that QCoreApplication.processEvents is called during slimg conversion."""
-    from core.worker import Worker
-    
+def test_worker_does_not_pump_the_gui_event_loop():
+    """Worker 跑在线程池里，转换路径上不许出现 processEvents() —— 那是 GUI 线程的活。
+
+    阳性对照：先确认 slimg 真的产出了文件，否则「零次调用」会因为转换早早抛异常而假绿。
+    """
+    from core.worker import Worker, WorkerSignals
+    from PySide6.QtCore import QMutex
+
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # Create test image
         input_path = os.path.join(tmp_dir, 'test.jpg')
+        output_path = os.path.join(tmp_dir, 'test.avif')
         create_test_image(input_path)
-        
-        # Mock processEvents
-        process_events_calls = []
+
+        calls = []
         original_process_events = QCoreApplication.processEvents
-        
-        def mock_process_events():
-            process_events_calls.append(time.time())
-            original_process_events()
-        
-        # Create worker with minimal setup
-        with patch.object(QCoreApplication, 'processEvents', side_effect=mock_process_events):
-            # Setup worker parameters
-            worker = Worker()
-            worker.n = 0
-            worker.item_abs_path = input_path
-            worker.org_item_abs_path = input_path
-            worker.item_name = 'test'
-            worker.item_ext = '.jpg'
-            worker.output_dir = tmp_dir
-            worker.output = os.path.join(tmp_dir, 'test.avif')
-            worker.final_output = os.path.join(tmp_dir, 'test.avif')
-            worker.output_ext = '.avif'
-            worker.params = {
-                'format': 'AVIF',
-                'quality': 80,
-                'downscaling': {'enabled': False},
-                'if_file_exists': 'Replace',
-                'custom_output_dir': False,
-                'delete_original': False,
-                'delete_original_mode': 'To Trash',
-                'misc': {'keep_metadata': 'None'},
-            }
-            worker.settings = {
-                'avif_encoder': 'slimg',
-            }
-            worker.available_threads = 4
-            worker.skipped = False
-            worker.skip = False
-            worker.lossless_jpeg = False
-            worker.proxy = MagicMock()
-            worker.proxy.proxyExists.return_value = False
-            worker.mutex = MagicMock()
-            
-            # Mock signals
-            class MockSignals(QObject):
-                started = Signal(int)
-                completed = Signal(int, bool)
-                canceled = Signal(int)
-            
-            worker.signals = MockSignals()
-            
-            # Run conversion
-            try:
-                worker._convert_with_slimg()
-            except Exception as e:
-                print(f"Conversion error: {e}")
-        
-        # Check that processEvents was called at least 3 times
-        print(f"processEvents called {len(process_events_calls)} times")
-        assert len(process_events_calls) >= 3, f"Expected at least 3 processEvents calls, got {len(process_events_calls)}"
+
+        def spy():
+            calls.append(time.time())
+            return original_process_events()
+
+        params = {
+            'format': 'AVIF',
+            'quality': 80,
+            'misc': {'keep_metadata': 'None'},
+        }
+        worker = Worker(
+            0,
+            Path(input_path),
+            Path(tmp_dir),
+            params,
+            {},
+            4,
+            QMutex(),
+            WorkerSignals(),
+        )
+        worker.output_dir = tmp_dir
+        worker.output = output_path
+        worker.final_output = output_path
+
+        with patch.object(QCoreApplication, 'processEvents', side_effect=spy):
+            worker._convert_with_slimg()
+
+        assert os.path.isfile(output_path), "slimg conversion produced no output"
+        assert calls == [], f"conversion pumped the GUI event loop {len(calls)} times"
 
 
 def test_progress_value_updates():

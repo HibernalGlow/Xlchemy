@@ -7,6 +7,23 @@ from PySide6.QtGui import QMouseEvent, QCursor
 
 from ui.widgets.scroll_area import ScrollArea
 
+# Fluent 接缝下不能直接读 *ScrollBarPolicy()：委托在建自定义滚动条时就把原生 policy
+# 永久钉成 AlwaysOff（自定义条接管绘制，见 qfluentwidgets scroll_bar.py:217-221、
+# :663-669），请求的策略只记在 ScrollBar._isForceHidden 上。classic 模式没有委托，
+# 原生 policy 就是真相。两种模式都断言同一件事：这根条到底还可不可用。
+def _bar_enabled(scroll, orient: Qt.Orientation) -> bool:
+    delegate = getattr(scroll, "delegate", None)
+    if delegate is None:
+        policy = (
+            scroll.verticalScrollBarPolicy()
+            if orient == Qt.Vertical
+            else scroll.horizontalScrollBarPolicy()
+        )
+        return policy != Qt.ScrollBarAlwaysOff
+
+    bar = delegate.vScrollBar if orient == Qt.Vertical else delegate.hScrollBar
+    return not bar._isForceHidden
+
 @pytest.fixture
 def app(qtbot):
     app = QApplication.instance()
@@ -18,18 +35,18 @@ def app(qtbot):
     return scroll
 
 def test_init(app):
-    assert app.horizontalScrollBarPolicy() == Qt.ScrollBarAlwaysOff
-    assert app.verticalScrollBarPolicy() == Qt.ScrollBarAsNeeded
+    assert not _bar_enabled(app, Qt.Horizontal)
+    assert _bar_enabled(app, Qt.Vertical)
 
 def test_enable_horizontal_scroll(qtbot):
     scroll_area = ScrollArea(enable_horizontal=True)
     qtbot.addWidget(scroll_area)
-    assert scroll_area.horizontalScrollBarPolicy() == Qt.ScrollBarAsNeeded
+    assert _bar_enabled(scroll_area, Qt.Horizontal)
 
 def test_enable_vertical_scroll(qtbot):
     scroll_area = ScrollArea(enable_vertical=False)
     qtbot.addWidget(scroll_area)
-    assert scroll_area.horizontalScrollBarPolicy() == Qt.ScrollBarAlwaysOff
+    assert not _bar_enabled(scroll_area, Qt.Vertical)
 
 def test_mousePressEvent(app):
     app.mousePressEvent(QMouseEvent(QMouseEvent.MouseButtonPress, QPointF(0, 0), QCursor.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))

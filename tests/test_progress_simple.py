@@ -54,9 +54,13 @@ def test_progress_with_threadpool():
     progress_dlg = ProgressDialog(minimum=0, maximum=5)
     progress_dlg.show()
     
-    # Disable auto-close to prevent dialog from closing when reaching maximum
-    progress_dlg.dlg.setAutoClose(False)
-    progress_dlg.dlg.setAutoReset(False)
+    # Disable auto-close to prevent dialog from closing when reaching maximum.
+    # 这两个开关是原生 QProgressDialog 的；Fluent 接缝的实现（ui/fluent/dialogs.py）
+    # 从不自动关窗，所以根本没有这两个方法 —— 少调一次不影响下面的 value() 断言。
+    for setter in ("setAutoClose", "setAutoReset"):
+        toggle = getattr(progress_dlg.dlg, setter, None)
+        if toggle is not None:
+            toggle(False)
     
     # Track progress
     completed_count = [0]

@@ -94,7 +94,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 ENV SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=auto
 RUN pip install maturin
 
-# Run unit tests
+# Run unit tests. test_convert 用 -m unittest 起，不直接跑文件：文件尾部的
+# unittest.main(failfast=True) 一失败就停，36 个用例只报出前 2 个。
 RUN if [ "${RUN_TESTS}" = "True" ]; then \
         python -m venv /build/env_dev && \
         . /build/env_dev/bin/activate && \
@@ -103,7 +104,7 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
         python -c "import xlchemy_rust; print('xlchemy_rust import OK', xlchemy_rust.__file__)" && \
         python misc/build_scripts/linux/probe_avif.py && \
         xvfb-run -a python test.py && \
-        xvfb-run -a python test_convert.py; \
+        xvfb-run -a python -m unittest -v test_convert; \
     fi
 
 # Setup virtual environment

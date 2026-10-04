@@ -212,6 +212,13 @@ class Interact:
             self.main_window.convert()
         self.wait_for_done()
 
+        # Worker 吞掉的每个异常都进 ExceptionView（core/controller.py 的 exception 信号）。
+        # 不把它们打印出来的话，CI 只能看到「输出目录是空的」，看不到为什么。
+        tree = self.main_window.exception_view.exceptions_t
+        for i in range(tree.topLevelItemCount()):
+            item = tree.topLevelItem(i)
+            print(f"[exception] {item.text(0)}: {item.text(1)} ({item.text(2)})")
+
     def wait_for_done(self):
         while True:
             sleep(1)
