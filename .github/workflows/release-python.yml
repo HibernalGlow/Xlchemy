@@ -175,8 +175,24 @@ jobs:
           test -x bin/linux/imagemagick/magick || { echo "missing bin/linux/imagemagick/magick"; exit 1; }
           bin/linux/cjxl --version | head -2
 
-      # 镜像里是 pyenv 编 Python + PyInstaller + build.py，产物从 /export/. 拷回 dist/。
-      # RUN_TESTS 默认 True，容器内会先跑 test.py 与 test_convert.py（真实转码）。
+      # 诊断：test_convert.py 的 test_avif_decode 在 Linux 上产不出文件，而它只会丢一句
+      # AssertionError。这里直接用 make deps 编出来的 avifenc/avifdec 走一遍同样的路，
+      # 把 stderr 和退出码打出来，判断是编码器缺解码器、参数不认，还是应用侧的探测/派发问题。
+      - name: Probe AVIF encode/decode
+        run: |
+          set -x
+          avifenc --version; avifdec --version || true
+          src=$(ls tests/test_images/*.jpg | head -1)
+          echo "sample: $src"
+          bin/linux/avifenc -q 60 "$src" /tmp/probe.avif; echo "encode rc=$?"
+          ls -l /tmp/probe.avif
+          bin/linux/avifdec /tmp/probe.avif /tmp/probe.png; echo "decode rc=$?"
+          ls -l /tmp/probe.png 2>&1 || echo "no png produced"
+          bin/linux/avifdec --info /tmp/probe.avif 2>&1 | head -12
+
+      # 镜像里是 pyenv 编 Python + maturin develop + PyInstaller + build.py，
+      # 产物从 /export/. 拷回 dist/。RUN_TESTS 默认 True，容器内会先跑
+      # test.py 与 test_convert.py（真实转码），测不过就不出包。
       - name: Build
         run: make build-linux
 
