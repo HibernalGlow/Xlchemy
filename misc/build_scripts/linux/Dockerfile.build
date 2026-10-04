@@ -101,6 +101,7 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
         pip install -r /build/requirements.txt -r /build/requirements_test.txt && \
         maturin develop --release && \
         python -c "import xlchemy_rust; print('xlchemy_rust import OK', xlchemy_rust.__file__)" && \
+        python misc/build_scripts/linux/probe_avif.py && \
         xvfb-run -a python test.py && \
         xvfb-run -a python test_convert.py; \
     fi
