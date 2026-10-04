@@ -14,9 +14,31 @@ env:
   GOPROXY: https://goproxy.cn,https://proxy.golang.org,direct
 
 jobs:
+  # 这条线是 Wails/Go 版：只有仓库里带 Go 工程时才构建。
+  # 主干（Python + PySide6 版）没有 go.mod，之前打 tag 会让本 workflow
+  # 直接红在「Install frontend dependencies」，所以先探一次再决定跑不跑。
+  gate:
+    name: Check Wails app present
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has-go-app: ${{ steps.probe.outputs.has-go-app }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: probe
+        run: |
+          if [ -f go.mod ] && [ -f frontend/package.json ] && [ -f build/windows/nsis/project.nsi ]; then
+            echo "has-go-app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-go-app=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::仓库里没有 Wails 工程（go.mod / frontend / NSIS 脚本），跳过 Wails 构建"
+          fi
+
   build-windows:
-    runs-on: windows-latest
     name: Build Windows
+    needs: gate
+    if: needs.gate.outputs.has-go-app == 'true'
+    runs-on: windows-latest
     timeout-minutes: 60
 
     steps:

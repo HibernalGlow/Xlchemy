@@ -218,8 +218,12 @@ class Builder():
         self.build_7z_name = f"xlchemy-linux-{self.version_sanitized}-x86_64"
         self.build_appimage_name = f"xlchemy-linux-{self.version_sanitized}-x86_64.AppImage"
 
-        self.build_macos_app_name = f"xlchemy-macos-{self.version_sanitized}-universal2.app"
-        self.build_macos_dmg_name = f"xlchemy-macos-{self.version_sanitized}-universal2.dmg"
+        # 架构标签必须和 misc/main.spec 的 target_arch 同源：没开 XL_MAC_UNIVERSAL2
+        # 时打出来的是 arm64 单架构包（psutil/shiboken6 只有 arm64 切片），
+        # 名字里写 universal2 就是在产物上撒谎。
+        macos_arch_tag = "universal2" if os.getenv("XL_MAC_UNIVERSAL2") else "arm64"
+        self.build_macos_app_name = f"xlchemy-macos-{self.version_sanitized}-{macos_arch_tag}.app"
+        self.build_macos_dmg_name = f"xlchemy-macos-{self.version_sanitized}-{macos_arch_tag}.dmg"
 
         # Clean up
         # base path: xlchemy/_internal

@@ -1,0 +1,186 @@
+name: Release (Python/Qt)
+
+# 主干这条线是 Python + PySide6 版，产物由 build.py 决定命名：
+#   xlchemy-win-<ver>-x86_64.exe / xlchemy-win-<ver>-x86_64-portable.7z
+#   xlchemy-linux-<ver>-x86_64.7z / xlchemy-linux-<ver>-x86_64.AppImage
+# macOS 的 xlchemy-macos-<ver>-arm64.dmg 目前只能本地出，原因见下面 build-macos 的说明。
+# Wails 那条线由 release.yml 负责，两边产物名不冲突。
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "仅用于试跑：写进 data/constants.py 的版本号（留空则用仓库里的值）"
+        required: false
+        default: ""
+
+env:
+  UV_VERSION: "0.7"
+
+jobs:
+  # ───────────────────────────── Windows ─────────────────────────────
+  build-windows:
+    name: Build Windows (Python)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # 版本库里 `/bin/` 整体被 .gitignore 忽略，唯一进了 git 的原料是 bin/win.zip
+      # （见 .gitignore:16-17）。不先解出 bin/win，build.py 打出来的包里没有编码器，
+      # 发出去就是个转不了图的空壳 —— 所以解压完立刻按 constants.py 的期望路径验一遍。
+      - name: Extract Windows encoders
+        shell: powershell
+        run: |
+          Expand-Archive -Path bin\win.zip -DestinationPath bin\win -Force
+          $need = @(
+            "bin\win\libjxl\cjxl.exe",
+            "bin\win\libjxl\cjpegli.exe",
+            "bin\win\libavif\avifenc.exe",
+            "bin\win\imagemagick\magick.exe",
+            "bin\win\oxipng\oxipng.exe",
+            "bin\win\jpegtran\jpegtran.exe",
+            "bin\win\exiftool\exiftool.exe"
+          )
+          $missing = $need | Where-Object { -not (Test-Path $_) }
+          if ($missing) {
+            "Encoders missing from bin/win.zip:"; $missing | ForEach-Object { "  $_" }
+            Get-ChildItem -Recurse bin/win | Select-Object -First 40 FullName
+            throw "Windows bundle would ship without encoders"
+          }
+          "All Windows encoders present."
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      # 编排脚本要求：uv/git/rustc/cargo 在 PATH、MSVC C++ 工具、7-Zip、ISCC。
+      # windows-latest 自带 VS2022+C++ 与 7-Zip，rustc/cargo 也在镜像里。
+      # 解释器与 ISCC 的路径显式量出来再传，别依赖 setup-python 的环境变量。
+      - name: Resolve tool paths
+        id: tools
+        shell: pwsh
+        run: |
+          $py = (& python -c "import sys; print(sys.executable)").Trim()
+          "python-path=$py" >> $Env:GITHUB_OUTPUT
+          "Python: $py $($py --version)"
+          $iscc = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) { throw "ISCC.exe not found after choco install innosetup" }
+          "inno-path=$iscc" >> $Env:GITHUB_OUTPUT
+          foreach ($t in @("uv","git","rustc","cargo","7z")) {
+            $c = Get-Command $t -ErrorAction SilentlyContinue
+            if (-not $c) { throw "$t not found in PATH" }
+            "$t -> $($c.Source)"
+          }
+
+      - name: Build
+        shell: pwsh
+        run: |
+          & "${{ steps.tools.outputs.python-path }}" misc\build_scripts\windows\build.py --skip-tests `
+            --python-path "${{ steps.tools.outputs.python-path }}" `
+            --inno-path "${{ steps.tools.outputs.inno-path }}"
+
+      - name: List artifacts
+        shell: pwsh
+        run: Get-ChildItem dist/ | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: |
+            dist/*.exe
+            dist/*.7z
+          if-no-files-found: error
+
+  # ───────────────────────────── Linux ─────────────────────────────
+  build-linux:
+    name: Build Linux (Python)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      # Dockerfile.build 只 COPY bin，不编编码器 —— 编码器是 make deps 用一组
+      # Dockerfile.{libjxl,libavif,imagemagick,libjpeg-turbo,oxipng} 产出到 bin/linux。
+      # 少了这一步，打出来的 .7z / .AppImage 里没有 cjxl/avifenc，等于发空壳。
+      - name: Build encoders
+        run: make deps
+
+      - name: Verify encoders
+        run: |
+          for b in cjxl djxl jxlinfo cjpegli avifenc avifdec oxipng jpegtran; do
+            test -x "bin/linux/$b" || { echo "missing bin/linux/$b"; ls -lR bin/linux; exit 1; }
+          done
+          test -x bin/linux/imagemagick/magick || { echo "missing bin/linux/imagemagick/magick"; exit 1; }
+          bin/linux/cjxl --version | head -2
+
+      # 镜像里是 pyenv 编 Python + PyInstaller + build.py，产物从 /export/. 拷回 dist/。
+      # RUN_TESTS 默认 True，容器内会先跑 test.py 与 test_convert.py（真实转码）。
+      - name: Build
+        run: make build-linux
+
+      - name: List artifacts
+        run: ls -l dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: |
+            dist/*.7z
+            dist/*.AppImage
+          if-no-files-found: error
+
+  # ───────────────────────────── macOS：暂不进 CI ─────────────────────────────
+  # 不是偷懒，是原料在 CI 上不存在：
+  #   1) bin/macos/ 被 .gitignore:16 的 `/bin/` 整目录忽略，只有 bin/win.zip 进了版本库；
+  #   2) misc/build_scripts/macos/libjxl.sh 等脚本硬绑 MacPorts（/opt/local、port installed、
+  #      clang-mp-17），GitHub 的 mac runner 只有 Homebrew；
+  #   3) 这些脚本还是 x86_64 + arm64 分别编完再 lipo 的 universal2 路线，
+  #      而 misc/main.spec 注明 psutil/shiboken6 只有 arm64 切片，app 侧默认单架构。
+  # 在 CI 里跑出来的 dmg 会是一个没有编码器的空壳，所以宁可不出这个产物。
+  # macOS 包目前仍按 README 的本地路线出：make deps PLAT=macos && task build:dmg
+  # 要在 CI 上补齐，需要单独做一条 Homebrew 版编码器 staging（并验证 constants.py
+  # Darwin 段列出的 9 个路径），那是独立的一件事，不塞进这条 lane。
+
+  # ───────────────────────────── Publish ─────────────────────────────
+  release:
+    name: Publish release
+    needs: [build-windows, build-linux]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: List
+        run: ls -lR artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
