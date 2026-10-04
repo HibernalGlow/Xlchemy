@@ -71,10 +71,22 @@ jobs:
 
       # dav1d-sys 要系统 dav1d>=1.3.0，runner 上没有；用 system-deps 的内部构建
       # （自己 clone dav1d 1.5.0 走 meson/ninja/nasm 静态编），所以要把这三样备齐。
+      # pkgconfiglite 不是可选的：内部构建编完 dav1d 后，system-deps 仍要用 pkg-config
+      # 读生成的 dav1d.pc；runner 上只有 Strawberry Perl 那个坏 pkg-config（meson 会
+      # 直接报 "thus broken. Ignoring"），缺真货就卡在最后一步。
       - name: Install dav1d build tools
         run: |
-          choco install nasm -y
+          choco install nasm pkgconfiglite -y
           python -m pip install --quiet meson ninja
+          # PATH 里 Strawberry Perl 那个 pkg-config.bat 是坏的（meson 会跳过它，
+          # system-deps 不会）。所以显式把 PKG_CONFIG 指到非 Strawberry 的那个，
+          # 不让解析顺序决定成败。
+          $pc = Get-Command pkg-config -All -ErrorAction SilentlyContinue |
+                Where-Object { $_.Source -notmatch 'Strawberry' } |
+                Select-Object -First 1
+          if (-not $pc) { Get-Command pkg-config -All | Format-Table Source; throw "no usable pkg-config" }
+          "pkg-config -> $($pc.Source)"
+          "PKG_CONFIG=$($pc.Source)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       # 编排脚本要求：uv/git/rustc/cargo 在 PATH、MSVC C++ 工具、7-Zip、ISCC。
       # windows-latest 自带 VS2022+C++ 与 7-Zip，rustc/cargo 也在镜像里。

@@ -95,7 +95,7 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
         python -m venv /build/env_dev && \
         . /build/env_dev/bin/activate && \
         pip install -r /build/requirements.txt -r /build/requirements_test.txt && \
-        pip install --no-index /tmp/whl/*.whl && \
+        pip install /tmp/whl/*.whl && \
         xvfb-run -a python test.py && \
         xvfb-run -a python test_convert.py; \
     fi
@@ -104,7 +104,7 @@ RUN if [ "${RUN_TESTS}" = "True" ]; then \
 RUN python -m venv /build/env_build && \
     . /build/env_build/bin/activate && \
     pip install -r /build/requirements.txt && \
-    pip install --no-index /tmp/whl/*.whl
+    pip install /tmp/whl/*.whl
 
 # Setup PyInstaller
 RUN cd /build && \
