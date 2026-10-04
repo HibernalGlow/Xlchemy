@@ -458,7 +458,14 @@ class QMainWindow(FluentWindow):
             self._tabs = widget
             widget.attachToWindow(self)
             return
-        super().setCentralWidget(widget)
+        # 到这里说明塞进来的不是本仓那个 shim（测试会换成自己的 Qt QTabWidget 子类，
+        # 调用方也可能给个普通 QWidget）。FluentWindow 的 MRO 是 QWidget 系，
+        # 没有 setCentralWidget 可 super()，所以直接挂进窗口自己的布局 ——
+        # 语义等价于「窗口中心内容」，且不再依赖调用方用的是哪个类。
+        self._centralWidget = widget
+        if self.widgetLayout.indexOf(widget) == -1:
+            self.widgetLayout.addWidget(widget, 1)
+        widget.show()
 
     # ------------------------------------------------------------- 壳
 

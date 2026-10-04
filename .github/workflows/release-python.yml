@@ -180,15 +180,19 @@ jobs:
       # 把 stderr 和退出码打出来，判断是编码器缺解码器、参数不认，还是应用侧的探测/派发问题。
       - name: Probe AVIF encode/decode
         run: |
+          set +e   # GitHub 的 bash 默认 -e，任何一条非零都会把整步判红（上一轮就是这样：
+                  # 第一行 avifenc --version 不在 PATH 就整段中止，什么都没测到）
           set -x
-          avifenc --version; avifdec --version || true
+          bin/linux/avifenc --version
+          bin/linux/avifdec --version
           src=$(ls tests/test_images/*.jpg | head -1)
           echo "sample: $src"
           bin/linux/avifenc -q 60 "$src" /tmp/probe.avif; echo "encode rc=$?"
           ls -l /tmp/probe.avif
           bin/linux/avifdec /tmp/probe.avif /tmp/probe.png; echo "decode rc=$?"
-          ls -l /tmp/probe.png 2>&1 || echo "no png produced"
-          bin/linux/avifdec --info /tmp/probe.avif 2>&1 | head -12
+          ls -l /tmp/probe.png || echo "no png produced"
+          bin/linux/avifdec --info /tmp/probe.avif
+          exit 0    # 纯诊断，成败由后面的 Build/Verify 决定
 
       # 镜像里是 pyenv 编 Python + maturin develop + PyInstaller + build.py，
       # 产物从 /export/. 拷回 dist/。RUN_TESTS 默认 True，容器内会先跑
