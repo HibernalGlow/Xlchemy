@@ -144,6 +144,15 @@ task build             # .app
 task build:dmg         # .dmg（默认 arm64；XL_MAC_UNIVERSAL2=1 出 universal2）
 ```
 
+只有 Homebrew、没有 MacPorts 的机器上，`make deps` 那批脚本硬绑 `/opt/local` 与
+`clang-mp-17`，跑不动。这时用仓里两个 brew 版脚本现编 mac 需要的两件原料，其余编码器
+直接从 brew 软链到 `bin/macos/`：
+
+```bash
+bash misc/build_scripts/macos/imagemagick_brew.sh   # 静态 coders 的 magick（--without-modules）
+bash misc/build_scripts/macos/jpegli_brew.sh        # cjpegli（mac 默认 JPEG 编码器要用它）
+```
+
 > [!WARNING]
 > 发布出来的 `.dmg` 是 ad-hoc 签名、**未经 Apple 公证**（没有开发者证书）。在别人机器上
 > 首次打开会被 Gatekeeper 拦下，需要右键 → 打开，或 `xattr -dr com.apple.quarantine` 清掉
