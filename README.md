@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?logo=windows&logoColor=white&style=flat-square" alt="Windows 10 / 11"/>
   <img src="https://img.shields.io/badge/Linux-Ubuntu--based-FCC622?logo=linux&logoColor=black&style=flat-square" alt="Ubuntu-based Linux"/>
-  <img src="https://img.shields.io/badge/macOS-universal2-000000?logo=apple&logoColor=white&style=flat-square" alt="macOS universal2"/>
+  <img src="https://img.shields.io/badge/macOS-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square" alt="macOS Apple Silicon"/>
   <img src="https://img.shields.io/badge/Python-3.12%20%C2%B7%203.13-3776AB?logo=python&logoColor=white&style=flat-square" alt="Python 3.12 or 3.13"/>
   <img src="https://img.shields.io/badge/UI-PySide6%20%2B%20Fluent-41CD52?logo=qt&logoColor=black&style=flat-square" alt="PySide6 with Fluent shell"/>
   <img src="https://img.shields.io/badge/Rust-pyo3%20bindings-DEA584?logo=rust&logoColor=white&style=flat-square" alt="Rust pyo3 bindings"/>
@@ -42,7 +42,7 @@
 | **Fluent 界面壳** | 基于 `PySide6-Fluent-Widgets` 的可关闭接缝；Miku / Ralsei / Dark Amber / Light Amber 四套主题，可跟随系统深浅 |
 | **经典壳共存** | `ui/fluent/` 是接缝而非替换，`XLCHEMY_UI=classic` 回到与上游逐像素一致的界面 |
 | **Rust 加速绑定** | `xlchemy_rust`（pyo3）承担转换、优化与图片信息解码 |
-| **macOS 原生包** | `.app` 与 `.dmg`（universal2），含 dylib 装箱脚本与 DMG 背景 |
+| **macOS 原生包** | `.app` 与 `.dmg`（默认 Apple Silicon arm64；`XL_MAC_UNIVERSAL2=1` 出 universal2），含 dylib 装箱脚本与 DMG 背景 |
 | **简体中文 UI** | `zh_CN` 语言目录，文案走可校验的 i18n 接缝（`task i18n:check` 报告未翻条目） |
 | **工程化入口** | `Taskfile.yml` + [uv](https://docs.astral.sh/uv/)：一条命令建环境、编扩展、跑测试 |
 
@@ -141,8 +141,13 @@ UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple task env:deps
 ```bash
 make deps              # 编译外部编码器与 ExifTool（PLAT 会按宿主系统自动选择）
 task build             # .app
-task build:dmg         # .dmg（universal2）
+task build:dmg         # .dmg（默认 arm64；XL_MAC_UNIVERSAL2=1 出 universal2）
 ```
+
+> [!WARNING]
+> 发布出来的 `.dmg` 是 ad-hoc 签名、**未经 Apple 公证**（没有开发者证书）。在别人机器上
+> 首次打开会被 Gatekeeper 拦下，需要右键 → 打开，或 `xattr -dr com.apple.quarantine` 清掉
+> 隔离位。包内编码器与 ExifTool 的 dylib 已自带，不再依赖本机的 Homebrew。
 
 #### Windows 10/11
 
@@ -305,7 +310,7 @@ A batch image converter in one window: drop in photos and screenshots, pick a fo
 | **Fluent UI shell** | A closable seam on `PySide6-Fluent-Widgets`; Miku / Ralsei / Dark Amber / Light Amber themes plus an optional follow-system light/dark switch |
 | **Classic shell kept** | `XLCHEMY_UI=classic` restores the upstream interface shown in the screenshot above |
 | **Rust bindings** | `xlchemy_rust` (pyo3) handles conversion, optimization and image-info decoding |
-| **macOS builds** | `.app` and universal2 `.dmg`, with dylib staging scripts |
+| **macOS builds** | `.app` and `.dmg` (Apple Silicon arm64 by default; `XL_MAC_UNIVERSAL2=1` for universal2), with dylib staging scripts |
 | **Simplified Chinese UI** | `zh_CN` catalog behind a verifiable i18n seam (`task i18n:check`) |
 | **Taskfile + uv workflow** | One command to create the environment, build the extension and run tests |
 
