@@ -336,6 +336,8 @@ class Builder():
                 rmTree(f"{self.dst_dir}/{self.project_name}")   # Remove leftover dist/xl-converter
                 match build_type:
                     case "dmg":
+                        self._relocateBundleBin()
+                        self._sealBundleAdhoc()
                         self._buildDmg()
        
         if self.args.getArg("update_file"):
@@ -585,6 +587,56 @@ class Builder():
                 stdout=subprocess.DEVNULL,
             )
 
+    def _relocateBundleBin(self) -> None:
+        """把 bundle 里的 bin/ 从 Contents/Frameworks 挪到 Contents/Resources。
+
+        codesign 把 Frameworks 下的每个文件都当嵌套代码，而 bin/macos/exiftool 是一个 perl
+        脚本 —— 脚本没法签名（"code object is not signed at all"），只要它还在 Frameworks 里，
+        整个包就封不上。运行时侧配套改 data/constants.py 的 Darwin BASE_PATH。
+        """
+        contents = os.path.join(self.dst_dir, self.macos_app_bundle_name, "Contents")
+        src = os.path.join(contents, "Frameworks", "bin")
+        dst = os.path.join(contents, "Resources", "bin")
+        if not os.path.isdir(src):
+            return
+
+        print("[Building] Relocating bundled binaries out of Frameworks")
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.move(src, dst)
+
+    def _sealBundleAdhoc(self) -> None:
+        """给整个 bundle 重封一层 adhoc 签名，并当场验一次。
+
+        stage_dylibs.sh 用 install_name_tool 原地改过加载路径，链接器原来那层签名当场失效。
+        这里必须用 --deep：bundle 的 Frameworks 里除了 dylib 还平铺着 PyInstaller 的数据文件
+        （assets/ui/data），逐个签 Contents/MacOS 里的可执行文件会触发外层 bundle 的嵌套校验，
+        反手就报某个 svg「code object is not signed at all」。前提是 bin/ 已经挪出 Frameworks
+        —— 那里的 exiftool 是 perl 脚本，签不了名（见 _relocateBundleBin）。
+        这台机没有开发者证书与公证，产物仍是 Signature=adhoc，别人下载后照旧要过 Gatekeeper，
+        发布说明里得写明「未公证」。
+        """
+        app = os.path.join(self.dst_dir, self.macos_app_bundle_name)
+
+        print("[Signing] Re-sealing the bundle (adhoc, --deep)")
+        result = subprocess.run(
+            ("codesign", "--force", "--deep", "--timestamp=none", "-s", "-", app),
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"codesign --deep failed: {(result.stderr or '').strip()}")
+
+        check = subprocess.run(
+            ("codesign", "--verify", "--deep", "--strict", app),
+            capture_output=True,
+            text=True,
+        )
+        if check.returncode != 0:
+            raise RuntimeError(
+                f"bundle still does not verify: {(check.stderr or '').strip().splitlines()[0]}")
+        print("[Signing] Bundle verifies (codesign --verify --deep --strict)")
+
     def _buildDmg(self) -> None:
         if platform.system() != "Darwin":
             return
@@ -642,8 +694,11 @@ text_size = 14
                 f.write(dmg_settings_py)
             
             try:
+                # 用 -m 而不是 env/bin/dmgbuild：控制台脚本的 shebang 是安装时写死的
+                # 绝对路径，虚拟环境一挪窝就 exec 不中（FileNotFoundError: 'dmgbuild'）。
                 subprocess.run([
-                    "dmgbuild", "-s", dmg_settings_path, self.project_display_name, dmg_output,
+                    sys.executable, "-m", "dmgbuild",
+                    "-s", dmg_settings_path, self.project_display_name, dmg_output,
                 ], check=True)
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"dmgbuild failed: {e}") from e
@@ -696,4 +751,6 @@ if __name__ == '__main__':
         exit()
     except (Exception, OSError) as err:
         print(f"[Error] {err}")
-        exit()
+        # 原来这里是 exit()（=rc 0）：dmgbuild 起不来时构建照样「成功」退出，dist 里没有
+        # 任何 dmg，CI 只看 rc 就会发一个缺产物的 release。硬异常必须把 rc 顶红。
+        exit(1)

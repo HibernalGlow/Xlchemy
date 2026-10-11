@@ -72,7 +72,15 @@ elif platform.system() == "Linux":
     else:
         CONFIG_LOCATION = os.path.expanduser('~/.config/xl-converter')
 elif platform.system() == "Darwin":
-    BASE_PATH = os.path.join(PROGRAM_FOLDER, "bin", "macos")
+    # 打包后 bin/ 落在 Contents/Resources，而不是 _MEIPASS（=Contents/Frameworks）：
+    # codesign 把 Frameworks 下的每个文件都当嵌套代码，而 bin/macos/exiftool 是 perl 脚本、
+    # 签不上名，只要它待在 Frameworks 里整个包就封不上（见 build.py 的 _relocateBundleBin）。
+    if getattr(sys, "frozen", False):
+        BASE_PATH = os.path.join(
+            os.path.dirname(PROGRAM_FOLDER), "Resources", "bin", "macos"
+        )
+    else:
+        BASE_PATH = os.path.join(PROGRAM_FOLDER, "bin", "macos")
 
     CJXL_PATH = os.path.join(BASE_PATH, "cjxl")
     DJXL_PATH = os.path.join(BASE_PATH, "djxl")
